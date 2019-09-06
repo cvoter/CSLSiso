@@ -75,23 +75,24 @@ Input data for the Central Sands Lake Study sites (Pleasant Lake, Long Lake, and
 * Regular (e.g., monthly or every-other-month) stable isotope measurements of $\delta^{18}O_{L}$, $\delta^{18}O_{GW_{in}}$, and $\delta^{18}O_{P}$
 
 ### 1. Meteorological Data
-For the Central Sands Lake Study, daily air temperature, relative humidity, precipitation, and reference potential evapotranspiration are downloaded from the [Hancock Agricultural Research Station website](https://enviroweather.msu.edu/weather.php?stn=hck) (station id: hck). This weather station is located in Hancock, WI (location: 44.1188, -89.533, elevation: 241m), approximately 8 miles from Plainfield Lake, 8.5 miles from Long Lake, and 14.5 miles from Pleasant Lake.
+For the Central Sands Lake Study (CSLS), daily air temperature, relative humidity, precipitation, and reference potential evapotranspiration are downloaded from the [Hancock Agricultural Research Station website](https://enviroweather.msu.edu/weather.php?stn=hck) (station id: hck). This weather station is located in Hancock, WI (location: 44.1188, -89.533, elevation: 241m), approximately 8 miles from Plainfield Lake, 8.5 miles from Long Lake, and 14.5 miles from Pleasant Lake.
 
-On the Hancock Station website, click on "Weather Station at Hancock" or "More weather for this station" to be routed to a page with options for "Custom Reports (Data-on-Demand)". Select Data Type "Daily Data", then check Max Air Temperature [1.5m], Min Air Temperature [1.5m], Precipitaiton, Max Relative Humidity [1.5m], Min Relative Humidity [1.5m], and reference potential evapotranspiration. Select starting date and end date, display units (metric), and output (csv), then "Generate Report". Note that the earliest starting date allowed (as of January and September 2019) is February 15, 2018.
+On the Hancock Station website, click on "Weather Station at Hancock" or "More weather for this station" to be routed to a page with options for "Custom Reports (Data-on-Demand)". Select Data Type "Daily Data" or "Hourly Data", then check (Max/Min) Air Temperature [1.5m], Precipitation, (Max/Min) Relative Humidity [1.5m], and Reference Potential Evapotranspiration. Select starting date and end date, display units (metric), and output (csv), then "Generate Report". Note that the earliest starting date allowed (as of January and September 2019) is February 15, 2018.
 
 ### 2. Lake Temperature Data
-Lake surface temperatures are extracted from the surface depth of a vertical lake temperature profile that was collected every other week at each lake. This data is stored in SWIMS.
+Lake surface temperatures (at 0 meters) are extracted from every-other-week measurements of vertical lake temperature profiles taken at the CSLS Lakes. Field date is associated with the project "Central Sands Lake Study" or "csls" and is stored in [WDNR SWIMS](https://dnr.wi.gov/topic/surfacewater/swims/).
 
 ### 3. Stable Isotope Measurements
 Measurements of $\delta^{18}O_{L}$ and $\delta^{18}O_{GW_{in}}$ are collected on site for each lake while $\delta^{18}O_{P}$ is measured using samples collected at the Hancock Research Station.
 
 ## Analysis
 ### 1. Identify Groundwater Gradient Across Lakes
+Groundwater gradients 
 
 ### 2. Summarize Monthly Input Data
 Precipitation (mm) and Reference Potential Evapotranspiration (mm) are summed by month and used for the $P$ and $E$ terms. Monthly means are calculated for air temperature (^oC) and relative humidity (%) which are both used to calculate $\delta^{18}O_{E}$.
 
-Monthly lake surface temperature is calculated by averaging biweekly lake temperature measurements at the surface depth of the vertical profile.
+Monthly lake surface temperature is calculated by averaging every-other-week lake temperature measurements at the surface depth of the vertical profile.
 
 Analysis of $\delta^{18}O$ and $\delta D$ at each well reveal the groundwtaer gradient across each lake. For this anlaysis, the $\delta^{18}O$ of the upgradient groundwater wells were averaged for each month to calculate the $\delta^{18}O_{GW_{in}}$
 
@@ -103,7 +104,7 @@ Analysis of $\delta^{18}O$ and $\delta D$ at each well reveal the groundwtaer gr
 
 ## Session Info
 
-See below for the versions of R and versions of packages in use when this R Markdown file was created.
+The version of R and the versions of packages in use when this R Markdown file was created are listed here:
 
 ```{r session_info, include=TRUE, echo=TRUE, results='markup'}
 devtools::session_info()
