@@ -25,6 +25,8 @@ start_n_months <- function(date_vector, all_days = TRUE) {
   prev_date    <- start_date - days(1)
   if (month(start_date) == month(prev_date) & all_days == TRUE) {
     start_date <- floor_date(start_date, unit = "month") + months(1)
+  } else if (all_days == FALSE) {
+    start_date <- floor_date(start_date, unit = "month")
   }
 
   # End month
@@ -32,6 +34,8 @@ start_n_months <- function(date_vector, all_days = TRUE) {
   next_date  <- end_date + days(1)
   if (month(start_date) == month(next_date) & all_days == TRUE) {
     end_date <- floor_date(end_date, unit = "month") - days(1)
+  } else if (all_days == FALSE) {
+    end_date <- ceiling_date(end_date, unit = "month") - days(1)
   }
 
   # Number of months in time series

@@ -24,8 +24,7 @@ hourly_to_monthly_weather(filename, filedir = "data", skip_lines = 7)
 \value{
 monthly_weather, a data frame with the following columns:
 \describe{
-\item{month}{month of observation (m)}
-\item{year}{year of observation (YYYY)}
+\item{date}{first of the month for each monthly observation (Date)}
 \item{atmp_K}{mean monthly air temperature (K)}
 \item{relh_pct}{mean monthly relative humidity (percent)}
 \item{pcpn_mm}{monthly precipitaiton (mm)}
