@@ -35,8 +35,8 @@ monthly_weather, a data frame with the following columns:
 }
 \description{
 This function takes daily max air temperature, min air temperature, max
-relative humidity, min relative humidity, precipitaiton, and reference 
-evapotranspiration as formatted by the Hancock, WI weather station and 
+relative humidity, min relative humidity, precipitaiton, and reference
+evapotranspiration as formatted by the Hancock, WI weather station and
 summarizes it at a monthly time step.
 }
 \references{

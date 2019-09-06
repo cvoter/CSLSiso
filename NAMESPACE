@@ -2,7 +2,6 @@
 
 export(daily_to_monthly_weather)
 export(hourly_to_monthly_weather)
-importFrom(lubridate,day)
-importFrom(lubridate,month)
-importFrom(lubridate,year)
+export(start_n_months)
+import(lubridate)
 importFrom(utils,read.csv)
