@@ -1,0 +1,110 @@
+---
+title: "CSLS Isotope Water Budget"
+output: rmarkdown::html_vignette
+vignette: >
+  %\VignetteIndexEntry{Put the title of your vignette here}
+  %\VignetteEngine{knitr::rmarkdown}
+  \usepackage[utf8]{inputenc}
+---
+
+```{r setup, echo=TRUE, warning=FALSE, message=FALSE}
+library(devtools)
+```
+
+## Overview
+This water budget model uses stable isotope measurements of precipitation, evaporation, lake water, and inflowing groundwater as well as observed precipitation and evaporation rates to calculate monthly groundwater flow into and out of a lake.
+
+<br>
+
+**Groundwater inflow** is calculated as follows (Krabbenhoft et al., 1990):
+
+\begin{align}
+\tag{1}
+GW_{in} = \frac{P*(\delta^{18}O_{L} - \delta^{18}O_{P}) + E*(\delta^{18}O_{E} - \delta^{18}O_{L})}{\delta^{18}O_{GW_{in}} - \delta^{18}O_{L}}
+\end{align}
+
+where $GW_{in}$ is the groundwater inflow [L^3/T], $P$ is precipitation [L^3/T], $E$ is evaporation [L^3/T], and $\delta^{18}O_{x}$ is the relative isotopic composition in units of per mil relative to a known standard. The relative isotopic composition is defined as $\delta^{18}O_{x} = [\frac{R_{x}}{R_{std}} - 1] * 10^{3}$ where $R_{x}$ is the ratio of isotope concentrations (e.g., $\frac{^{18}O}{^{16}O}$). $\delta^{18}O_{L}$ is measured at the lake, $\delta^{18}O_{P}$ is measured from precipitation, $\delta^{18}O_{E}$ is estimated for evaporation, and $\delta^{18}O_{GW_{in}}$ is measured at inflowing groundwater wells.
+
+<br>
+
+**Groundwater outflow** can then be calculated from the following equation (Krabbenhoft et al., 1990):
+
+\begin{align}
+\tag{2}
+\frac{dV}{dt} = 0 = GW_{in} + P - GW_{out} - E
+\end{align}
+
+where $\frac{dV}{dt}$ is the change in lake volume [L^3/T] and $GW_{out}$ is the groundwater outflow [L^3/T]. If changes in lake volume are measured (i.e., $\frac{dV}{dt} \neq 0$), then these changes are substituted for 0 and the modeled groundwater outflows are adjusted.
+
+<br>
+
+$\delta^{18}O_{E}$ **must be estimated** as follows (Krabbenhoft et al., 1990) since it cannot be directly measured like $\delta^{18}O_{P}$, $\delta^{18}O_{L}$, or $\delta^{18}O_{GW_{in}}$.
+
+\begin{align}
+\tag{3}
+\delta^{18}O_{E} = \frac{\alpha * \delta^{18}O_{L} - h*\delta^{18}O_{A} - \epsilon}{1 - h +10^{-3}\Delta \epsilon}
+\end{align}
+
+The terms of Eq. 3 are calculated using the following definitions (Krabbenhoft et al., 1990; Ozaydin et al., 2001):
+
+\begin{align}
+\tag{4}
+\alpha &= \frac{-2.0667 - \frac{415.6}{t} + (\frac{1137}{t^2})*10^3}{1000} \\
+\tag{5}
+h &= RH*\frac{es_{A}}{es_{L}} \\
+\tag{6}
+es &= \frac{1321.7e^{\frac{17.27t}{237}+t}}{273+t} \\
+\tag{7}
+\delta^{18}O_{A} &= \frac{\delta^{18}O_{P}}{\alpha} - (1 - \frac{1}{\alpha}) \\
+\tag{8}
+\epsilon &= 1000(1 - \alpha) + \Delta \epsilon \\
+\tag{9}
+\Delta \epsilon &= 14.3*(1 - h)
+\end{align}
+
+where $t$ is air temperature (K) for $\alpha$ and $es_{A}$, $t$ is lake temperature (K) for $es_{L}$, and $RH$ is relative humidity.
+
+## Data Sources
+Input data for the Central Sands Lake Study sites (Pleasant Lake, Long Lake, and Plainfield Lake) are located in the "data" folder of this project. Required inputs include:
+
+* Monthly mean air temperature (K)
+* Monthly mean relative humidity (%)
+* Monthly precipitation depth (mm)
+* Monthly reference potential evapotranspiration depths (mm)
+* Monthly mean lake surface temperature (K)
+* Regular (e.g., monthly or every-other-month) stable isotope measurements of $\delta^{18}O_{L}$, $\delta^{18}O_{GW_{in}}$, and $\delta^{18}O_{P}$
+
+### 1. Meteorological Data
+For the Central Sands Lake Study, daily air temperature, relative humidity, precipitation, and reference potential evapotranspiration are downloaded from the [Hancock Agricultural Research Station website](https://enviroweather.msu.edu/weather.php?stn=hck) (station id: hck). This weather station is located in Hancock, WI (location: 44.1188, -89.533, elevation: 241m), approximately 8 miles from Plainfield Lake, 8.5 miles from Long Lake, and 14.5 miles from Pleasant Lake.
+
+On the Hancock Station website, click on "Weather Station at Hancock" or "More weather for this station" to be routed to a page with options for "Custom Reports (Data-on-Demand)". Select Data Type "Daily Data", then check Max Air Temperature [1.5m], Min Air Temperature [1.5m], Precipitaiton, Max Relative Humidity [1.5m], Min Relative Humidity [1.5m], and reference potential evapotranspiration. Select starting date and end date, display units (metric), and output (csv), then "Generate Report". Note that the earliest starting date allowed (as of January and September 2019) is February 15, 2018.
+
+### 2. Lake Temperature Data
+Lake surface temperatures are extracted from the surface depth of a vertical lake temperature profile that was collected every other week at each lake. This data is stored in SWIMS.
+
+### 3. Stable Isotope Measurements
+Measurements of $\delta^{18}O_{L}$ and $\delta^{18}O_{GW_{in}}$ are collected on site for each lake while $\delta^{18}O_{P}$ is measured using samples collected at the Hancock Research Station.
+
+## Analysis
+### 1. Identify Groundwater Gradient Across Lakes
+
+### 2. Summarize Monthly Input Data
+Precipitation (mm) and Reference Potential Evapotranspiration (mm) are summed by month and used for the $P$ and $E$ terms. Monthly means are calculated for air temperature (^oC) and relative humidity (%) which are both used to calculate $\delta^{18}O_{E}$.
+
+Monthly lake surface temperature is calculated by averaging biweekly lake temperature measurements at the surface depth of the vertical profile.
+
+Analysis of $\delta^{18}O$ and $\delta D$ at each well reveal the groundwtaer gradient across each lake. For this anlaysis, the $\delta^{18}O$ of the upgradient groundwater wells were averaged for each month to calculate the $\delta^{18}O_{GW_{in}}$
+
+### 3. Calculate Water Balance
+
+## Results
+
+## References
+
+## Session Info
+
+See below for the versions of R and versions of packages in use when this R Markdown file was created.
+
+```{r session_info, include=TRUE, echo=TRUE, results='markup'}
+devtools::session_info()
+```

@@ -4,24 +4,28 @@
 #' relative humidity, min relative humidity, precipitaiton, and reference 
 #' evapotranspiration as formatted by the Hancock, WI weather station and 
 #' summarizes it at a monthly time step.
+#' 
+#' @references \url{https://enviroweather.msu.edu/weather.php?stn=hck}
 #'
 #' @param filename name of daily weather file which includes:
 #' \itemize{
-#' \item date
-#' \item atmp_max - maximum air temperature (deg C)
-#' \item atmp_min - minimum air temperature (deg C)
-#' \item relh_max - maximum relative humidity (%)
-#' \item relh_min - minimum relative humidity (%)
-#' \item pcpn - precipitation (mm)
-#' \item rpet - reference potential evapotranspiration (mm)
+#'   \item date (m/d/YYYY)
+#'   \item atmp_max - maximum air temperature (deg C)
+#'   \item atmp_min - minimum air temperature (deg C)
+#'   \item relh_max - maximum relative humidity (%)
+#'   \item relh_min - minimum relative humidity (%)
+#'   \item pcpn - precipitation (mm)
+#'   \item rpet - reference potential evapotranspiration (mm/day)
 #' }
 #' @param filedir directory in which daily weather csv file resides
 #' @param skip_lines number of rows in csv to skip before reading, default: 7
 #' 
-#' @return monthly_weather, a data frame with the following:
+#' @return monthly_weather, a data frame with the following columns:
 #' \describe{
+#' \item{month}{month of observation (m)}
+#' \item{year}{year of observation (YYYY)}
 #' \item{atmp_K}{mean monthly air temperature (K)}
-#' \item{relh_pct}{mean monthly relative humidity (%)}
+#' \item{relh_pct}{mean monthly relative humidity (percent)}
 #' \item{pcpn_mm}{monthly precipitaiton (mm)}
 #' \item{rpet_mm}{monthly reference potential evapotranspiration (mm)}
 #' }
@@ -97,7 +101,7 @@ daily_to_monthly_weather <- function(filename,
     
     monthly_weather$atmp_K[i]   <- mean(c(this_weather$atmp_max, 
                                           this_weather$atmp_min),
-                                        na.rm = TRUE)
+                                        na.rm = TRUE) + 273.15
     monthly_weather$relh_pct[i] <- mean(c(this_weather$relh_max, 
                                           this_weather$relh_min),
                                         na.rm = TRUE)
