@@ -29,9 +29,9 @@
 #'
 #' @export
 
-mean_monthly_lst <- function(filename,
-                             filedir = 'data',
-                             wbic = 106900) {
+get_monthly_lst <- function(filename,
+                            filedir = 'data',
+                            wbic = 106900) {
   # Load all SWIMS data
   fileloc <- sprintf('%s/%s', filedir, filename)
   SWIMS <- read.csv(fileloc)
