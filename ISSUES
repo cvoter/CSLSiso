@@ -1,0 +1,7 @@
+# ISSUES for isoH2Obudget
+
+Current issues:  
+ * Colnames in raw isotope spreadsheet apparently have extra spaces (d18O..VSMOW.)
+ * Need to add ways to validate raw data to make sure I'm subsetting correctly and not losing data due to unexpected data formatting, ESPECIALLY for isotope data.
+ * Need lubridate on personal laptop
+ * Add README to repo
