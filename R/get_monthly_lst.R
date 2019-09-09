@@ -15,8 +15,10 @@
 #'         Meters" for lake surface temperatures
 #'   \item WBIC - Wisconsin Water Body Identification Code
 #' }
-#' @param filedir directory in which daily weather csv file resides
-#' @param skip_lines number of rows in csv to skip before reading, default: 7
+#' @param filedir directory in which daily weather csv file resides, defaults to
+#'                'system.file' to instruct it to look within package
+#'                "inst/extdata" directory.
+#' @param wbic Wisconsin Water Body Identification Code for lake of interest
 #'
 #' @return monthly_lst, a data frame with the following columns:
 #' \describe{
@@ -26,22 +28,31 @@
 #'
 #' @importFrom lubridate day month year
 #' @importFrom utils read.csv
+#' @importFrom rlang .data
 #'
 #' @export
 
 get_monthly_lst <- function(filename,
-                            filedir = 'data',
+                            filedir = 'system.file',
                             wbic = 106900) {
   # Load all SWIMS data
-  fileloc <- sprintf('%s/%s', filedir, filename)
-  SWIMS <- read.csv(fileloc)
+  if (filedir == 'system.file') {
+    SWIMS <- read.csv(system.file("extdata",
+                                  filename,
+                                  package = "isoH2Obudget",
+                                  mustWork = TRUE))
+  } else {
+    SWIMS <- read.csv(sprintf('%s/%s', filedir, filename))
+  }
 
   # Subset to get just surface temps for just this lake
   submonthly_lst <- subset(SWIMS,
-                           select = c(Start.Date.Time, Result, Units),
-                           DNR.Parameter == 10 &
-                             Result.Depth == "0 Meters" &
-                             WBIC == wbic)
+                           select = c(.data$Start.Date.Time,
+                                      .data$Result,
+                                      .data$Units),
+                           .data$DNR.Parameter == 10 &
+                             .data$Result.Depth == "0 Meters" &
+                             .data$WBIC == wbic)
   colnames(submonthly_lst) <- c("date","ltmp","units")
   submonthly_lst$date <- as.Date(submonthly_lst$date, format = "%m/%d/%Y")
   submonthly_lst$ltmp <- as.numeric(as.character(submonthly_lst$ltmp))

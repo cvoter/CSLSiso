@@ -18,7 +18,9 @@
 #'   \item pcpn - precipitation (mm)
 #'   \item rpet - reference potential evapotranspiration (mm)
 #' }
-#' @param filedir directory in which weather csv file resides
+#' @param filedir directory in which weather csv file resides, defaults to
+#'                'system.file' to instruct it to look within package
+#'                "inst/extdata" directory.
 #' @param skip_lines [numeric] number of rows in csv to skip before reading in
 #'                   data, defaults to 7.
 #' @param daily_weather [logical] defaults to FALSE for subdaily weather, set
@@ -39,12 +41,19 @@
 #' @export
 
 get_monthly_weather <- function(filename,
-                                filedir = 'data',
+                                filedir = 'system.file',
                                 skip_lines = 7,
                                 daily_weather = FALSE) {
   # Load weather data
-  fileloc <- sprintf('%s/%s', filedir, filename)
-  weather <- read.csv(fileloc, skip = skip_lines)
+  if (filedir == 'system.file') {
+    weather <- read.csv(system.file("extdata",
+                                  filename,
+                                  package = "isoH2Obudget",
+                                  mustWork = TRUE),
+                        skip = skip_lines)
+  } else {
+    weather <- read.csv(sprintf('%s/%s', filedir, filename), skip = skip_lines)
+  }
 
   # Fix formatting
   end_data         <- which(weather$date == "Variable Ids:") - 2

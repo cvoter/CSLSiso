@@ -7,7 +7,8 @@ Maintainer: Carolyn Voter <cvoter@wisc.edu>
 Description: Calculates the water budget for a lake.
     Uses stable isotopes to calculate groundwater flow to and from the lake.
 Imports:
-    lubridate
+    lubridate,
+    rlang
 Suggests:
     knitr,
     devtools,
