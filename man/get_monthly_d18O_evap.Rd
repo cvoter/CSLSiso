@@ -31,6 +31,9 @@ get_monthly_d18O_evap(monthly_weather, monthly_lst, monthly_isotopes)
                  month
 }}
 }
+\value{
+monthly_isotopes with d18O_evap column added
+}
 \description{
 This function takes
 }

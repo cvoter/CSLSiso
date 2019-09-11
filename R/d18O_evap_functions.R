@@ -12,7 +12,13 @@
 # ------------------------------------------------------------------------------
 #' Evaporation d18O
 #'
-#' Calculates the isotope composition of evaporation.
+#' Calculates the isotope composition of evaporation based on equation 5 in
+#' Krabbenhoft et al. (1990).
+#'
+#' @references Krabbenhoft, D. P., C. J. Bowser, M. P. Anderson, and J. W.
+#'   Valley. (1990). Estimating Groundwater Exchange with Lakes: 1. The Stable
+#'   Isotope Mass Balance Method. Water Resources Research, 26(10):2445-2453.
+#'   https://doi.org/10.1029/WR026i010p02445
 #'
 #' @param atmp air temperature (K)
 #' @param ltmp lake surface temperature (K)
@@ -26,8 +32,8 @@
 
 d18O_evap <- function(atmp, ltmp, RH, d18O_pcpn, d18O_lake) {
   # Required parameters
-  es_a          <- d18O_evap_sat_vapor_press(atmp)
-  es_l          <- d18O_evap_sat_vapor_press(ltmp)
+  es_a          <- d18O_evap_sat_vapor_press(atmp - 273.15)
+  es_l          <- d18O_evap_sat_vapor_press(ltmp - 273.15)
   h             <- d18O_evap_normalized_humidity(RH, es_a, es_l)
   alpha         <- d18O_evap_isotope_frac(ltmp)
   delta_epsilon <- d18O_evap_kinetic_frac(h, K = 14.3)
@@ -43,63 +49,80 @@ d18O_evap <- function(atmp, ltmp, RH, d18O_pcpn, d18O_lake) {
 #' Saturation Vapor Pressure
 #'
 #' Calculates the saturation vapor pressure based on temperature (of air or
-#' water)
+#' water) based on equations 11 and 12 of Allen et al. (1998).
 #'
-#' @param tmp temperature of air or water (K)
+#' @references Allen, R. G., Pereira, L. S., Raes, D., & Smith, M. (1998). Crop
+#'   evapotranspiration: Guidelines for computing crop water requirements. Rome:
+#'   FAO. Retrieved from http://www.fao.org/docrep/X0490E/x0490e00.htm.
 #'
-#' @return es - saturation vapor pressure
+#' @param tmp temperature of air or water (degrees C)
+#'
+#' @return es - saturation vapor pressure (kPa)
 #'
 #' @export
 
 d18O_evap_sat_vapor_press <- function(tmp) {
-  es <- (1321.7*exp(17.27*tmp/237 + tmp))/(273 + tmp)
+  es <- 0.6108*exp(17.27*tmp/(237.3 + tmp))
   return(es)
 }
 # ------------------------------------------------------------------------------
 #' Normalized Relative Humidity
 #'
 #' Calculates the relative humidity normalized to the temperature of the surface
-#' water
+#' water.
 #'
 #' @param RH relative humidity (\%)
-#' @param es_a saturation vapor pressure for the air
-#' @param es_l saturation vapor pressure for the lake
+#' @param es_a saturation vapor pressure for the air (kPa)
+#' @param es_l saturation vapor pressure for the lake (kPa)
 #'
 #' @return h - the relative humidity normalized to the temperature of the
-#'         surface water
+#'         surface water (-)
 #'
 #' @export
 
 d18O_evap_normalized_humidity <- function(RH, es_a, es_l) {
-  h <- RH * (es_a/es_l)
+  h <- (RH/100) * (es_a/es_l)
   return(h)
 }
 # ------------------------------------------------------------------------------
 #' Equilibrium Isotope Fractionation Factor
 #'
 #' Calculates the equilibrium isotope fractionation factor at the temperature of
-#' the air-water interface.
+#' the air-water interface based on equation 9 in Ozaydin et al. (2001).
+#'
+#' @references Ozaydin, V., U. Sendil, and D. Altinbilek. (2001). Stable isotope
+#'   mass balance method to find the water budget of a lake. Turkish Journal of
+#'   Engineering and Environmental Sciences, 25:329-344. Retrieved from:
+#'   https://dergipark.org.tr/download/article-file/126752
 #'
 #' @param ltmp lake surface temperature (K)
 #'
-#' @return alpha - the equilibrium isotope fractionation factor
+#' @return alpha - the equilibrium isotope fractionation factor (-)
 #'
 #' @export
 
 d18O_evap_isotope_frac <- function(ltmp) {
-  alpha <- (-2.0667 - (415.6/ltmp) + (1137/(ltmp^2))*(10^3))/1000
+  alpha <- exp((-2.0667 - (415.6/ltmp) + (1137/(ltmp^2))*(10^3))/1000)
   return(alpha)
 }
 # ------------------------------------------------------------------------------
 #' Kinetic Fractionation Factor
 #'
-#' Calculates the kinetic fractionation factor
+#' Calculates the kinetic fractionation factor based on equation 6 in
+#' Krabeenhoft et al. (1990).
+#'
+#' @references Krabbenhoft, D. P., C. J. Bowser, M. P. Anderson, and J. W.
+#'   Valley. (1990). Estimating Groundwater Exchange with Lakes: 1. The Stable
+#'   Isotope Mass Balance Method. Water Resources Research, 26(10):2445-2453.
+#'   https://doi.org/10.1029/WR026i010p02445
+#'
 #'
 #' @param h relative humidity normalized to the temperature of the surface water
+#'          (-)
 #' @param K constant determinded by wind tunnel experiments for different
 #'          isotopes, defaults to K(18O) = 14.3.
 #'
-#' @return delta_epsilon - the kinetic fractionation factor
+#' @return delta_epsilon - the kinetic fractionation factor (-)
 #'
 #' @export
 
@@ -110,27 +133,40 @@ d18O_evap_kinetic_frac <- function(h, K = 14.3) {
 # ------------------------------------------------------------------------------
 #' Total Fractionation Factor
 #'
-#' Calculates the total fractionation factor
+#' Calculates the total fractionation factor based on the definition of epsilon
+#' for equation 5 in Krabbenhoft et al. (1990). Note this is not the actual
+#' definition presented in the paper - instead of alpha, here we have 1/alpha.
+#'
+#' @references Krabbenhoft, D. P., C. J. Bowser, M. P. Anderson, and J. W.
+#'   Valley. (1990). Estimating Groundwater Exchange with Lakes: 1. The Stable
+#'   Isotope Mass Balance Method. Water Resources Research, 26(10):2445-2453.
+#'   https://doi.org/10.1029/WR026i010p02445
 #'
 #' @param alpha equilibrium isotope fractionation factor at the temperature of
-#'              the air-water interface
-#' @param delta_epsilon kinetic fractionation factor
+#'              the air-water interface (-)
+#' @param delta_epsilon kinetic fractionation factor (-)
 #'
-#' @return epsilon - the total fractionation factor
+#' @return epsilon - the total fractionation factor (-)
 #'
 #' @export
 
 d18O_evap_total_frac <- function(alpha, delta_epsilon) {
-  epsilon <- 1000*(1 - alpha) + delta_epsilon
+  epsilon <- 1000*(1 - 1/alpha) + delta_epsilon
 }
 # ------------------------------------------------------------------------------
 #' Atmosphere d18O
 #'
-#' Calculates the d18O isotope composition of the atmosphere
+#' Calculates the d18O isotope composition of the atmosphere based on equation
+#' 14 in Ozaydin et al. (2001).
+#'
+#' @references Ozaydin, V., U. Sendil, and D. Altinbilek. (2001). Stable isotope
+#'   mass balance method to find the water budget of a lake. Turkish Journal of
+#'   Engineering and Environmental Sciences, 25:329-344. Retrieved from:
+#'   https://dergipark.org.tr/download/article-file/126752
 #'
 #' @param d18O_pcpn isotopic composition of precipitation
 #' @param alpha equilibrium isotope fractionation factor at the temperature of
-#'              the air-water interface
+#'              the air-water interface (-)
 #'
 #' @return d18O_atm - the d18O isotope composition of the atmosphere
 #'

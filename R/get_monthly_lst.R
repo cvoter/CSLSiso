@@ -23,7 +23,7 @@
 #' @return monthly_lst, a data frame with the following columns:
 #' \describe{
 #' \item{date}{first of the month for each monthly observation (Date)}
-#' \item{ltmp}{mean monthly lake surface temperature (degrees C)}
+#' \item{ltmp}{mean monthly lake surface temperature (degrees K)}
 #' }
 #'
 #' @importFrom lubridate day month year
@@ -47,12 +47,12 @@ get_monthly_lst <- function(filename,
 
   # Subset to get just surface temps for just this lake
   submonthly_lst <- subset(SWIMS,
-                           select = c(.data$Start.Date.Time,
-                                      .data$Result,
-                                      .data$Units),
-                           .data$DNR.Parameter == 10 &
-                             .data$Result.Depth == "0 Meters" &
-                             .data$WBIC == wbic)
+                           select = c(Start.Date.Time,
+                                      Result,
+                                      Units),
+                           DNR.Parameter == 10 &
+                             Result.Depth == "0 Meters" &
+                             WBIC == wbic)
   colnames(submonthly_lst) <- c("date","ltmp","units")
   submonthly_lst$date <- as.Date(submonthly_lst$date, format = "%m/%d/%Y")
   submonthly_lst$ltmp <- as.numeric(as.character(submonthly_lst$ltmp))
@@ -75,7 +75,7 @@ get_monthly_lst <- function(filename,
     these_lst <- submonthly_lst[which(month(submonthly_lst$date) == m &
                                         year(submonthly_lst$date) == y),]
     monthly_lst$date[[i]] <- this_month
-    monthly_lst$ltmp[i] <- mean(these_lst$ltmp, na.rm = TRUE)
+    monthly_lst$ltmp_K[i] <- mean(these_lst$ltmp, na.rm = TRUE) + 273.15
   }
 
   # R bizzarly looses the class of date objects in for loops, fix here

@@ -13,7 +13,7 @@
 #' @param monthly_lst a data frame with the following columns:
 #' \itemize{
 #' \item date - first of the month for each monthly observation (Date)
-#' \item ltmp - mean monthly lake surface temperature (degrees C)
+#' \item ltmp_K - mean monthly lake surface temperature (degrees K)
 #' }
 #' @param monthly_isotopes a data frame with the following columns:
 #' \itemize{
@@ -24,6 +24,9 @@
 #'                  month
 #' }
 #'
+#' @return monthly_isotopes with d18O_evap column added
+#'
+#' @export
 
 get_monthly_d18O_evap <- function(monthly_weather,
                                   monthly_lst,
@@ -37,8 +40,8 @@ get_monthly_d18O_evap <- function(monthly_weather,
 
     atmp       <- monthly_weather$atmp_K[which(monthly_weather$date ==
                                                 this_month)]
-    ltmp       <- monthly_lst$ltmp[which(monthly_lst$date ==
-                                          this_month)]
+    ltmp       <- monthly_lst$ltmp_K[which(monthly_lst$date ==
+                                             this_month)]
     RH         <- monthly_weather$relh_pct[which(monthly_weather$date ==
                                                   this_month)]
     d18O_pcpn  <- monthly_isotopes$d18O_pcpn[i]

@@ -65,12 +65,12 @@ get_monthly_isotopes <- function(isotope_file,
     isotopes <- read.csv(sprintf("%s/%s", filedir, isotope_file))
   }
   lake_isotopes <- subset(isotopes,
-                          .data$Site.ID %in% sites$site_id &
-                            .data$Valid == TRUE &
-                            is.na(.data$d18O..VSMOW.) == FALSE,
-                          select = c(.data$Collection.Date.Time,
-                                     .data$Site.ID,
-                                     .data$d18O..VSMOW.))
+                          Site.ID %in% sites$site_id &
+                            Valid == TRUE &
+                            is.na(d18O..VSMOW.) == FALSE,
+                          select = c(Collection.Date.Time,
+                                     Site.ID,
+                                     d18O..VSMOW.))
   colnames(lake_isotopes) <- c("date","site_id","d18O")
   lake_isotopes <- merge(lake_isotopes, sites)
 
