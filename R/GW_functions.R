@@ -1,0 +1,58 @@
+# GW_functions
+# Functions to calculate groundwater flow to and from a lake
+# Includes;
+# - GW_inflow
+# - GW_outflow
+# ------------------------------------------------------------------------------
+#' Groundwater Inflow
+#'
+#' Calculates the groundwater inflow to a lake based on equation 4 in
+#' Krabbenhoft et al. (1990).
+#'
+#' @references Krabbenhoft, D. P., C. J. Bowser, M. P. Anderson, and J. W.
+#'   Valley. (1990). Estimating Groundwater Exchange with Lakes: 1. The Stable
+#'   Isotope Mass Balance Method. Water Resources Research, 26(10):2445-2453.
+#'   https://doi.org/10.1029/WR026i010p02445
+#'
+#' @param P precipitation (mm)
+#' @param E evapotranspiration (mm)
+#' @param d180_pcpn d18O isotopic composition of precipitation
+#' @param d18O_lake d18O isotopic composition of the lake
+#' @param d18O_GWin d18O isotopic composition of groundwater inflow
+#' @param d18O_evap d18O isotopic composition of evaporation
+#'
+#' @return GWin - the groundwtaer inflow to the lake (mm)
+#'
+#' @export
+
+GW_inflow <- function(P, E, d18O_pcpn, d18O_lake, d18O_GWin, d18O_evap) {
+  GWin <- (P*(d18O_lake - d18O_pcpn) + E*(d18O_evap - d18O_lake))/
+          (d18O_GWin - d18O_lake)
+  return(GWin)
+}
+# ------------------------------------------------------------------------------
+#' Groundwater Inflow
+#'
+#' Calculates the groundwater inflow to a lake based on equation 4 in
+#' Krabbenhoft et al. (1990).
+#'
+#' @references Krabbenhoft, D. P., C. J. Bowser, M. P. Anderson, and J. W.
+#'   Valley. (1990). Estimating Groundwater Exchange with Lakes: 1. The Stable
+#'   Isotope Mass Balance Method. Water Resources Research, 26(10):2445-2453.
+#'   https://doi.org/10.1029/WR026i010p02445
+#'
+#' @param P precipitation (mm)
+#' @param E evapotranspiration (mm)
+#' @param d180_pcpn d18O isotopic composition of precipitation
+#' @param d18O_lake d18O isotopic composition of the lake
+#' @param d18O_GWin d18O isotopic composition of groundwater inflow
+#' @param d18O_evap d18O isotopic composition of evaporation
+#'
+#' @return GWout - the groundwtaer outflow from the lake (mm)
+#'
+#' @export
+
+GW_outflow <- function(P, E, GWin, dVdt = 0) {
+  GWout <- P + GWin - E - dVdt
+  return(GWout)
+}

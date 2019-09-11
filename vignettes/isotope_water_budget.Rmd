@@ -9,6 +9,10 @@ vignette: >
 
 ```{r setup, echo=TRUE, warning=FALSE, message=FALSE}
 library(devtools)
+library(isoH2Obudget)
+library(reshape2) #for melting
+library(ggplot2) #for plotting
+library(extrafont) #for fonts
 ```
 
 ## Overview
@@ -23,7 +27,8 @@ and out of a lake.
 
 \begin{align}
 \tag{1}
-GW_{in} = \frac{P*(\delta^{18}O_{L} - \delta^{18}O_{P}) + E*(\delta^{18}O_{E} - \delta^{18}O_{L})}{\delta^{18}O_{GW_{in}} - \delta^{18}O_{L}}
+GW_{in} = \frac{P*(\delta^{18}O_{L} - \delta^{18}O_{P}) + E*(\delta^{18}O_{E} - 
+          \delta^{18}O_{L})}{\delta^{18}O_{GW_{in}} - \delta^{18}O_{L}}
 \end{align}
 
 where $GW_{in}$ is the groundwater inflow [L^3/T], $P$ is precipitation [L^3/T],
@@ -38,7 +43,8 @@ groundwater wells.
 
 <br>
 
-**Groundwater outflow** can then be calculated from the following equation (Krabbenhoft et al., 1990):
+**Groundwater outflow** can then be calculated from the following equation
+(Krabbenhoft et al., 1990):
 
 \begin{align}
 \tag{2}
@@ -58,7 +64,8 @@ $\delta^{18}O_{L}$, or $\delta^{18}O_{GW_{in}}$.
 
 \begin{align}
 \tag{3}
-\delta^{18}O_{E} = \frac{\alpha * \delta^{18}O_{L} - h*\delta^{18}O_{A} - \epsilon}{1 - h +10^{-3}\Delta \epsilon}
+\delta^{18}O_{E} = \frac{\alpha * \delta^{18}O_{L} - h*\delta^{18}O_{A} - 
+                  \epsilon}{1 - h +10^{-3}\Delta \epsilon}
 \end{align}
 
 The terms of Eq. 3 are calculated using the following definitions (Krabbenhoft
@@ -82,21 +89,22 @@ es &= \frac{1321.7e^{\frac{17.27t}{237}+t}}{273+t} \\
 where $t$ is air temperature (K) for $\alpha$ and $es_{A}$, $t$ is lake
 temperature (K) for $es_{L}$, and $RH$ is relative humidity.
 
-## Data Sources
+## Input data
 Input data for the Central Sands Lake Study sites (Pleasant Lake, Long Lake, and
-Plainfield Lake) are located in the "data" folder of this project. Required
-inputs include:
+Plainfield Lake) are located in the "inst/extdata" folder of this project.
+Required inputs include:
 
 * Monthly mean air temperature (K)
 * Monthly mean relative humidity (%)
 * Monthly precipitation depth (mm)
 * Monthly reference potential evapotranspiration depths (mm)
 * Monthly mean lake surface temperature (K)
-* Regular (e.g., monthly or every-other-month) stable isotope measurements of $\delta^{18}O_{L}$, $\delta^{18}O_{GW_{in}}$, and $\delta^{18}O_{P}$
+* Regular (e.g., monthly or every-other-month) stable isotope measurements of
+$\delta^{18}O_{L}$, $\delta^{18}O_{GW_{in}}$, and $\delta^{18}O_{P}$
 
 ### 1. Meteorological Data
-For the Central Sands Lake Study (CSLS), daily air temperature, relative
-humidity, precipitation, and reference potential evapotranspiration are
+For the Central Sands Lake Study (CSLS), daily or subdaily air temperature,
+relative humidity, precipitation, and reference potential evapotranspiration are
 downloaded from the [Hancock Agricultural Research Station
 website](https://enviroweather.msu.edu/weather.php?stn=hck) (station id: hck).
 This weather station is located in Hancock, WI (location: 44.1188, -89.533,
@@ -112,38 +120,95 @@ date and end date, display units (metric), and output (csv), then "Generate
 Report". Note that the earliest starting date allowed (as of January and
 September 2019) is February 15, 2018.
 
+Daily or subdaily data is summarized at a monthly timestep.
+
+```{r monthly_weather, eval=TRUE, echo=TRUE}
+monthly_weather <- get_monthly_weather(filename = 'weather_hancock_hourly_2019_09_06.csv',
+                                       filedir = 'system.file',
+                                       skip_lines = 7,
+                                       daily_weather = FALSE)
+head(monthly_weather)
+```
+
 ### 2. Lake Temperature Data
 Lake surface temperatures (at 0 meters) are extracted from every-other-week
 measurements of vertical lake temperature profiles taken at the CSLS Lakes.
-Field date is associated with the project "Central Sands Lake Study" or "csls"
-and is stored in [WDNR SWIMS](https://dnr.wi.gov/topic/surfacewater/swims/).
+
+Field data is stored in [WDNR
+SWIMS](https://dnr.wi.gov/topic/surfacewater/swims/) and is associated with the
+project "Central Sands Lake Study" or "csls".
+
+Every-other-week measurements is summarized at a monthly timestep.
+
+```{r monthly_lst, eval=TRUE, echo=TRUE}
+monthly_lst <- get_monthly_lst(filename = 'SWIMS_2019_09_05.csv',
+                               filedir = 'system.file',
+                               wbic = 106900)
+head(monthly_lst)
+```
 
 ### 3. Stable Isotope Measurements
 Measurements of $\delta^{18}O_{L}$ and $\delta^{18}O_{GW_{in}}$ are collected on
 site for each lake while $\delta^{18}O_{P}$ is measured using samples collected
 at the Hancock Research Station.
 
+Measurements are summarized at a monthly timestep. Site types (precipitation,
+lake, inflowing groundwtaer well, or outflowing groundwater well) are defined in
+the "sites_file" csv file.
+
+```{r monthly_isotopes, eval=TRUE, echo=TRUE}
+monthly_isotopes <- get_monthly_isotopes(isotope_file = 'isotope_samples_2019_09_06.csv',
+                                 sites_file = 'isotope_sites_pleasant_2019_09_06.csv',
+                                 filedir = 'system.file')
+head(monthly_isotopes)
+```
+
 ## Analysis
-### 1. Identify Groundwater Gradient Across Lakes
-Groundwater gradients 
+### 1. Estimate d18O Evaporation
+As the only isotopic parameter that cannot be directly measured,
+$\delta^{18}O_{E}$ must be calculated next. 
 
-### 2. Summarize Monthly Input Data
-Precipitation (mm) and Reference Potential Evapotranspiration (mm) are summed by
-month and used for the $P$ and $E$ terms. Monthly means are calculated for air
-temperature (^oC) and relative humidity (%) which are both used to calculate
-$\delta^{18}O_{E}$.
+```{r add_d18O_E, eval=TRUE, echo=TRUE}
+monthly_isotopes <- get_monthly_d18O_evap(monthly_weather,
+                                          monthly_lst,
+                                          monthly_isotopes)
+head(monthly_isotopes)
+```
 
-Monthly lake surface temperature is calculated by averaging every-other-week
-lake temperature measurements at the surface depth of the vertical profile.
-
-Analysis of $\delta^{18}O$ and $\delta D$ at each well reveal the groundwtaer
-gradient across each lake. For this anlaysis, the $\delta^{18}O$ of the
-upgradient groundwater wells were averaged for each month to calculate the
-$\delta^{18}O_{GW_{in}}$
-
-### 3. Calculate Water Balance
+### 2. Calculate Water Balance
+```{r h2o_bal, eval=TRUE, echo=TRUE}
+lake_h2o_bal <- get_monthly_h2o_bal(monthly_weather, monthly_isotopes)
+head(lake_h2o_bal)
+```
 
 ## Results
+Currently, only one month has isotope measurements for precipitation, the lake,
+and groundwater wells at Pleasant Lake, so only that one month can be
+visualized.
+
+```{r plot, eval=TRUE, echo=TRUE}
+
+melted_bal <- melt(lake_h2o_bal, id.vars = "date")
+for (i in 1:nrow(melted_bal)) {
+  if (melted_bal$variable[i] == "P" |
+  melted_bal$variable[i] == "GWin") {
+    melted_bal$in_or_out[i] <- "in"
+  } else {
+    melted_bal$in_or_out[i] <- "out"
+  }
+}
+
+plot_bal <- subset(melted_bal, date == melted_bal$date[2])
+
+plot_balance <- ggplot(data = plot_bal) +
+                geom_col(aes(x = in_or_out, y = value, fill = variable)) +
+                facet_wrap(~date) +
+                scale_y_continuous(expand = c(0,0)) +
+                theme_bw()
+  
+plot_balance
+
+```
 
 ## References
 
