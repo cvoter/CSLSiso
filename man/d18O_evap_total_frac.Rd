@@ -8,13 +8,21 @@ d18O_evap_total_frac(alpha, delta_epsilon)
 }
 \arguments{
 \item{alpha}{equilibrium isotope fractionation factor at the temperature of
-the air-water interface}
+the air-water interface (-)}
 
-\item{delta_epsilon}{kinetic fractionation factor}
+\item{delta_epsilon}{kinetic fractionation factor (-)}
 }
 \value{
-epsilon - the total fractionation factor
+epsilon - the total fractionation factor (-)
 }
 \description{
-Calculates the total fractionation factor
+Calculates the total fractionation factor based on the definition of epsilon
+for equation 5 in Krabbenhoft et al. (1990). Note this is not the actual
+definition presented in the paper - instead of alpha, here we have 1/alpha.
+}
+\references{
+Krabbenhoft, D. P., C. J. Bowser, M. P. Anderson, and J. W.
+  Valley. (1990). Estimating Groundwater Exchange with Lakes: 1. The Stable
+  Isotope Mass Balance Method. Water Resources Research, 26(10):2445-2453.
+  https://doi.org/10.1029/WR026i010p02445
 }

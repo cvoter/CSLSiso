@@ -8,11 +8,14 @@ Description: Calculates the water budget for a lake.
     Uses stable isotopes to calculate groundwater flow to and from the lake.
 Imports:
     lubridate,
-    rlang
+    ggplot2,
+    extrafont
 Suggests:
+    extrafont,
     knitr,
     devtools,
-    roxygen2
+    roxygen2,
+    reshape2
 License: MIT + file LICENSE
 Encoding: UTF-8
 LazyData: true

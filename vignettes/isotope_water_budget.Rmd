@@ -1,19 +1,46 @@
 ---
 title: "CSLS Isotope Water Budget"
-output: rmarkdown::html_vignette
+output: 
+  rmarkdown::html_vignette:
+    toc: true
 vignette: >
   %\VignetteIndexEntry{Put the title of your vignette here}
   %\VignetteEngine{knitr::rmarkdown}
   \usepackage[utf8]{inputenc}
 ---
 
-```{r setup, echo=TRUE, warning=FALSE, message=FALSE}
+```{r setup, echo=FALSE, warning=FALSE, message=FALSE}
 library(devtools)
 library(isoH2Obudget)
 library(reshape2) #for melting
 library(ggplot2) #for plotting
 library(extrafont) #for fonts
 ```
+
+## Issues
+Current issues with ths approach include:
+
+* **Hancock weather station** has NAs for temperature, relative humidity, and
+reference potential evapotranspiration for several days in May - July 2019.
+    - Currently, I use hourly data to minimize the impact of this. 
+    - What are the modelers doing?
+* **Stable isotope measurements** don't align with one another.
+    - When can lake measurmente be used for other months?
+    - Can precipitaiton be used across multiple months (seems like no)?
+    - Perhaps we should just grab the closest precip & lake measurment for each
+    well sample?
+* **The total fractionation factor**, $\epsilon$, is confusing to me based on
+Justin P.'s spreadsheet.
+    - Word document + Krabbenhoft paper use $\alpha$ in equation
+    - Excel spreadsheet inexplicably changes this to $\frac{1}{\alpha}$
+    - One possible explanation is that $\alpha*$ means $\frac{1}{\alpha}$, but
+    if so, that is not explained and is inconsistently applied to equations
+    - Makes a big difference in outcome.
+* **Changes in lake volume** are not necessarily 0 throughout the month. Neither are
+surface inputs necessarily 0 (that would indicate absolutely no watershed).
+* **Inflowing vs. outflowing** groundwater wells change over time. Currently,
+type of well is hardwired in to the "sites_type" csv file. Should update this
+after exploring well level records & isotope composition over time.
 
 ## Overview
 This water budget model uses stable isotope measurements of precipitation,
@@ -23,7 +50,8 @@ and out of a lake.
 
 <br>
 
-**Groundwater inflow** is calculated as follows (Krabbenhoft et al., 1990):
+**Groundwater inflow** is calculated based on Krabbenhoft et al. (1990),
+assuming no surface water inputs to the lake:
 
 \begin{align}
 \tag{1}
@@ -31,63 +59,27 @@ GW_{in} = \frac{P*(\delta^{18}O_{L} - \delta^{18}O_{P}) + E*(\delta^{18}O_{E} -
           \delta^{18}O_{L})}{\delta^{18}O_{GW_{in}} - \delta^{18}O_{L}}
 \end{align}
 
-where $GW_{in}$ is the groundwater inflow [L^3/T], $P$ is precipitation [L^3/T],
-$E$ is evaporation [L^3/T], and $\delta^{18}O_{x}$ is the relative isotopic
-composition in units of per mil relative to a known standard. The relative
-isotopic composition is defined as $\delta^{18}O_{x} = [\frac{R_{x}}{R_{std}} -
-1] * 10^{3}$ where $R_{x}$ is the ratio of isotope concentrations (e.g.,
-$\frac{^{18}O}{^{16}O}$). $\delta^{18}O_{L}$ is measured at the lake,
-$\delta^{18}O_{P}$ is measured from precipitation, $\delta^{18}O_{E}$ is
-estimated for evaporation, and $\delta^{18}O_{GW_{in}}$ is measured at inflowing
-groundwater wells.
+where $GW_{in}$ is the groundwater inflow (mm), $P$ is precipitation (mm), $E$
+is evaporation (mm), and $\delta^{18}O_{x}$ is the relative isotopic composition
+in units of per mil relative to a known standard. $\delta^{18}O_{L}$ is measured
+at the lake, $\delta^{18}O_{P}$ is measured from precipitation,
+$\delta^{18}O_{E}$ is estimated for evaporation, and $\delta^{18}O_{GW_{in}}$ is
+measured at inflowing groundwater wells.
 
 <br>
 
-**Groundwater outflow** can then be calculated from the following equation
-(Krabbenhoft et al., 1990):
+**Groundwater outflow** can then be calculated as the only remaining term in the
+water balance:
 
 \begin{align}
 \tag{2}
 \frac{dV}{dt} = 0 = GW_{in} + P - GW_{out} - E
 \end{align}
 
-where $\frac{dV}{dt}$ is the change in lake volume [L^3/T] and $GW_{out}$ is the
-groundwater outflow [L^3/T]. If changes in lake volume are measured (i.e.,
+where $\frac{dV}{dt}$ is the change in lake volume (mm) and $GW_{out}$ is the
+groundwater outflow (mm). If changes in lake volume are measured (i.e.,
 $\frac{dV}{dt} \neq 0$), then these changes are substituted for 0 and the
 modeled groundwater outflows are adjusted.
-
-<br>
-
-$\delta^{18}O_{E}$ **must be estimated** as follows (Krabbenhoft et al., 1990)
-since it cannot be directly measured like $\delta^{18}O_{P}$,
-$\delta^{18}O_{L}$, or $\delta^{18}O_{GW_{in}}$.
-
-\begin{align}
-\tag{3}
-\delta^{18}O_{E} = \frac{\alpha * \delta^{18}O_{L} - h*\delta^{18}O_{A} - 
-                  \epsilon}{1 - h +10^{-3}\Delta \epsilon}
-\end{align}
-
-The terms of Eq. 3 are calculated using the following definitions (Krabbenhoft
-et al., 1990; Ozaydin et al., 2001):
-
-\begin{align}
-\tag{4}
-\alpha &= \frac{-2.0667 - \frac{415.6}{t} + (\frac{1137}{t^2})*10^3}{1000} \\
-\tag{5}
-h &= RH*\frac{es_{A}}{es_{L}} \\
-\tag{6}
-es &= \frac{1321.7e^{\frac{17.27t}{237}+t}}{273+t} \\
-\tag{7}
-\delta^{18}O_{A} &= \frac{\delta^{18}O_{P}}{\alpha} - (1 - \frac{1}{\alpha}) \\
-\tag{8}
-\epsilon &= 1000(1 - \alpha) + \Delta \epsilon \\
-\tag{9}
-\Delta \epsilon &= 14.3*(1 - h)
-\end{align}
-
-where $t$ is air temperature (K) for $\alpha$ and $es_{A}$, $t$ is lake
-temperature (K) for $es_{L}$, and $RH$ is relative humidity.
 
 ## Input data
 Input data for the Central Sands Lake Study sites (Pleasant Lake, Long Lake, and
@@ -122,7 +114,7 @@ September 2019) is February 15, 2018.
 
 Daily or subdaily data is summarized at a monthly timestep.
 
-```{r monthly_weather, eval=TRUE, echo=TRUE}
+```{r monthly_weather, eval=TRUE, echo=FALSE}
 monthly_weather <- get_monthly_weather(filename = 'weather_hancock_hourly_2019_09_06.csv',
                                        filedir = 'system.file',
                                        skip_lines = 7,
@@ -138,9 +130,10 @@ Field data is stored in [WDNR
 SWIMS](https://dnr.wi.gov/topic/surfacewater/swims/) and is associated with the
 project "Central Sands Lake Study" or "csls".
 
-Every-other-week measurements is summarized at a monthly timestep.
+Every-other-week measurements is summarized at a monthly timestep (shown here
+for Pleasant Lake).
 
-```{r monthly_lst, eval=TRUE, echo=TRUE}
+```{r monthly_lst, eval=TRUE, echo=FALSE}
 monthly_lst <- get_monthly_lst(filename = 'SWIMS_2019_09_05.csv',
                                filedir = 'system.file',
                                wbic = 106900)
@@ -156,45 +149,103 @@ Measurements are summarized at a monthly timestep. Site types (precipitation,
 lake, inflowing groundwtaer well, or outflowing groundwater well) are defined in
 the "sites_file" csv file.
 
-```{r monthly_isotopes, eval=TRUE, echo=TRUE}
+Pleasant Lake is shown here.
+
+```{r monthly_isotopes, eval=TRUE, echo=FALSE}
 monthly_isotopes <- get_monthly_isotopes(isotope_file = 'isotope_samples_2019_09_06.csv',
                                  sites_file = 'isotope_sites_pleasant_2019_09_06.csv',
                                  filedir = 'system.file')
-head(monthly_isotopes)
+monthly_isotopes
 ```
 
 ## Analysis
 ### 1. Estimate d18O Evaporation
-As the only isotopic parameter that cannot be directly measured,
-$\delta^{18}O_{E}$ must be calculated next. 
+$\delta^{18}O_{E}$ **must be estimated** since it cannot be directly measured
+like $\delta^{18}O_{P}$, $\delta^{18}O_{L}$, or $\delta^{18}O_{GW_{in}}$
+(Krabbenhoft et al., 1990).
+\begin{align}
+\tag{3}
+\delta^{18}O_{E} = \frac{\alpha * \delta^{18}O_{L} - h*\delta^{18}O_{A} - 
+                  \epsilon}{1 - h +10^{-3}\Delta \epsilon}
+\end{align}
 
-```{r add_d18O_E, eval=TRUE, echo=TRUE}
+The relative humidity normalized to the temperature of the surface water (-),
+$h$, is calculated as follows:
+\begin{align}
+\tag{4}
+h = \frac{RH}{100}*\frac{es_{A}}{es_{L}}
+\end{align}
+
+where $RH$ is the relative humidity (%), $es_{A}$ is the saturated vapor
+pressure for the air (kPa), and $es_{L}$ is the saturated vapor pressure for
+the lake (kPa). Saturated vapor pressure is calculated based on Allen et al.
+(1998) using air temperature (degrees C) or lake temperature (degrees C) for
+$t$ as appropriate:
+\begin{align}
+\tag{5}
+es = 0.6108e^{\frac{17.27t}{237+t}}
+\end{align}
+
+The equilibrium isotope fractionation factor (-), $\alpha$, is calculated
+based on Ozaydin et al. (2001), where $t$ is the lake surface temperature (K):
+
+\begin{align}
+\tag{6}
+\alpha &= e^{\frac{-2.0667 - \frac{415.6}{t} + (\frac{1137}{t^2})*10^3}{1000}}
+\end{align}
+
+The kinetic fractionation factor (-), $\Delta \epsilon$, is calculated based
+on Krabbenhoft et al. (1990):
+\begin{align}
+\tag{7}
+\Delta \epsilon = 14.3*(1 - h)
+\end{align}
+
+The total fractionation factor (-), $\epsilon$, combines both the isotopic
+fractionation factor and the kinetic fracitonation factor (Krabbenhoft et al.,
+1990):
+\begin{align}
+\tag{8}
+\epsilon = 1000(1 - \frac{1}{\alpha}) + \Delta \epsilon
+\end{align}
+
+Lastly, the isotopic composition of the atmosphere, $\delta^{18}O_{A}$, is
+calculated based on Ozaydin et al. (2001):
+\begin{align}
+\tag{9}
+\delta^{18}O_{A} = \frac{\delta^{18}O_{P}}{\alpha} - (1 - \frac{1}{\alpha})
+\end{align}
+
+```{r add_d18O_E, eval=TRUE, echo=FALSE}
 monthly_isotopes <- get_monthly_d18O_evap(monthly_weather,
                                           monthly_lst,
                                           monthly_isotopes)
-head(monthly_isotopes)
+monthly_isotopes
 ```
 
 ### 2. Calculate Water Balance
-```{r h2o_bal, eval=TRUE, echo=TRUE}
+With groundwater inflow calculated based on Eq. 1 and groundwater outflow
+calculated based on Eq. 2, the water balance can be calculated for each month
+with complete data.
+
+```{r h2o_bal, eval=TRUE, echo=FALSE}
 lake_h2o_bal <- get_monthly_h2o_bal(monthly_weather, monthly_isotopes)
 head(lake_h2o_bal)
 ```
 
-## Results
 Currently, only one month has isotope measurements for precipitation, the lake,
 and groundwater wells at Pleasant Lake, so only that one month can be
-visualized.
+calculated and visualized
 
-```{r plot, eval=TRUE, echo=TRUE}
+```{r plot, eval=TRUE, echo=FALSE, fig.width = 5, fig.height = 3}
 
 melted_bal <- melt(lake_h2o_bal, id.vars = "date")
 for (i in 1:nrow(melted_bal)) {
   if (melted_bal$variable[i] == "P" |
   melted_bal$variable[i] == "GWin") {
-    melted_bal$in_or_out[i] <- "in"
+    melted_bal$in_or_out[i] <- "In"
   } else {
-    melted_bal$in_or_out[i] <- "out"
+    melted_bal$in_or_out[i] <- "Out"
   }
 }
 
@@ -204,13 +255,20 @@ plot_balance <- ggplot(data = plot_bal) +
                 geom_col(aes(x = in_or_out, y = value, fill = variable)) +
                 facet_wrap(~date) +
                 scale_y_continuous(expand = c(0,0)) +
-                theme_bw()
+                scale_fill_brewer(name = "Flux",
+                                  palette = "Paired",
+                                  breaks = c("P","E","GWin","GWout"),
+                                  labels = c("Precipitation",
+                                             "Evapotranspiration",
+                                             "Grounwater Inflow",
+                                             "Groundwater Outflow")) +
+                labs(x = "", y = "Flux (mm)") +
+                theme_bw() + 
+                theme(text = element_text(family = "Segoe UI Semilight"))
   
 plot_balance
 
 ```
-
-## References
 
 ## Session Info
 

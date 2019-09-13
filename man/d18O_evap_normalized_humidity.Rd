@@ -9,15 +9,15 @@ d18O_evap_normalized_humidity(RH, es_a, es_l)
 \arguments{
 \item{RH}{relative humidity (\%)}
 
-\item{es_a}{saturation vapor pressure for the air}
+\item{es_a}{saturation vapor pressure for the air (kPa)}
 
-\item{es_l}{saturation vapor pressure for the lake}
+\item{es_l}{saturation vapor pressure for the lake (kPa)}
 }
 \value{
 h - the relative humidity normalized to the temperature of the
-        surface water
+        surface water (-)
 }
 \description{
 Calculates the relative humidity normalized to the temperature of the surface
-water
+water.
 }

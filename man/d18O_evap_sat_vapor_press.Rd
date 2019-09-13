@@ -7,12 +7,17 @@
 d18O_evap_sat_vapor_press(tmp)
 }
 \arguments{
-\item{tmp}{temperature of air or water (K)}
+\item{tmp}{temperature of air or water (degrees C)}
 }
 \value{
-es - saturation vapor pressure
+es - saturation vapor pressure (kPa)
 }
 \description{
 Calculates the saturation vapor pressure based on temperature (of air or
-water)
+water) based on equations 11 and 12 of Allen et al. (1998).
+}
+\references{
+Allen, R. G., Pereira, L. S., Raes, D., & Smith, M. (1998). Crop
+  evapotranspiration: Guidelines for computing crop water requirements. Rome:
+  FAO. Retrieved from http://www.fao.org/docrep/X0490E/x0490e00.htm.
 }

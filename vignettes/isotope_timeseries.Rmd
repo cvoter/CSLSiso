@@ -1,0 +1,190 @@
+---
+title: "Isotope Interpretations"
+output: 
+  rmarkdown::html_vignette:
+    toc: true
+vignette: >
+  %\VignetteIndexEntry{Put the title of your vignette here}
+  %\VignetteEngine{knitr::rmarkdown}
+  \usepackage[utf8]{inputenc}
+---
+
+```{r setup, echo=FALSE, warning=FALSE, message=FALSE}
+library(devtools)
+library(isoH2Obudget)
+library(reshape2) #for melting
+library(ggplot2) #for plotting
+library(extrafont) #for fonts
+library(knitr)
+```
+
+```{r lake_iso, eval=TRUE, echo=FALSE}
+psnt_isotopes <- lake_isotopes(lake = "Pleasant",
+                               isotope_file = 'isotope_samples_2019_09_06.csv',
+                               filedir = 'system.file')
+pfl_isotopes <- lake_isotopes(lake = "Plainfield",
+                              isotope_file = 'isotope_samples_2019_09_06.csv',
+                              filedir = 'system.file')
+ll_isotopes <- lake_isotopes(lake = "Long",
+                              isotope_file = 'isotope_samples_2019_09_06.csv',
+                              filedir = 'system.file')
+```
+
+## Issues
+Current issues/to-do's with isotope interpretations include:
+
+* Talk with Katie and Aaron about these plots & interpretations
+* Incorporate timeseries of well level and lake level measurements
+* Automate decision making for upstream vs. downstream wells
+
+## Overview
+When looking at these plots, keep in mind that measurements closest to the
+meteoric water line are most likely inflowing groundwater wells while
+measurements drifting off to the right are likely outflowing groundwater wells
+(or the lake itself), which are influenced by evaporation.
+
+```{r schematic, out.width = "75%", eval=TRUE, echo=FALSE, fig.align="center"}
+include_graphics(system.file("images", "isotope_signatures.png", package = "isoH2Obudget", mustWork = TRUE))
+```
+
+### TL;DR
+
+* **Pleasant.** PSNT-07 was probably misclassified originally, PSNT-06 and
+PSNT-11 may go back and forth between being inflowing & outflowing wells, but
+all other classifications remain unchanged so far. 
+* **Long.** All wells are now upstream wells, but it is difficult to tell when
+the flip occurred from isotope signatures alone.
+* **Plainfield.** I'm not sure I understand/agree with PFL-13 and PFL-14's
+original classification. All but PFL-14 appear to be inflowing wells now.
+Difficult to tell when flip ocurred from isotope signatures alone.
+
+## Pleasant Lake
+The original classifications for each well (as noted by Justin P.) were:
+
+| Upstream | Downsteam |
+|:---------|:----------|
+|PSNT-01   |PSNT-03    |
+|PSNT-07   |PSNT-05    |
+|PSNT-08   |PSNT-06    |
+|PSNT-09   |PSNT-10    |
+|PSNT-14   |PSNT-11    |
+|PSNT-15   |           |
+|PSNT-16   |           |
+
+Looking at each Pleasant Lake site individually, I'm not sure why PSNT-07 was
+originally classified as an inflowing groundwater well - its isotopic signature
+plots pretty far to the right and the water level was also below the lake level
+in both Summer 2018 and May 2019. PSNT-06 and PSNT-11 seem like they may be
+bouncing back and forth between outflowing and inflowing wells based on the
+isotopic signatures, but snapshots of well levels indicate PSNT-11 is generally
+just a smidge higher than the lake level and PSNT-06 is typically a bit under
+the lake level (i.e., no change in classification). PSNT-03 and PSNT-05 seem to
+be trending back toward the meteoric water line, but still clearly represent
+outflowing groundwater.
+
+```{r psnt_facet, eval=TRUE, echo=FALSE, warning=FALSE, message=FALSE, fig.width=7, fig.height=6, fig.align="center"}
+psnt_facet <- ggplot(data = psnt_isotopes,
+                    aes(x = d18O, y = d2H, group = site_id))
+psnt_facet <- plot_facet(psnt_facet, df = psnt_isotopes)
+psnt_facet
+```
+
+<br>
+```{r psnt_level, out.width = "90%", eval=TRUE, echo=FALSE, fig.align="center"}
+include_graphics(system.file("images", 
+                             "pleasant_lake_water_levels.png", 
+                             package = "isoH2Obudget", 
+                             mustWork = TRUE))
+```
+
+<br>
+For completeness, here are all sites on the same plot.
+
+```{r psnt_colors, eval=TRUE, echo=FALSE, warning=FALSE, message=FALSE, fig.width=6, fig.height=4, fig.align="center"}
+psnt_colors <- ggplot(data = psnt_isotopes,
+                      aes(x = d18O, y = d2H, group = site_id))
+psnt_colors <- plot_colors(psnt_colors)
+psnt_colors
+```
+
+## Long Lake
+The original classifications for each well (as noted by Justin P.) were:
+
+| Upstream | Downsteam |
+|:---------|:----------|
+|LL-01     |LL-02      |
+|LL-06     |LL-03      |
+|LL-07     |LL-04      |
+|LL-08     |LL-05      |
+|          |LL-09      |
+|          |LL-10      |
+
+I find it somewhat difficult to see the original upstream/downstream split from
+the isotope signatures, but it was clearly there in the well level readings. Now
+both the well level readings and the isotopic signatures indicate all wells
+reflect inflowing groundwater.
+
+```{r ll_facet, eval=TRUE, echo=FALSE, warning=FALSE, message=FALSE, fig.width=7, fig.height=6, fig.align="center"}
+ll_facet <- ggplot(data = ll_isotopes,
+                    aes(x = d18O, y = d2H, group = site_id))
+ll_facet <- plot_facet(ll_facet, df = ll_isotopes)
+ll_facet
+```
+<br>
+```{r ll_pfl_level, out.width = "90%", eval=TRUE, echo=FALSE, fig.align="center"}
+include_graphics(system.file("images", 
+                             "long_plainfield_lake_water_levels.png", 
+                             package = "isoH2Obudget", 
+                             mustWork = TRUE))
+```
+<br>
+For completeness, here are all sites on the same plot.
+
+```{r ll_colors, eval=TRUE, echo=FALSE, warning=FALSE, message=FALSE, fig.width=6, fig.height=4, fig.align="center"}
+ll_colors <- ggplot(data = ll_isotopes,
+                      aes(x = d18O, y = d2H, group = site_id))
+ll_colors <- plot_colors(ll_colors)
+ll_colors
+```
+
+
+## Plainfield Lake
+The original classifications for each well (as noted by Justin P.) were:
+
+| Upstream | Downsteam |
+|:---------|:----------|
+|PFL-02    |PFL-03     |
+|PFL-04    |PFL-05     |
+|PFL-11    |PFL-07     |
+|PFL-13    |PFL-09     |
+|PFL-14    |           |
+
+Again, I find it a little hard to distinguish downstream wells from isotope
+signature alone, but with squinting, I would have put PFL-13 and PFL-14 on the
+downstream side originally (this is what the well levels indicate as well). Now,
+all but PFL-14 is an upstream well.
+
+```{r pfl_facet, eval=TRUE, echo=FALSE, warning=FALSE, message=FALSE, fig.width=7, fig.height=6, fig.align="center"}
+pfl_facet <- ggplot(data = pfl_isotopes,
+                    aes(x = d18O, y = d2H, group = site_id))
+pfl_facet <- plot_facet(pfl_facet, df = pfl_isotopes)
+pfl_facet
+```
+<br>
+For completeness, here are all sites on the same plot.
+
+```{r pfl_colors, eval=TRUE, echo=FALSE, warning=FALSE, message=FALSE, fig.width=6, fig.height=4, fig.align="center"}
+pfl_colors <- ggplot(data = pfl_isotopes,
+                      aes(x = d18O, y = d2H, group = site_id))
+pfl_colors <- plot_colors(pfl_colors)
+pfl_colors
+```
+
+## Session Info
+
+The version of R and the versions of packages in use when this R Markdown file
+was created are listed here:
+
+```{r session_info, include=TRUE, echo=TRUE, results='markup'}
+devtools::session_info()
+```

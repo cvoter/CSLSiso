@@ -19,7 +19,7 @@ get_monthly_d18O_evap(monthly_weather, monthly_lst, monthly_isotopes)
 \item{monthly_lst}{a data frame with the following columns:
 \itemize{
 \item date - first of the month for each monthly observation (Date)
-\item ltmp - mean monthly lake surface temperature (degrees C)
+\item ltmp_K - mean monthly lake surface temperature (degrees K)
 }}
 
 \item{monthly_isotopes}{a data frame with the following columns:

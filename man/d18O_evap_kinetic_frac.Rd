@@ -7,14 +7,22 @@
 d18O_evap_kinetic_frac(h, K = 14.3)
 }
 \arguments{
-\item{h}{relative humidity normalized to the temperature of the surface water}
+\item{h}{relative humidity normalized to the temperature of the surface water
+(-)}
 
 \item{K}{constant determinded by wind tunnel experiments for different
 isotopes, defaults to K(18O) = 14.3.}
 }
 \value{
-delta_epsilon - the kinetic fractionation factor
+delta_epsilon - the kinetic fractionation factor (-)
 }
 \description{
-Calculates the kinetic fractionation factor
+Calculates the kinetic fractionation factor based on equation 6 in
+Krabeenhoft et al. (1990).
+}
+\references{
+Krabbenhoft, D. P., C. J. Bowser, M. P. Anderson, and J. W.
+  Valley. (1990). Estimating Groundwater Exchange with Lakes: 1. The Stable
+  Isotope Mass Balance Method. Water Resources Research, 26(10):2445-2453.
+  https://doi.org/10.1029/WR026i010p02445
 }

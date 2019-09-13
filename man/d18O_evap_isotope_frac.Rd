@@ -10,9 +10,15 @@ d18O_evap_isotope_frac(ltmp)
 \item{ltmp}{lake surface temperature (K)}
 }
 \value{
-alpha - the equilibrium isotope fractionation factor
+alpha - the equilibrium isotope fractionation factor (-)
 }
 \description{
 Calculates the equilibrium isotope fractionation factor at the temperature of
-the air-water interface.
+the air-water interface based on equation 9 in Ozaydin et al. (2001).
+}
+\references{
+Ozaydin, V., U. Sendil, and D. Altinbilek. (2001). Stable isotope
+  mass balance method to find the water budget of a lake. Turkish Journal of
+  Engineering and Environmental Sciences, 25:329-344. Retrieved from:
+  https://dergipark.org.tr/download/article-file/126752
 }

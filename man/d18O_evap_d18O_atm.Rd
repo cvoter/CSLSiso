@@ -10,11 +10,18 @@ d18O_evap_d18O_atm(d18O_pcpn, alpha)
 \item{d18O_pcpn}{isotopic composition of precipitation}
 
 \item{alpha}{equilibrium isotope fractionation factor at the temperature of
-the air-water interface}
+the air-water interface (-)}
 }
 \value{
 d18O_atm - the d18O isotope composition of the atmosphere
 }
 \description{
-Calculates the d18O isotope composition of the atmosphere
+Calculates the d18O isotope composition of the atmosphere based on equation
+14 in Ozaydin et al. (2001).
+}
+\references{
+Ozaydin, V., U. Sendil, and D. Altinbilek. (2001). Stable isotope
+  mass balance method to find the water budget of a lake. Turkish Journal of
+  Engineering and Environmental Sciences, 25:329-344. Retrieved from:
+  https://dergipark.org.tr/download/article-file/126752
 }

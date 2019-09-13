@@ -16,7 +16,7 @@
 #'
 #' @param P precipitation (mm)
 #' @param E evapotranspiration (mm)
-#' @param d180_pcpn d18O isotopic composition of precipitation
+#' @param d18O_pcpn d18O isotopic composition of precipitation
 #' @param d18O_lake d18O isotopic composition of the lake
 #' @param d18O_GWin d18O isotopic composition of groundwater inflow
 #' @param d18O_evap d18O isotopic composition of evaporation
@@ -43,10 +43,8 @@ GW_inflow <- function(P, E, d18O_pcpn, d18O_lake, d18O_GWin, d18O_evap) {
 #'
 #' @param P precipitation (mm)
 #' @param E evapotranspiration (mm)
-#' @param d180_pcpn d18O isotopic composition of precipitation
-#' @param d18O_lake d18O isotopic composition of the lake
-#' @param d18O_GWin d18O isotopic composition of groundwater inflow
-#' @param d18O_evap d18O isotopic composition of evaporation
+#' @param GWin groundwater inflow (mm)
+#' @param dVdt change in lake volume storage (mm)
 #'
 #' @return GWout - the groundwtaer outflow from the lake (mm)
 #'
