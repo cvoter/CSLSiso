@@ -33,7 +33,7 @@
 #'
 #' @export
 
-lake_isotopes <- function(lake = "Pleasant",
+load_lake_isotopes <- function(lake = "Pleasant",
                           isotope_file,
                           filedir = 'system.file') {
   # Load data
@@ -46,7 +46,7 @@ lake_isotopes <- function(lake = "Pleasant",
     isotopes <- read.csv(sprintf("%s/%s", filedir, isotope_file))
   }
   lake_isotopes <- subset(isotopes,
-                          Lake == lake &
+                          (Lake == lake | Site.ID == "PRECIP") &
                             Valid == TRUE &
                             is.na(d18O..VSMOW.) == FALSE,
                           select = c(Collection.Date.Time,
@@ -54,9 +54,7 @@ lake_isotopes <- function(lake = "Pleasant",
                                      d18O..VSMOW.,
                                      dD..VSMOW.))
   colnames(lake_isotopes) <- c("date", "site_id", "d18O", "d2H")
-
-  # Identify start month and total number of months
-  lake_isotopes$date <- as.Date(lake_isotopes$date, format = "%m/%d/%Y")
+  lake_isotopes$date <- mdy_hm(lake_isotopes$date)
 
   return(as.data.frame(lake_isotopes))
 }

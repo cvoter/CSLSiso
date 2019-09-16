@@ -9,6 +9,7 @@
 #' priori based on visual inspection of groundwater levels in each well, lake
 #' water level, and stable isotope measurements.
 #'
+#' @param lake name of lake to analyze (capitalized, e.g. "Pleasant")
 #' @param isotope_file name of isotope csv file with stable isotope measurement
 #'                     info, including (but not limited to):
 #' \itemize{
@@ -47,36 +48,23 @@
 #'
 #' @export
 
-get_monthly_isotopes <- function(isotope_file,
-                                 sites_file,
+get_monthly_isotopes <- function(lake,
+                                 isotope_file,
+                                 lake_file,
+                                 well_file,
                                  filedir = 'system.file') {
-  # Load data
-  if (filedir == 'system.file') {
-    sites <- read.csv(system.file("extdata",
-                                  sites_file,
-                                  package = "isoH2Obudget",
-                                  mustWork = TRUE))
-    isotopes <- read.csv(system.file("extdata",
-                                     isotope_file,
-                                     package = "isoH2Obudget",
-                                     mustWork = TRUE))
-  } else {
-    sites <- read.csv(sprintf("%s/%s", filedir, sites_file))
-    isotopes <- read.csv(sprintf("%s/%s", filedir, isotope_file))
-  }
-  lake_isotopes <- subset(isotopes,
-                          Site.ID %in% sites$site_id &
-                            Valid == TRUE &
-                            is.na(d18O..VSMOW.) == FALSE,
-                          select = c(Collection.Date.Time,
-                                     Site.ID,
-                                     d18O..VSMOW.))
-  colnames(lake_isotopes) <- c("date","site_id","d18O")
-  lake_isotopes <- merge(lake_isotopes, sites)
+
+  # Extract stable isotope measurements for this lake
+  isotopes   <- lake_isotopes(lake, isotope_file, filedir = 'system.file')
+
+  # Note which measurements are for upgradient vs. downgradient wells
+  isotopes   <- up_or_down_gradient(isotopes,
+                                    lake,
+                                    lake_file,
+                                    well_file)
 
   # Identify start month and total number of months
-  lake_isotopes$date <- as.Date(lake_isotopes$date, format = "%m/%d/%Y")
-  month_info         <- start_n_months(lake_isotopes$date, all_days = FALSE)
+  month_info <- start_n_months(isotopes$date, all_days = FALSE)
 
   # Extract monthly isotopes
   monthly_isotopes <- NULL
@@ -89,7 +77,7 @@ get_monthly_isotopes <- function(isotope_file,
                                            month(lake_isotopes$date) == m),]
     d18O_pcpn <- these_iso$d18O[which(these_iso$site_type == "precipitation")]
     d18O_lake <- these_iso$d18O[which(these_iso$site_type == "lake")]
-    d18O_GWin <- these_iso$d18O[which(these_iso$site_type == "upstream")]
+    d18O_GWin <- these_iso$d18O[which(these_iso$site_type == "upgradient")]
 
     monthly_isotopes$date[i]      <- this_month
     monthly_isotopes$d18O_pcpn[i] <- mean(d18O_pcpn)
