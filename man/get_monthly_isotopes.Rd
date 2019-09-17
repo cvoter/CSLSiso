@@ -4,9 +4,13 @@
 \alias{get_monthly_isotopes}
 \title{Get Monthly Isotopes}
 \usage{
-get_monthly_isotopes(isotope_file, sites_file, filedir = "system.file")
+get_monthly_isotopes(lake, isotope_file,
+  site_file = "csls_site_dictionary.csv", filedir = "system.file",
+  Xday = 7)
 }
 \arguments{
+\item{lake}{name of lake to analyze (capitalized, e.g. "Pleasant")}
+
 \item{isotope_file}{name of isotope csv file with stable isotope measurement
                     info, including (but not limited to):
 \itemize{
@@ -18,6 +22,10 @@ get_monthly_isotopes(isotope_file, sites_file, filedir = "system.file")
 \item Collection.Date.Time - date and time of sample collection
 }}
 
+\item{filedir}{name of directory with both csv files, defaults to
+'system.file' to instruct it to look within package
+"inst/extdata" directory.}
+
 \item{sites_file}{name of csv file with info on the sampling sites for a
                   lake of interest, including:
 \itemize{
@@ -27,10 +35,6 @@ get_monthly_isotopes(isotope_file, sites_file, filedir = "system.file")
       "precipitation", "lake", "upstream" (i.e., groundwater inflow well),
       "downstream" (i.e., groundwater outflow well), or "NA".
 }}
-
-\item{filedir}{name of directory with both csv files, defaults to
-'system.file' to instruct it to look within package
-"inst/extdata" directory.}
 }
 \value{
 monthly_isotopes, a data frame with the following:

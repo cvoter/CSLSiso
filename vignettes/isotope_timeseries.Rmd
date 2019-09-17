@@ -19,15 +19,15 @@ library(knitr)
 ```
 
 ```{r lake_iso, eval=TRUE, echo=FALSE}
-psnt_isotopes <- lake_isotopes(lake = "Pleasant",
-                               isotope_file = 'isotope_samples_2019_09_06.csv',
-                               filedir = 'system.file')
-pfl_isotopes <- lake_isotopes(lake = "Plainfield",
-                              isotope_file = 'isotope_samples_2019_09_06.csv',
-                              filedir = 'system.file')
-ll_isotopes <- lake_isotopes(lake = "Long",
-                              isotope_file = 'isotope_samples_2019_09_06.csv',
-                              filedir = 'system.file')
+psnt_isotopes <- load_lake_isotopes(lake = "Pleasant",
+                                    isotope_file = 'isotope_samples_2019_09_06.csv',
+                                    filedir = 'system.file')
+pfl_isotopes <- load_lake_isotopes(lake = "Plainfield",
+                                   isotope_file = 'isotope_samples_2019_09_06.csv',
+                                   filedir = 'system.file')
+ll_isotopes <- load_lake_isotopes(lake = "Long",
+                                  isotope_file = 'isotope_samples_2019_09_06.csv',
+                                  filedir = 'system.file')
 ```
 
 ## Issues

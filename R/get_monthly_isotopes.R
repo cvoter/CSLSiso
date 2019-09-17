@@ -50,18 +50,23 @@
 
 get_monthly_isotopes <- function(lake,
                                  isotope_file,
-                                 lake_file,
-                                 well_file,
-                                 filedir = 'system.file') {
+                                 site_file = "csls_site_dictionary.csv",
+                                 filedir = 'system.file',
+                                 Xday = 7) {
 
   # Extract stable isotope measurements for this lake
-  isotopes   <- lake_isotopes(lake, isotope_file, filedir = 'system.file')
+  isotopes     <- load_lake_isotopes(lake, isotope_file, filedir)
+
+  # Retrieve water level information from DNR feature services
+  water_levels <- retrieve_csls_water_levels()
 
   # Note which measurements are for upgradient vs. downgradient wells
-  isotopes   <- up_or_down_gradient(isotopes,
-                                    lake,
-                                    lake_file,
-                                    well_file)
+  isotopes     <- classify_lake_isotopes(isotopes,
+                                         water_levels,
+                                         lake,
+                                         site_file,
+                                         filedir,
+                                         Xday)
 
   # Identify start month and total number of months
   month_info <- start_n_months(isotopes$date, all_days = FALSE)
@@ -73,8 +78,8 @@ get_monthly_isotopes <- function(lake,
     m          <- month(this_month)
     y          <- year(this_month)
 
-    these_iso <- lake_isotopes[which(year(lake_isotopes$date) == y &
-                                           month(lake_isotopes$date) == m),]
+    these_iso <- isotopes[which(year(isotopes$date) == y &
+                                  month(isotopes$date) == m),]
     d18O_pcpn <- these_iso$d18O[which(these_iso$site_type == "precipitation")]
     d18O_lake <- these_iso$d18O[which(these_iso$site_type == "lake")]
     d18O_GWin <- these_iso$d18O[which(these_iso$site_type == "upgradient")]
@@ -86,7 +91,7 @@ get_monthly_isotopes <- function(lake,
   }
 
   # R bizzarly looses the class of date objects in for loops, fix here
-  monthly_isotopes$date <- as.Date(monthly_isotopes$date, origin = "1970-01-01")
+  monthly_isotopes$date <- as_datetime(monthly_isotopes$date)
 
   return(as.data.frame(monthly_isotopes))
 }

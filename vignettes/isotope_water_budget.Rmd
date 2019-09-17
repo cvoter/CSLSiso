@@ -15,6 +15,7 @@ library(isoH2Obudget)
 library(reshape2) #for melting
 library(ggplot2) #for plotting
 library(extrafont) #for fonts
+library(dplyr) #for %>% pipes
 ```
 
 ## Issues
@@ -152,9 +153,11 @@ the "sites_file" csv file.
 Pleasant Lake is shown here.
 
 ```{r monthly_isotopes, eval=TRUE, echo=FALSE}
-monthly_isotopes <- get_monthly_isotopes(isotope_file = 'isotope_samples_2019_09_06.csv',
-                                 sites_file = 'isotope_sites_pleasant_2019_09_06.csv',
-                                 filedir = 'system.file')
+monthly_isotopes <- get_monthly_isotopes(lake = "Pleasant",
+                                         isotope_file = 'isotope_samples_2019_09_06.csv',
+                                         site_file = "csls_site_dictionary.csv",
+                                         filedir = 'system.file',
+                                         Xday = 7)
 monthly_isotopes
 ```
 
