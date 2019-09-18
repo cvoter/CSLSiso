@@ -160,9 +160,11 @@ isotope_file <- 'isotope_samples_2019_09_06.csv'
 site_file    <- "csls_site_dictionary.csv"
 filedir      <- 'system.file'
 Xday         <- 7
-static_wells <- TRUE
+static_wells <- FALSE
+static_lake  <- FALSE
 monthly_isotopes <- get_monthly_isotopes(lake, isotope_file, site_file, 
-                                         filedir, Xday, static_wells)
+                                         filedir, Xday, static_wells, 
+                                         static_lake)
 monthly_isotopes
 ```
 
@@ -238,7 +240,7 @@ with complete data.
 
 ```{r h2o_bal, eval=TRUE, echo=FALSE}
 lake_h2o_bal <- get_monthly_h2o_bal(monthly_weather, monthly_isotopes)
-head(lake_h2o_bal)
+lake_h2o_bal
 ```
 
 Currently, only one month has isotope measurements for precipitation, the lake,

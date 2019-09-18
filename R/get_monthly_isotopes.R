@@ -42,7 +42,8 @@
 #'                     upgradient and downgradient wells (TRUE) or dynamically
 #'                     classify based on water levels Xdays before each isotope
 #'                     measurement (TRUE). Defaults to FALSE.
-#'
+#' @param static_lake logical indicates whether to use mean of fall (Sept-Nov)
+#'                     isotope samples for the lake or actual measurement.
 #' @return monthly_isotopes, a data frame with the following:
 #' \describe{
 #' \item{date}{first of the month for each monthly observation (Date)}
@@ -53,6 +54,10 @@
 #' }
 #'
 #' @importFrom lubridate month year as_datetime
+#' @importFrom magrittr %>%
+#' @importFrom dplyr filter summarize
+#' @importFrom lubridate month
+#' @importFrom rlang .data
 #'
 #' @export
 
@@ -61,7 +66,8 @@ get_monthly_isotopes <- function(lake,
                                  site_file = "csls_site_dictionary.csv",
                                  filedir = 'system.file',
                                  Xday = 7,
-                                 static_wells = FALSE) {
+                                 static_wells = FALSE,
+                                 static_lake = FALSE) {
 
   # Extract stable isotope measurements for this lake
   isotopes     <- load_lake_isotopes(lake, isotope_file, filedir)
@@ -88,11 +94,28 @@ get_monthly_isotopes <- function(lake,
     this_month <- month_info$start_date + months(i-1)
     m          <- month(this_month)
     y          <- year(this_month)
+    these_iso  <- isotopes[which(year(isotopes$date) == y &
+                                   month(isotopes$date) == m),]
 
-    these_iso <- isotopes[which(year(isotopes$date) == y &
-                                  month(isotopes$date) == m),]
+    next_month <- month_info$start_date + months(i)
+    m_next     <- month(next_month)
+    y_next     <- year(next_month)
+    next_iso   <- isotopes[which(year(isotopes$date) == y_next &
+                                  month(isotopes$date) == m_next),]
+
     d18O_pcpn <- these_iso$d18O[which(these_iso$site_type == "precipitation")]
-    d18O_lake <- these_iso$d18O[which(these_iso$site_type == "lake")]
+    if (length(d18O_pcpn) == 0) {
+      d18O_pcpn <- next_iso$d18O[which(next_iso$site_type == "precipitation")]
+    }
+    if (static_lake) {
+      d18O_lake <- isotopes %>%
+                   filter(.data$site_type == "lake",
+                          month(.data$date) %in% c(9,10,11)) %>%
+                   summarize(mean(.data$d18O)) %>%
+                   as.numeric()
+    } else {
+      d18O_lake <- these_iso$d18O[which(these_iso$site_type == "lake")]
+    }
     d18O_GWin <- these_iso$d18O[which(these_iso$site_type == "upgradient")]
 
     monthly_isotopes$date[i]      <- this_month
