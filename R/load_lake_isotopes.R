@@ -28,8 +28,11 @@
 #'   \item{d2H}{isotopic composition for duterium}
 #' }
 #'
-#' @import lubridate
 #' @importFrom utils read.csv
+#' @importFrom magrittr %>%
+#' @importFrom dplyr filter select
+#' @importFrom rlang .data
+#' @importFrom lubridate mdy_hm
 #'
 #' @export
 
@@ -45,16 +48,16 @@ load_lake_isotopes <- function(lake = "Pleasant",
   } else {
     isotopes <- read.csv(sprintf("%s/%s", filedir, isotope_file))
   }
-  lake_isotopes <- subset(isotopes,
-                          (Lake == lake | Site.ID == "PRECIP") &
-                            Valid == TRUE &
-                            is.na(d18O..VSMOW.) == FALSE,
-                          select = c(Collection.Date.Time,
-                                     Site.ID,
-                                     d18O..VSMOW.,
-                                     dD..VSMOW.))
+  lake_isotopes           <- isotopes %>%
+                             filter(.data$Lake == lake | .data$Site.ID == "PRECIP",
+                                    .data$Valid == TRUE,
+                                    is.na(.data$d18O..VSMOW.) == FALSE) %>%
+                             select(.data$Collection.Date.Time,
+                                    .data$Site.ID,
+                                    .data$d18O..VSMOW.,
+                                    .data$dD..VSMOW.)
   colnames(lake_isotopes) <- c("date", "site_id", "d18O", "d2H")
-  lake_isotopes$date <- mdy_hm(lake_isotopes$date)
+  lake_isotopes$date      <- mdy_hm(lake_isotopes$date)
 
   return(as.data.frame(lake_isotopes))
 }

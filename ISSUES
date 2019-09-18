@@ -1,11 +1,17 @@
 # ISSUES for isoH2Obudget
 
 Current issues:  
- * Need reference (and in some cases, units) for alpha_factor, normalized_humidity, sat_vapor_press. Check with Katie/Meg.
- * Need to add ways to validate raw data to make sure I'm subsetting correctly and not losing data due to unexpected data formatting, ESPECIALLY for isotope data.
+ * Need to add data validation to functions.
  * Add README to repo
- * Add scripts to visualize isotope and water level data and decide on upstream vs. downstream wells
+ * Interpolate missing hancock weather station values for temp, relative humidity, and reference PET
+ * Update assignment of precip measurements to months
+ * Sensitivity analysis of lake isotope measurements: monthly vs. one value entire year vs. two values per year (summer/spring)
+ * Use bathymetry vol vs. stage to get dV/dt. Check that vathymetry relationships are corrected to be relative to mean sea level
+ * Sensitivity analysis of using well levels at each measurement to classify upgradient vs. downgradient vs. static assignment.
+ * What if don't assume lake is well mixed and del_L = del_GWout?
  
 Previous issues:  
  * Colnames in raw isotope spreadsheet apparently have extra spaces (d18O..VSMOW.)
    - Format in Excel spreadsheet is "d18O (VSMOW)". Keep as is in spreadsheet and in R functions.   
+ * Need reference (and in some cases, units) for alpha_factor, normalized_humidity, sat_vapor_press. Check with Katie/Meg.
+ * Add scripts to visualize isotope and water level data and decide on upstream vs. downstream wells

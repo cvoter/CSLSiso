@@ -12,6 +12,7 @@ vignette: >
 ```{r setup, echo=FALSE, warning=FALSE, message=FALSE}
 library(devtools)
 library(isoH2Obudget)
+library(qpdf) #for pdf size reduction
 library(reshape2) #for melting
 library(ggplot2) #for plotting
 library(extrafont) #for fonts
@@ -135,9 +136,10 @@ Every-other-week measurements is summarized at a monthly timestep (shown here
 for Pleasant Lake).
 
 ```{r monthly_lst, eval=TRUE, echo=FALSE}
-monthly_lst <- get_monthly_lst(filename = 'SWIMS_2019_09_05.csv',
-                               filedir = 'system.file',
-                               wbic = 106900)
+monthly_lst <- get_monthly_lst(lake = "Pleasant",
+                               SWIMS_file = 'SWIMS_2019_09_05.csv',
+                               site_file = "csls_site_dictionary.csv",
+                               filedir = 'system.file')
 head(monthly_lst)
 ```
 
@@ -263,7 +265,7 @@ plot_balance <- ggplot(data = plot_bal) +
                                   breaks = c("P","E","GWin","GWout"),
                                   labels = c("Precipitation",
                                              "Evapotranspiration",
-                                             "Grounwater Inflow",
+                                             "Groundwater Inflow",
                                              "Groundwater Outflow")) +
                 labs(x = "", y = "Flux (mm)") +
                 theme_bw() + 

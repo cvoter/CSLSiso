@@ -12,6 +12,8 @@
 #'
 #' @param plot_obj a plot object created with ggplot(data = actual_data, aes(x =
 #'                 actual_x, y = actual_y, group = actual_group))
+#' @param df a data frame with a column "date" representing the range of dates
+#'   plotted within plot_obj
 #'
 #' @return new_obj - a plot object with aesthetics added
 #'
@@ -73,6 +75,7 @@ plot_facet <- function(plot_obj, df) {
 #'
 #' @import ggplot2
 #' @import extrafont
+#' @importFrom rlang .data
 #'
 #' @export
 
@@ -83,7 +86,7 @@ plot_colors <- function(plot_obj) {
                          color = "darkred",
                          size = 2) +
              geom_path() +
-             geom_point(aes(fill = site_id),
+             geom_point(aes(fill = .data$site_id),
                         shape = 21,
                         size = 3,
                         color = "black") +

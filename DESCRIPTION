@@ -9,9 +9,13 @@ Description: Calculates the water budget for a lake.
 Imports:
     lubridate,
     ggplot2,
-    extrafont
-Suggests:
     extrafont,
+    dplyr,
+    jsonlite,
+    magrittr,
+    rlang,
+    qpdf
+Suggests:
     knitr,
     devtools,
     roxygen2,

@@ -9,6 +9,9 @@ plot_facet(plot_obj, df)
 \arguments{
 \item{plot_obj}{a plot object created with ggplot(data = actual_data, aes(x =
 actual_x, y = actual_y, group = actual_group))}
+
+\item{df}{a data frame with a column "date" representing the range of dates
+plotted within plot_obj}
 }
 \value{
 new_obj - a plot object with aesthetics added

@@ -35,8 +35,8 @@
 #' \item{rpet_mm}{monthly reference potential evapotranspiration (mm)}
 #' }
 #'
-#' @import lubridate
 #' @importFrom utils read.csv
+#' @importFrom lubridate month year
 #'
 #' @export
 

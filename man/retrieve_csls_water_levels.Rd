@@ -7,7 +7,14 @@
 retrieve_csls_water_levels()
 }
 \value{
-water_levels, a data frame with the following columns:
+water_levels, a data frame with the following columns
+\describe{
+\item{date}{date of water level measurement}
+\item{site_no}{UGSG site number}
+\item{obs_type}{type of observation (LK = lake level, GW = groundwater
+                level)}
+\item{level_m}{water level in meters above mean sea level}
+}
 }
 \description{
 Downloads current feature layer from DNR feature services with water quantity

@@ -13,7 +13,7 @@
 #' Evaporation d18O
 #'
 #' Calculates the isotope composition of evaporation based on equation 5 in
-#' Krabbenhoft et al. (1990).
+#' Krabbenhoft et al. (1990). Note that alpha* is equivalent to 1/alpha.
 #'
 #' @references Krabbenhoft, D. P., C. J. Bowser, M. P. Anderson, and J. W.
 #'   Valley. (1990). Estimating Groundwater Exchange with Lakes: 1. The Stable
@@ -41,8 +41,8 @@ d18O_evap <- function(atmp, ltmp, RH, d18O_pcpn, d18O_lake) {
   d18O_atm      <- d18O_evap_d18O_atm(d18O_pcpn, alpha)
 
   # d18O evaporation
-  d18O_evap <- (alpha*d18O_lake - h*d18O_atm - epsilon)/
-    (1 - h + delta_epsilon*10^(-3))
+  d18O_evap <- ((1/alpha)*d18O_lake - h*d18O_atm - epsilon)/
+               (1 - h + delta_epsilon*10^(-3))
   return(d18O_evap)
 }
 # ------------------------------------------------------------------------------
@@ -134,8 +134,8 @@ d18O_evap_kinetic_frac <- function(h, K = 14.3) {
 #' Total Fractionation Factor
 #'
 #' Calculates the total fractionation factor based on the definition of epsilon
-#' for equation 5 in Krabbenhoft et al. (1990). Note this is not the actual
-#' definition presented in the paper - instead of alpha, here we have 1/alpha.
+#' for equation 5 in Krabbenhoft et al. (1990). Note that alpha* is equivalent
+#' to 1/alpha.
 #'
 #' @references Krabbenhoft, D. P., C. J. Bowser, M. P. Anderson, and J. W.
 #'   Valley. (1990). Estimating Groundwater Exchange with Lakes: 1. The Stable

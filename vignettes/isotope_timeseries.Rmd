@@ -12,6 +12,7 @@ vignette: >
 ```{r setup, echo=FALSE, warning=FALSE, message=FALSE}
 library(devtools)
 library(isoH2Obudget)
+library(qpdf) #for pdf size reduction
 library(reshape2) #for melting
 library(ggplot2) #for plotting
 library(extrafont) #for fonts

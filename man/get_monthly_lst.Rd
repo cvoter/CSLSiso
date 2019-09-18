@@ -4,10 +4,13 @@
 \alias{get_monthly_lst}
 \title{Monthly Lake Surface Temperature}
 \usage{
-get_monthly_lst(filename, filedir = "system.file", wbic = 106900)
+get_monthly_lst(lake, SWIMS_file, site_file = "csls_site_dictionary.csv",
+  filedir = "system.file")
 }
 \arguments{
-\item{filename}{name of SWIMS csv file which includes the following fields:
+\item{lake}{name of lake to analyze (capitalized, e.g. "Pleasant")}
+
+\item{SWIMS_file}{name of SWIMS csv file which includes the following fields:
 \itemize{
   \item DNR Parameter - unique DNR number for parameter. Assume lake
         surface temperatures are stored as "10" for "Temperature Field"
@@ -18,11 +21,23 @@ get_monthly_lst(filename, filedir = "system.file", wbic = 106900)
   \item WBIC - Wisconsin Water Body Identification Code
 }}
 
+\item{site_file}{filname of site dictionary with the following columns
+\itemize{
+\item lake - name of lake associated with the measurement site. Corresponds
+             to lake name argument in this function.
+\item obs_type - type of observation (LK = lake, GW = groundwater
+                 monitoring well)
+\item site_id - unique site id for measurement site (e.g., LL-01).
+                Corresponds to site_id in "isotopes" data frame.
+\item SWIMS_station_id - SWIMS station id, if exists for this site.
+\item USGS_id - USGS site number. Corresponds to site_no in "water_levels"
+                data frame.
+\item WBIC - water body identification code (WBIC), for lake sites only.
+}}
+
 \item{filedir}{directory in which daily weather csv file resides, defaults to
 'system.file' to instruct it to look within package
 "inst/extdata" directory.}
-
-\item{wbic}{Wisconsin Water Body Identification Code for lake of interest}
 }
 \value{
 monthly_lst, a data frame with the following columns:

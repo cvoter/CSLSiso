@@ -36,6 +36,8 @@
 #' \item{GWout}{monthly groundwater outflow to the lake (mm)}
 #' }
 #'
+#' @importFrom lubridate as_datetime
+#'
 #' @export
 
 get_monthly_h2o_bal <- function(monthly_weather, monthly_isotopes) {
@@ -70,7 +72,10 @@ get_monthly_h2o_bal <- function(monthly_weather, monthly_isotopes) {
     lake_h2o_bal$GWout[i] <- GW_outflow(P, E, lake_h2o_bal$GWin[i], dVdt = 0)
   }
   # R bizzarly looses the class of date objects in for loops, fix here
-  lake_h2o_bal$date <- as.Date(lake_h2o_bal$date, origin = "1970-01-01")
+  # Format of date number requires lubridate::as_datetime, but convert from
+  # POSIXct to Date for ggplotting
+  lake_h2o_bal$date <- as_datetime(lake_h2o_bal$date)
+  lake_h2o_bal$date <- as.Date(lake_h2o_bal$date)
 
   return(as.data.frame(lake_h2o_bal))
 }

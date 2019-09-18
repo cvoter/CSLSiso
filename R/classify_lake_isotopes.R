@@ -5,37 +5,37 @@
 #' by comparing the 7-day mean lake level and well level leading up to isotope
 #' measurements.
 #'
-#' @param isotopes a data frame with the following columns:
-#' @itemize{
-#'   \item date - date and time of sample collection (Date)
-#'   \item site_id - unique site id for where measurement was taken (e.g.,
-#'                   LL-01)
-#'   \item d18O - stable isotope measurement for d18O at this site
-#'   \item d2H - stable isotope measurement for for duterium at this site
+#' @param isotopes a data frame with the following columns
+#' \itemize{
+#' \item date - date and time of sample collection (Date)
+#' \item site_id - unique site id for where measurement was taken (e.g.,
+#'                 LL-01)
+#' \item d18O - stable isotope measurement for d18O at this site
+#' \item d2H - stable isotope measurement for for duterium at this site
 #' }
-#' @param water_levels a data frame with the following columns:
-#' @itemize {
-#'   \item date - date of water level measurement
-#'   \item site_no - UGSG site number
-#'   \item obs_type - type of observation (LK = lake level, GW = groundwater
-#'                    level)
-#'   \item level_m - water level in meters above mean sea level
+#' @param water_levels a data frame with the following columns
+#' \itemize{
+#' \item date - date of water level measurement
+#' \item site_no - UGSG site number
+#' \item obs_type - type of observation (LK = lake level, GW = groundwater
+#'                  level)
+#' \item level_m - water level in meters above mean sea level
 #' }
 #' @param lake name of lake to analyze (e.g., Pleasant, Long, or Plainfield).
 #'             This name corresponds to lake names in the site dictionary "lake"
 #'             column.
-#' @param site_file filname of site dictionary with the following columns:
-#' @itemize {
-#'   \item lake - name of lake associated with the measurement site. Corresponds
-#'                to lake name argument in this function.
-#'   \item obs_type - type of observation (LK = lake, GW = groundwater
-#'                    monitoring well)
-#'   \item site_id - unique site id for measurement site (e.g., LL-01).
-#'                   Corresponds to site_id in "isotopes" data frame.
-#'   \item SWIMS_station_id - SWIMS station id, if exists for this site.
-#'   \item USGS_id - USGS site number. Corresponds to site_no in "water_levels"
-#'                   data frame.
-#'   \item WBIC - water body identification code (WBIC), for lake sites only.
+#' @param site_file filname of site dictionary with the following columns
+#' \itemize{
+#' \item lake - name of lake associated with the measurement site. Corresponds
+#'              to lake name argument in this function.
+#' \item obs_type - type of observation (LK = lake, GW = groundwater
+#'                  monitoring well)
+#' \item site_id - unique site id for measurement site (e.g., LL-01).
+#'                 Corresponds to site_id in "isotopes" data frame.
+#' \item SWIMS_station_id - SWIMS station id, if exists for this site.
+#' \item USGS_id - USGS site number. Corresponds to site_no in "water_levels"
+#'                 data frame.
+#' \item WBIC - water body identification code (WBIC), for lake sites only.
 #' }
 #' @param filedir name of directory with both csv files, defaults to
 #'                'system.file' to instruct it to look within package
@@ -48,8 +48,10 @@
 #'                    "precipitation", "lake", "upgradient", or "downgradient".
 #'
 #' @importFrom utils read.csv
-#' @importFrom dplyr filter
+#' @importFrom magrittr %>%
+#' @importFrom dplyr filter select
 #' @importFrom lubridate days
+#' @importFrom rlang .data
 #'
 #' @export
 
@@ -69,16 +71,16 @@ classify_lake_isotopes <- function(isotopes,
   } else {
     site_dictionary <- read.csv(sprintf("%s/%s", filedir, site_file))
   }
-  all_sites <- site_dictionary %>% filter(lake == !!lake)
-  gw_sites  <- all_sites %>% filter(obs_type == "GW")
+  all_sites <- site_dictionary %>% filter(.data$lake == !!lake)
+  gw_sites  <- all_sites %>% filter(.data$obs_type == "GW")
 
   # Water levels - subset to records related to this lake
   lake_levels <- water_levels %>%
-                 filter(site_no %in% c(all_sites$USGS_id),
-                        obs_type == "LK")
+                 filter(.data$site_no %in% c(all_sites$USGS_id),
+                        .data$obs_type == "LK")
   well_levels <- water_levels %>%
-                 filter(site_no %in% c(all_sites$USGS_id),
-                        obs_type == "GW")
+                 filter(.data$site_no %in% c(all_sites$USGS_id),
+                        .data$obs_type == "GW")
 
   # Classify measurements (upgradient, downgradient, precipitation, lake)
   isotopes$site_type <- NA
@@ -86,12 +88,12 @@ classify_lake_isotopes <- function(isotopes,
     if (isotopes$site_id[i] %in% gw_sites$site_id) {
       # Filter well level records to just this well
       this_USGS_id <- gw_sites %>%
-                      filter(as.character(site_id) ==
+                      filter(as.character(.data$site_id) ==
                                as.character(isotopes$site_id[i])) %>%
-                      select(USGS_id) %>%
+                      select(.data$USGS_id) %>%
                       as.numeric()
       this_well    <- well_levels %>%
-                      filter(site_no == this_USGS_id)
+                      filter(.data$site_no == this_USGS_id)
 
       # X day mean lake level before isotope measurement
       lake_meas_i <- which.min(abs(lake_levels$date - isotopes$date[i]))

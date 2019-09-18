@@ -17,8 +17,8 @@ epsilon - the total fractionation factor (-)
 }
 \description{
 Calculates the total fractionation factor based on the definition of epsilon
-for equation 5 in Krabbenhoft et al. (1990). Note this is not the actual
-definition presented in the paper - instead of alpha, here we have 1/alpha.
+for equation 5 in Krabbenhoft et al. (1990). Note that alpha* is equivalent
+to 1/alpha.
 }
 \references{
 Krabbenhoft, D. P., C. J. Bowser, M. P. Anderson, and J. W.

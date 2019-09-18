@@ -22,19 +22,26 @@ get_monthly_isotopes(lake, isotope_file,
 \item Collection.Date.Time - date and time of sample collection
 }}
 
+\item{site_file}{filname of site dictionary with the following columns
+\itemize{
+\item lake - name of lake associated with the measurement site. Corresponds
+             to lake name argument in this function.
+\item obs_type - type of observation (LK = lake, GW = groundwater
+                 monitoring well)
+\item site_id - unique site id for measurement site (e.g., LL-01).
+                Corresponds to site_id in "isotopes" data frame.
+\item SWIMS_station_id - SWIMS station id, if exists for this site.
+\item USGS_id - USGS site number. Corresponds to site_no in "water_levels"
+                data frame.
+\item WBIC - water body identification code (WBIC), for lake sites only.
+}}
+
 \item{filedir}{name of directory with both csv files, defaults to
 'system.file' to instruct it to look within package
 "inst/extdata" directory.}
 
-\item{sites_file}{name of csv file with info on the sampling sites for a
-                  lake of interest, including:
-\itemize{
-\item site_id - unique site id for all stable isotope measurements relevant
-      to this lake. Assumed to match site ids in isotope_file.
-\item site_type - type of measurement location. Options include
-      "precipitation", "lake", "upstream" (i.e., groundwater inflow well),
-      "downstream" (i.e., groundwater outflow well), or "NA".
-}}
+\item{Xday}{number of days to consider when calculating average water level
+before isotope measurements, defaults to 7 days.}
 }
 \value{
 monthly_isotopes, a data frame with the following:

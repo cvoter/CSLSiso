@@ -9,15 +9,41 @@ classify_lake_isotopes(isotopes, water_levels, lake,
   Xday = 7)
 }
 \arguments{
-\item{isotopes}{a data frame with the following columns:}
+\item{isotopes}{a data frame with the following columns
+\itemize{
+\item date - date and time of sample collection (Date)
+\item site_id - unique site id for where measurement was taken (e.g.,
+                LL-01)
+\item d18O - stable isotope measurement for d18O at this site
+\item d2H - stable isotope measurement for for duterium at this site
+}}
 
-\item{water_levels}{a data frame with the following columns:}
+\item{water_levels}{a data frame with the following columns
+\itemize{
+\item date - date of water level measurement
+\item site_no - UGSG site number
+\item obs_type - type of observation (LK = lake level, GW = groundwater
+                 level)
+\item level_m - water level in meters above mean sea level
+}}
 
 \item{lake}{name of lake to analyze (e.g., Pleasant, Long, or Plainfield).
 This name corresponds to lake names in the site dictionary "lake"
 column.}
 
-\item{site_file}{filname of site dictionary with the following columns:}
+\item{site_file}{filname of site dictionary with the following columns
+\itemize{
+\item lake - name of lake associated with the measurement site. Corresponds
+             to lake name argument in this function.
+\item obs_type - type of observation (LK = lake, GW = groundwater
+                 monitoring well)
+\item site_id - unique site id for measurement site (e.g., LL-01).
+                Corresponds to site_id in "isotopes" data frame.
+\item SWIMS_station_id - SWIMS station id, if exists for this site.
+\item USGS_id - USGS site number. Corresponds to site_no in "water_levels"
+                data frame.
+\item WBIC - water body identification code (WBIC), for lake sites only.
+}}
 
 \item{filedir}{name of directory with both csv files, defaults to
 'system.file' to instruct it to look within package
