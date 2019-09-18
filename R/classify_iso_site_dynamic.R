@@ -1,6 +1,6 @@
-#' Classify Stable Isotope Measurements
+#' Classify Stable Isotope Measurements (Dynamic)
 #'
-#' Classifies the site type of isotope measurements as precipitaiton, lake,
+#' Classifies the site type of isotope measurements as precipitation, lake,
 #' upgradient, or downgradient. Upgradient vs. downgradient wells are determined
 #' by comparing the 7-day mean lake level and well level leading up to isotope
 #' measurements.
@@ -52,15 +52,16 @@
 #' @importFrom dplyr filter select
 #' @importFrom lubridate days
 #' @importFrom rlang .data
+#' @importFrom bit64 as.integer64
 #'
 #' @export
 
-classify_lake_isotopes <- function(isotopes,
-                                   water_levels,
-                                   lake,
-                                   site_file = "csls_site_dictionary.csv",
-                                   filedir = 'system.file',
-                                   Xday = 7) {
+classify_iso_site_dynamic <- function(isotopes,
+                                      water_levels,
+                                      lake,
+                                      site_file = "csls_site_dictionary.csv",
+                                      filedir = 'system.file',
+                                      Xday = 7) {
 
   # Sites - load dictionary and subset to sites related to this lake
   if (filedir == 'system.file') {
@@ -71,15 +72,23 @@ classify_lake_isotopes <- function(isotopes,
   } else {
     site_dictionary <- read.csv(sprintf("%s/%s", filedir, site_file))
   }
-  all_sites <- site_dictionary %>% filter(.data$lake == !!lake)
-  gw_sites  <- all_sites %>% filter(.data$obs_type == "GW")
+  all_sites    <- site_dictionary %>%
+                  filter(.data$lake == !!lake)
+  gw_sites     <- site_dictionary %>%
+                  filter(.data$lake == !!lake,
+                         .data$obs_type == "GW")
+  lake_USGS_id <- all_sites %>%
+                  filter(.data$obs_type == "LK") %>%
+                  select(.data$USGS_id) %>%
+                  as.numeric() %>%
+                  as.integer64()
 
   # Water levels - subset to records related to this lake
   lake_levels <- water_levels %>%
-                 filter(.data$site_no %in% c(all_sites$USGS_id),
+                 filter(.data$site_no == lake_USGS_id,
                         .data$obs_type == "LK")
   well_levels <- water_levels %>%
-                 filter(.data$site_no %in% c(all_sites$USGS_id),
+                 filter(.data$site_no %in% c(gw_sites$USGS_id),
                         .data$obs_type == "GW")
 
   # Classify measurements (upgradient, downgradient, precipitation, lake)

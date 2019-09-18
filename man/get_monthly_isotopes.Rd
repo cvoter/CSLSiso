@@ -6,7 +6,7 @@
 \usage{
 get_monthly_isotopes(lake, isotope_file,
   site_file = "csls_site_dictionary.csv", filedir = "system.file",
-  Xday = 7)
+  Xday = 7, static_wells = FALSE)
 }
 \arguments{
 \item{lake}{name of lake to analyze (capitalized, e.g. "Pleasant")}
@@ -42,6 +42,11 @@ get_monthly_isotopes(lake, isotope_file,
 
 \item{Xday}{number of days to consider when calculating average water level
 before isotope measurements, defaults to 7 days.}
+
+\item{static_wells}{logical indicates whether to use static definition of
+upgradient and downgradient wells (TRUE) or dynamically
+classify based on water levels Xdays before each isotope
+measurement (TRUE). Defaults to FALSE.}
 }
 \value{
 monthly_isotopes, a data frame with the following:

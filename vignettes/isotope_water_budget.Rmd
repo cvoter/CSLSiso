@@ -155,11 +155,14 @@ the "sites_file" csv file.
 Pleasant Lake is shown here.
 
 ```{r monthly_isotopes, eval=TRUE, echo=FALSE}
-monthly_isotopes <- get_monthly_isotopes(lake = "Pleasant",
-                                         isotope_file = 'isotope_samples_2019_09_06.csv',
-                                         site_file = "csls_site_dictionary.csv",
-                                         filedir = 'system.file',
-                                         Xday = 7)
+lake         <- "Pleasant"
+isotope_file <- 'isotope_samples_2019_09_06.csv'
+site_file    <- "csls_site_dictionary.csv"
+filedir      <- 'system.file'
+Xday         <- 7
+static_wells <- TRUE
+monthly_isotopes <- get_monthly_isotopes(lake, isotope_file, site_file, 
+                                         filedir, Xday, static_wells)
 monthly_isotopes
 ```
 

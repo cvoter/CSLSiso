@@ -38,6 +38,10 @@
 #'                "inst/extdata" directory.
 #' @param Xday number of days to consider when calculating average water level
 #'             before isotope measurements, defaults to 7 days.
+#' @param static_wells logical indicates whether to use static definition of
+#'                     upgradient and downgradient wells (TRUE) or dynamically
+#'                     classify based on water levels Xdays before each isotope
+#'                     measurement (TRUE). Defaults to FALSE.
 #'
 #' @return monthly_isotopes, a data frame with the following:
 #' \describe{
@@ -56,21 +60,24 @@ get_monthly_isotopes <- function(lake,
                                  isotope_file,
                                  site_file = "csls_site_dictionary.csv",
                                  filedir = 'system.file',
-                                 Xday = 7) {
+                                 Xday = 7,
+                                 static_wells = FALSE) {
 
   # Extract stable isotope measurements for this lake
   isotopes     <- load_lake_isotopes(lake, isotope_file, filedir)
 
-  # Retrieve water level information from DNR feature services
-  water_levels <- retrieve_csls_water_levels()
-
   # Note which measurements are for upgradient vs. downgradient wells
-  isotopes     <- classify_lake_isotopes(isotopes,
-                                         water_levels,
-                                         lake,
-                                         site_file,
-                                         filedir,
-                                         Xday)
+  if (static_wells) {
+    isotopes     <- classify_iso_site_static(isotopes, lake, site_file, filedir)
+  } else {
+    water_levels <- retrieve_csls_water_levels()
+    isotopes     <- classify_iso_site_dynamic(isotopes,
+                                              water_levels,
+                                              lake,
+                                              site_file,
+                                              filedir,
+                                              Xday)
+  }
 
   # Identify start month and total number of months
   month_info <- start_n_months(isotopes$date, all_days = FALSE)
