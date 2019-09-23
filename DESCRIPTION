@@ -1,7 +1,7 @@
 Package: isoH2Obudget
 Type: Package
 Title: Lake Water Budget Using Stable Isotopes
-Version: 0.1.0
+Version: 0.2.0
 Author: Carolyn Voter <cvoter@wisc.edu>
 Maintainer: Carolyn Voter <cvoter@wisc.edu>
 Description: Calculates the water budget for a lake.
@@ -15,12 +15,15 @@ Imports:
     magrittr,
     rlang,
     bit64,
-    qpdf
+    qpdf,
+    NISTunits,
+    stringr,
+    zoo,
+    reshape2
 Suggests:
     knitr,
     devtools,
-    roxygen2,
-    reshape2
+    roxygen2
 License: MIT + file LICENSE
 Encoding: UTF-8
 LazyData: true

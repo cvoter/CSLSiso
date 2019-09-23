@@ -25,9 +25,12 @@
 #'
 #' @export
 
-GW_inflow <- function(P, E, d18O_pcpn, d18O_lake, d18O_GWin, d18O_evap) {
+calculate_GW_inflow <- function(P, E, d18O_pcpn, d18O_lake, d18O_GWin, d18O_evap) {
   GWin <- (P*(d18O_lake - d18O_pcpn) + E*(d18O_evap - d18O_lake))/
           (d18O_GWin - d18O_lake)
+
+  if (length(GWin) == 0) {GWin <- NA}
+
   return(GWin)
 }
 # ------------------------------------------------------------------------------
@@ -50,7 +53,7 @@ GW_inflow <- function(P, E, d18O_pcpn, d18O_lake, d18O_GWin, d18O_evap) {
 #'
 #' @export
 
-GW_outflow <- function(P, E, GWin, dVdt = 0) {
+calculate_GW_outflow <- function(P, E, GWin, dVdt = 0) {
   GWout <- P + GWin - E - dVdt
   return(GWout)
 }

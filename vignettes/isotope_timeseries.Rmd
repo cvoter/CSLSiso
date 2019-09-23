@@ -13,30 +13,21 @@ vignette: >
 library(devtools)
 library(isoH2Obudget)
 library(qpdf) #for pdf size reduction
+library(dplyr) #for pipes, filtering, and selecting
 library(reshape2) #for melting
 library(ggplot2) #for plotting
 library(extrafont) #for fonts
 library(knitr)
 ```
 
-```{r lake_iso, eval=TRUE, echo=FALSE}
-psnt_isotopes <- load_lake_isotopes(lake = "Pleasant",
-                                    isotope_file = 'isotope_samples_2019_09_06.csv',
-                                    filedir = 'system.file')
-pfl_isotopes <- load_lake_isotopes(lake = "Plainfield",
-                                   isotope_file = 'isotope_samples_2019_09_06.csv',
-                                   filedir = 'system.file')
-ll_isotopes <- load_lake_isotopes(lake = "Long",
-                                  isotope_file = 'isotope_samples_2019_09_06.csv',
-                                  filedir = 'system.file')
+```{r isotopes, eval=TRUE, echo=FALSE}
+load("../data/isotopes.Rda")
+psnt_isotopes <- isotopes %>% filter(lake == "Pleasant")
+ll_isotopes   <- isotopes %>% filter(lake == "Long")
+pfl_isotopes  <- isotopes %>% filter(lake == "Plainfield")
 ```
 
 ## Issues
-Current issues/to-do's with isotope interpretations include:
-
-* Talk with Katie and Aaron about these plots & interpretations
-* Incorporate timeseries of well level and lake level measurements
-* Automate decision making for upstream vs. downstream wells
 
 ## Overview
 When looking at these plots, keep in mind that measurements closest to the
@@ -45,7 +36,10 @@ measurements drifting off to the right are likely outflowing groundwater wells
 (or the lake itself), which are influenced by evaporation.
 
 ```{r schematic, out.width = "75%", eval=TRUE, echo=FALSE, fig.align="center"}
-include_graphics(system.file("images", "isotope_signatures.png", package = "isoH2Obudget", mustWork = TRUE))
+include_graphics(system.file("images", 
+                             "isotope_signatures.png", 
+                             package = "isoH2Obudget", 
+                             mustWork = TRUE))
 ```
 
 ### TL;DR

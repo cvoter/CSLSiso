@@ -83,93 +83,8 @@ groundwater outflow (mm). If changes in lake volume are measured (i.e.,
 $\frac{dV}{dt} \neq 0$), then these changes are substituted for 0 and the
 modeled groundwater outflows are adjusted.
 
-## Input data
-Input data for the Central Sands Lake Study sites (Pleasant Lake, Long Lake, and
-Plainfield Lake) are located in the "inst/extdata" folder of this project.
-Required inputs include:
+<br> 
 
-* Monthly mean air temperature (K)
-* Monthly mean relative humidity (%)
-* Monthly precipitation depth (mm)
-* Monthly reference potential evapotranspiration depths (mm)
-* Monthly mean lake surface temperature (K)
-* Regular (e.g., monthly or every-other-month) stable isotope measurements of
-$\delta^{18}O_{L}$, $\delta^{18}O_{GW_{in}}$, and $\delta^{18}O_{P}$
-
-### 1. Meteorological Data
-For the Central Sands Lake Study (CSLS), daily or subdaily air temperature,
-relative humidity, precipitation, and reference potential evapotranspiration are
-downloaded from the [Hancock Agricultural Research Station
-website](https://enviroweather.msu.edu/weather.php?stn=hck) (station id: hck).
-This weather station is located in Hancock, WI (location: 44.1188, -89.533,
-elevation: 241m), approximately 8 miles from Plainfield Lake, 8.5 miles from
-Long Lake, and 14.5 miles from Pleasant Lake.
-
-On the Hancock Station website, click on "Weather Station at Hancock" or "More
-weather for this station" to be routed to a page with options for "Custom
-Reports (Data-on-Demand)". Select Data Type "Daily Data" or "Hourly Data", then
-check (Max/Min) Air Temperature [1.5m], Precipitation, (Max/Min) Relative
-Humidity [1.5m], and Reference Potential Evapotranspiration. Select starting
-date and end date, display units (metric), and output (csv), then "Generate
-Report". Note that the earliest starting date allowed (as of January and
-September 2019) is February 15, 2018.
-
-Daily or subdaily data is summarized at a monthly timestep.
-
-```{r monthly_weather, eval=TRUE, echo=FALSE}
-monthly_weather <- get_monthly_weather(filename = 'weather_hancock_hourly_2019_09_06.csv',
-                                       filedir = 'system.file',
-                                       skip_lines = 7,
-                                       daily_weather = FALSE)
-head(monthly_weather)
-```
-
-### 2. Lake Temperature Data
-Lake surface temperatures (at 0 meters) are extracted from every-other-week
-measurements of vertical lake temperature profiles taken at the CSLS Lakes.
-
-Field data is stored in [WDNR
-SWIMS](https://dnr.wi.gov/topic/surfacewater/swims/) and is associated with the
-project "Central Sands Lake Study" or "csls".
-
-Every-other-week measurements is summarized at a monthly timestep (shown here
-for Pleasant Lake).
-
-```{r monthly_lst, eval=TRUE, echo=FALSE}
-monthly_lst <- get_monthly_lst(lake = "Pleasant",
-                               SWIMS_file = 'SWIMS_2019_09_05.csv',
-                               site_file = "csls_site_dictionary.csv",
-                               filedir = 'system.file')
-head(monthly_lst)
-```
-
-### 3. Stable Isotope Measurements
-Measurements of $\delta^{18}O_{L}$ and $\delta^{18}O_{GW_{in}}$ are collected on
-site for each lake while $\delta^{18}O_{P}$ is measured using samples collected
-at the Hancock Research Station.
-
-Measurements are summarized at a monthly timestep. Site types (precipitation,
-lake, inflowing groundwtaer well, or outflowing groundwater well) are defined in
-the "sites_file" csv file.
-
-Pleasant Lake is shown here.
-
-```{r monthly_isotopes, eval=TRUE, echo=FALSE}
-lake         <- "Pleasant"
-isotope_file <- 'isotope_samples_2019_09_06.csv'
-site_file    <- "csls_site_dictionary.csv"
-filedir      <- 'system.file'
-Xday         <- 7
-static_wells <- FALSE
-static_lake  <- FALSE
-monthly_isotopes <- get_monthly_isotopes(lake, isotope_file, site_file, 
-                                         filedir, Xday, static_wells, 
-                                         static_lake)
-monthly_isotopes
-```
-
-## Analysis
-### 1. Estimate d18O Evaporation
 $\delta^{18}O_{E}$ **must be estimated** since it cannot be directly measured
 like $\delta^{18}O_{P}$, $\delta^{18}O_{L}$, or $\delta^{18}O_{GW_{in}}$
 (Krabbenhoft et al., 1990).
@@ -226,30 +141,174 @@ calculated based on Ozaydin et al. (2001):
 \delta^{18}O_{A} = \frac{\delta^{18}O_{P}}{\alpha} - (1 - \frac{1}{\alpha})
 \end{align}
 
-```{r add_d18O_E, eval=TRUE, echo=FALSE}
-monthly_isotopes <- get_monthly_d18O_evap(monthly_weather,
-                                          monthly_lst,
-                                          monthly_isotopes)
+
+## Input data
+Input data for the Central Sands Lake Study sites (Pleasant Lake, Long Lake, and
+Plainfield Lake) are located in the "data" folder of this project, with raw csv
+files located in the "inst/extdata" directory. For examples of how to convert
+raw csv files into the .Rda inputs required for the functions in this package,
+see the vignette "retrieve_csls_inputs_data".
+
+Required inputs include:
+
+### 1. Meteorological Data
+For the Central Sands Lake Study (CSLS), hourly air temperature, relative
+humidity, precipitation, and reference potential evapotranspiration are
+downloaded from the [Hancock Agricultural Research Station
+website](https://enviroweather.msu.edu/weather.php?stn=hck) (station id: hck).
+This weather station is located in Hancock, WI (location: 44.1188, -89.533,
+elevation: 241m), approximately 8 miles from Plainfield Lake, 8.5 miles from
+Long Lake, and 14.5 miles from Pleasant Lake.
+
+On the Hancock Station website, click on "Weather Station at Hancock" or "More
+weather for this station" to be routed to a page with options for "Custom
+Reports (Data-on-Demand)". Select Data Type "Daily Data" or "Hourly Data", then
+check (Max/Min) Air Temperature [1.5m], Precipitation, (Max/Min) Relative
+Humidity [1.5m], and Reference Potential Evapotranspiration. Select starting
+date and end date, display units (metric), and output (csv), then "Generate
+Report". Note that the earliest starting date allowed (as of January and
+September 2019) is February 15, 2018.
+
+```{r weather, eval=TRUE, echo=FALSE}
+load("../data/weather.Rda")
+head(weather)
+```
+
+### 2. Lake Temperature Data
+Lake surface temperatures (at 0 meters) are extracted from every-other-week
+measurements of vertical lake temperature profiles taken at the CSLS Lakes.
+
+Field data is stored in [WDNR
+SWIMS](https://dnr.wi.gov/topic/surfacewater/swims/) and is associated with the
+project "Central Sands Lake Study" or "csls".
+
+```{r lst, eval=TRUE, echo=FALSE}
+load("../data/lst.Rda")
+head(lst)
+```
+
+### 3. Stable Isotope Measurements
+Measurements of $\delta^{18}O_{L}$ and $\delta^{18}O_{GW_{in}}$ are collected on
+site for each lake while $\delta^{18}O_{P}$ is measured using samples collected
+at the Hancock Research Station.
+
+```{r isotopes, eval=TRUE, echo=FALSE}
+load("../data/isotopes.Rda")
+head(isotopes)
+```
+
+### 4. Lake and Groundwater Levels
+Daily lake levels and groundwater levels are retrieved from the DNR Water Use
+section ArcGIS feature services. The data of interest for CSLS is DG_HiCap >
+DG_CSLS_QUANT_MON_WTM_EXT > Layer 2 (W13101.WU_CSLS_QUANT_DATA).
+
+```{r water_levels, eval=TRUE, echo=FALSE}
+load("../data/water_levels.Rda")
+head(water_levels)
+```
+
+### 5. Bathymetry Information
+In order to assess potential changes in lake volume, bathymetry information is
+also needed. This includes the relationships between elevation, lake volume, and
+lake surface area.
+
+```{r stage_vol, eval=TRUE, echo=FALSE}
+load("../data/stage_vol.Rda")
+head(stage_vol)
+```
+
+### 6. Site Dictionary
+Lastly, we also need a site dictionary which maps various ID codes for each
+measurement site to one another.
+
+```{r site_dict, eval=TRUE, echo=FALSE}
+load("../data/site_dictionary.Rda")
+head(site_dictionary)
+```
+
+## Analysis
+### 1. Subset for lake of interest
+First, subset the input data sets for records related to the lake of interest.
+
+```{r subset, eval=TRUE, echo=FALSE}
+# Subset for lake
+lake_subset <- subset_lake(lake = "Pleasant",
+                           site_dictionary,
+                           lst,
+                           isotopes,
+                           water_levels,
+                           stage_vol)
+
+# Reassign variable names
+lst             <- lake_subset$lst
+isotopes        <- lake_subset$isotopes
+lake_levels     <- lake_subset$lake_levels
+gw_levels       <- lake_subset$gw_levels
+stage_vol       <- lake_subset$stage_vol
+site_dictionary <- lake_subset$site_dictionary
+
+# Identify monthly timeseries wiht complete coverage of input data
+month_info      <- get_overlap_months(weather, 
+                                      lst, 
+                                      isotopes, 
+                                      lake_levels, 
+                                      gw_levels)
+```
+
+### 2. Analyze at a monthly timestep
+Next, summarize records at a monthly time step. Here, we have monthly weather...
+
+```{r monthly_weather, eval=TRUE, echo=TRUE}
+monthly_weather   <- get_monthly_weather(weather)
+head(monthly_weather)
+```
+
+...monthly lake surface temperature...
+
+```{r monthly_lst, eval=TRUE, echo=TRUE}
+monthly_lst       <- get_monthly_lst(lst)
+head(monthly_lst)
+```
+
+...monthly isotope measurements (& calculations)...
+
+```{r monthly_isotopes, eval=TRUE, echo=TRUE}
+monthly_isotopes  <- get_monthly_isotopes(isotopes, site_dictionary,
+                                          static_wells = FALSE, lake_levels, 
+                                          gw_levels, Xday = 7, 
+                                          static_lake = FALSE)
+monthly_isotopes  <- get_monthly_d18O_evap(monthly_weather,
+                                           monthly_lst,
+                                           monthly_isotopes)
 monthly_isotopes
 ```
 
-### 2. Calculate Water Balance
-With groundwater inflow calculated based on Eq. 1 and groundwater outflow
-calculated based on Eq. 2, the water balance can be calculated for each month
-with complete data.
+...monthly change in lake volume (mm)...
 
-```{r h2o_bal, eval=TRUE, echo=FALSE}
-lake_h2o_bal <- get_monthly_h2o_bal(monthly_weather, monthly_isotopes)
-lake_h2o_bal
+```{r monthly_dV, eval=TRUE, echo=TRUE}
+monthly_dV        <- get_monthly_dV(lake_levels,
+                                    stage_vol, 
+                                    month_info, 
+                                    as_depth = TRUE,
+                                    tmp_depth_fix = TRUE)
+head(monthly_dV)
 ```
 
-Currently, only one month has isotope measurements for precipitation, the lake,
-and groundwater wells at Pleasant Lake, so only that one month can be
-calculated and visualized
+...and the monthly water balance.
+
+```{r monthly_h2o_bal, eval=TRUE, echo=TRUE}
+monthly_h2o_bal   <- get_monthly_h2o_bal(monthly_weather,
+                                         monthly_isotopes,
+                                         monthly_dV,
+                                         month_info)
+monthly_h2o_bal
+```
+
+### 3. Visualize water balance
 
 ```{r plot, eval=TRUE, echo=FALSE, fig.width = 5, fig.height = 3}
 
-melted_bal <- melt(lake_h2o_bal, id.vars = "date")
+melted_bal <- melt(subset(monthly_h2o_bal, is.na(GWout) == FALSE), id.vars = "date")
 for (i in 1:nrow(melted_bal)) {
   if (melted_bal$variable[i] == "P" |
   melted_bal$variable[i] == "GWin") {
@@ -259,19 +318,18 @@ for (i in 1:nrow(melted_bal)) {
   }
 }
 
-plot_bal <- subset(melted_bal, date == melted_bal$date[2])
-
-plot_balance <- ggplot(data = plot_bal) +
+plot_balance <- ggplot(data = melted_bal) +
                 geom_col(aes(x = in_or_out, y = value, fill = variable)) +
                 facet_wrap(~date) +
                 scale_y_continuous(expand = c(0,0)) +
                 scale_fill_brewer(name = "Flux",
                                   palette = "Paired",
-                                  breaks = c("P","E","GWin","GWout"),
+                                  breaks = c("P","E","GWin","GWout","dV"),
                                   labels = c("Precipitation",
                                              "Evapotranspiration",
                                              "Groundwater Inflow",
-                                             "Groundwater Outflow")) +
+                                             "Groundwater Outflow",
+                                             "Change in Lake Volume")) +
                 labs(x = "", y = "Flux (mm)") +
                 theme_bw() + 
                 theme(text = element_text(family = "Segoe UI Semilight"))

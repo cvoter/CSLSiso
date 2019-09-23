@@ -1,0 +1,76 @@
+---
+title: "Retrieve CSLS Input Data"
+output: 
+  rmarkdown::html_vignette:
+    toc: true
+vignette: >
+  %\VignetteIndexEntry{Put the title of your vignette here}
+  %\VignetteEngine{knitr::rmarkdown}
+  \usepackage[utf8]{inputenc}
+---
+
+This document demonstrates how to retrieve raw CSLS input data from csv files
+and save it as an .Rda file in the format required for isoH2Obudget functions.
+
+```{r setup, echo=FALSE, warning=FALSE, message=FALSE}
+library(devtools)
+library(isoH2Obudget)
+```
+
+## Specify csv filenames
+First, identify the filenames of each required raw csv file. Example raw csv
+files for the CSLS are stored in inst/extdata in the working version of the
+package. Once the package is intalled, these example raw csv files can be
+retrieved by specifying `filedir <- "system.file"`. If you would like to use
+these functions to process different raw csv files, update `filedir` with the
+relative path to the directory with these other csv files.
+
+```{r filenames, eval=TRUE, echo=TRUE}
+weather_file   <- "weather_hancock_hourly_2019_09_06.csv"
+SWIMS_file     <- "SWIMS_2019_09_05.csv"
+isotope_file   <- "isotope_samples_2019_09_06.csv"
+site_file      <- "csls_site_dictionary.csv"
+stage_vol_file <- "csls_stage_volume.csv"
+
+filedir        <- "system.file"
+```
+
+## Retrieve data
+The isoH2Obudget package has functions to load raw csv files and process them
+into data frames in the format required for isoH2Obudget functions. For details
+on how the raw csv files should be formatted in order to be processed correctly,
+see the help files (e.g., enter `?retrieve_csls_weather` in the console for help
+on the retrieve_csls_weather function).
+
+```{r data, eval=TRUE, echo=TRUE}
+weather         <- retrieve_csls_weather(weather_file, filedir)
+lst             <- retrieve_csls_lst(SWIMS_file, filedir)
+isotopes        <- retrieve_csls_isotopes(isotope_file, filedir)
+water_levels    <- retrieve_csls_water_levels()
+stage_vol       <- retrieve_csls_stage_volume(stage_vol_file, filedir)
+site_dictionary <- retrieve_csls_site_dictionary(site_file, filedir)
+```
+
+## Save Rda file
+Lastly, save the processed data frames to the data directory of your project.
+Note that the working directory of .Rmd "vignettes" files is diffrent from the
+project working directory.
+
+```{r save, echo=TRUE, eval=TRUE}
+# save(weather, file = "../data/weather.rda")
+# save(lst, file = "../data/lst.rda")
+# save(isotopes, file = "../data/isotopes.rda")
+# save(water_levels, file = "../data/water_levels.rda")
+# save(stage_vol, file = "../data/stage_vol.rda")
+# save(site_dictionary, file = "../data/site_dictionary.rda")
+use_data(isotopes, lst, site_dictionary, stage_vol, water_levels, weather,
+         overwrite = TRUE, compress = "xz")
+```
+
+## Session info
+The version of R and the versions of packages in use when this R Markdown file
+was created are listed here:
+
+```{r session_info, include=TRUE, echo=TRUE, results='markup'}
+devtools::session_info()
+```
