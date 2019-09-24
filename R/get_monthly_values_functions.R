@@ -174,7 +174,8 @@ get_monthly_isotopes <- function(isotopes,
   if (static_lake) {
     fall_d18O_lake <- monthly_isotopes %>%
                       filter(month(.data$date) %in% c(9,10,11)) %>%
-                      select(.data$d18O_lake)
+                      select(.data$d18O_lake) %>%
+                      unlist()
     mean_d18O_lake <- mean(fall_d18O_lake, na.rm = TRUE)
     if (is.na(mean_d18O_lake) == FALSE) {
       monthly_isotopes$d18O_lake <- mean_d18O_lake
@@ -212,7 +213,9 @@ get_monthly_d18O_evap <- function(monthly_weather,
     d18O_pcpn  <- monthly_isotopes$d18O_pcpn[i]
     d18O_lake  <- monthly_isotopes$d18O_lake[i]
 
-    if (any(is.na(c(atmp, ltmp, RH, d18O_pcpn, d18O_lake))) == FALSE) {
+    if (any(is.na(c(atmp, ltmp, RH, d18O_pcpn, d18O_lake))) == FALSE &
+        length(atmp) > 0 & length(ltmp) > 0 & length(RH) > 0 &
+        length(d18O_pcpn) > 0 & length(d18O_lake) > 0 ) {
       monthly_isotopes$d18O_evap[i] <- d18O_evap(atmp, ltmp, RH, d18O_pcpn, d18O_lake)
     } else {
       monthly_isotopes$d18O_evap[i] <- NA

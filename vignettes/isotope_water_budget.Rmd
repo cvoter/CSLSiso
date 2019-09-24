@@ -12,7 +12,6 @@ vignette: >
 ```{r setup, echo=FALSE, warning=FALSE, message=FALSE}
 library(devtools)
 library(isoH2Obudget)
-library(qpdf) #for pdf size reduction
 library(reshape2) #for melting
 library(ggplot2) #for plotting
 library(extrafont) #for fonts
@@ -22,27 +21,36 @@ library(dplyr) #for %>% pipes
 ## Issues
 Current issues with ths approach include:
 
-* **Hancock weather station** has NAs for temperature, relative humidity, and
-reference potential evapotranspiration for several days in May - July 2019.
-    - Currently, I use hourly data to minimize the impact of this. 
-    - What are the modelers doing?
-* **Stable isotope measurements** don't align with one another.
-    - When can lake measurmente be used for other months?
-    - Can precipitaiton be used across multiple months (seems like no)?
-    - Perhaps we should just grab the closest precip & lake measurment for each
-    well sample?
-* **The total fractionation factor**, $\epsilon$, is confusing to me based on
-Justin P.'s spreadsheet.
-    - Word document + Krabbenhoft paper use $\alpha$ in equation
-    - Excel spreadsheet inexplicably changes this to $\frac{1}{\alpha}$
-    - One possible explanation is that $\alpha*$ means $\frac{1}{\alpha}$, but
-    if so, that is not explained and is inconsistently applied to equations
-    - Makes a big difference in outcome.
-* **Changes in lake volume** are not necessarily 0 throughout the month. Neither are
-surface inputs necessarily 0 (that would indicate absolutely no watershed).
-* **Inflowing vs. outflowing** groundwater wells change over time. Currently,
-type of well is hardwired in to the "sites_type" csv file. Should update this
-after exploring well level records & isotope composition over time.
+* **Stable isotope measurements** See new vignette for sensitivity analysis.
+Availability of precip isotope measurements is the limiting factor for monthly
+water balance calculations.
+* **Lake stage-volume relationship** is not quite right. 
+    * Volume represents losing lake water from the outside in, rather than top
+    down.
+    * Due to irregularity of lake bed, estimating volume as surface area of
+    contor * 0.5ft contour interval is super off.
+    * For water budget purposes, it's probably better to just use lake levels
+    (m) anyway. But will need to go back to ArcGIS if need stage-vol
+    relationship for other purposes.
+
+## Updates
+Updates since last dicussion include:
+
+* **Hancock weather station** NAs are now linearly interpolated between values.
+This works fine for current timeseries gaps, but should probably add in warnings
+if gaps are super long (>> 8 hrs).
+* **The total fractionation factor**, $\epsilon$, is fixed. $\alpha*$ means
+$\frac{1}{\alpha}$ everywhere now.
+* **Groundwater isotope measurements**. Code now dynamically adjusts upgradient
+vs. downgradient classification for each measurement (default behavior), but can
+also switch to use static classifications.
+* **Precipitation isotope measurements**. Currently backfill up to one month of
+NAs with next month's value. This works for current measurements, but may not
+always be appropriate. Should make this a more robust process at somepoint.
+* **Lake isotope measurements**. Code uses measured isotopes by default, but can
+also switch to use static classifictaion (mean of fall measurements, Sept-Nov).
+* **Changes in lake volume** are incorporated into water balance. Currently does
+this just with lake levels, see issue above.
 
 ## Overview
 This water budget model uses stable isotope measurements of precipitation,
@@ -141,7 +149,6 @@ calculated based on Ozaydin et al. (2001):
 \delta^{18}O_{A} = \frac{\delta^{18}O_{P}}{\alpha} - (1 - \frac{1}{\alpha})
 \end{align}
 
-
 ## Input data
 Input data for the Central Sands Lake Study sites (Pleasant Lake, Long Lake, and
 Plainfield Lake) are located in the "data" folder of this project, with raw csv
@@ -155,65 +162,60 @@ Required inputs include:
 For the Central Sands Lake Study (CSLS), hourly air temperature, relative
 humidity, precipitation, and reference potential evapotranspiration are
 downloaded from the [Hancock Agricultural Research Station
-website](https://enviroweather.msu.edu/weather.php?stn=hck) (station id: hck).
-This weather station is located in Hancock, WI (location: 44.1188, -89.533,
-elevation: 241m), approximately 8 miles from Plainfield Lake, 8.5 miles from
-Long Lake, and 14.5 miles from Pleasant Lake.
+website](https://enviroweather.msu.edu/weather.php?stn=hck). 
 
-On the Hancock Station website, click on "Weather Station at Hancock" or "More
-weather for this station" to be routed to a page with options for "Custom
-Reports (Data-on-Demand)". Select Data Type "Daily Data" or "Hourly Data", then
-check (Max/Min) Air Temperature [1.5m], Precipitation, (Max/Min) Relative
-Humidity [1.5m], and Reference Potential Evapotranspiration. Select starting
-date and end date, display units (metric), and output (csv), then "Generate
-Report". Note that the earliest starting date allowed (as of January and
-September 2019) is February 15, 2018.
+See also: "?retrieve_csls_weather" and "?weather"
 
 ```{r weather, eval=TRUE, echo=FALSE}
-load("../data/weather.Rda")
+data(weather)
 head(weather)
 ```
 
 ### 2. Lake Temperature Data
 Lake surface temperatures (at 0 meters) are extracted from every-other-week
-measurements of vertical lake temperature profiles taken at the CSLS Lakes.
+measurements of vertical lake temperature profiles taken at the CSLS Lakes. 
 
-Field data is stored in [WDNR
-SWIMS](https://dnr.wi.gov/topic/surfacewater/swims/) and is associated with the
-project "Central Sands Lake Study" or "csls".
+See also: "?retrieve_csls_lst" and "?lst"
 
 ```{r lst, eval=TRUE, echo=FALSE}
-load("../data/lst.Rda")
+data(lst)
 head(lst)
 ```
 
 ### 3. Stable Isotope Measurements
 Measurements of $\delta^{18}O_{L}$ and $\delta^{18}O_{GW_{in}}$ are collected on
 site for each lake while $\delta^{18}O_{P}$ is measured using samples collected
-at the Hancock Research Station.
+at the Hancock Research Station. 
+
+See also: "?retrieve_csls_isotopes" and "?isotopes"
 
 ```{r isotopes, eval=TRUE, echo=FALSE}
-load("../data/isotopes.Rda")
+data(isotopes)
 head(isotopes)
 ```
 
 ### 4. Lake and Groundwater Levels
 Daily lake levels and groundwater levels are retrieved from the DNR Water Use
-section ArcGIS feature services. The data of interest for CSLS is DG_HiCap >
-DG_CSLS_QUANT_MON_WTM_EXT > Layer 2 (W13101.WU_CSLS_QUANT_DATA).
+section ArcGIS feature services. 
+
+See also: "?retrieve_csls_water_levels" and "?water_levels"
 
 ```{r water_levels, eval=TRUE, echo=FALSE}
-load("../data/water_levels.Rda")
+data(water_levels)
 head(water_levels)
 ```
 
 ### 5. Bathymetry Information
 In order to assess potential changes in lake volume, bathymetry information is
 also needed. This includes the relationships between elevation, lake volume, and
-lake surface area.
+lake surface area. **Note:** The stage-volume relationship in the current csv
+export from ArcGIS does not look right, so this is not currently being used
+(only lake levels are used to get change in lake volume as a depth).
+
+See also: "?retrieve_csls_stage_vol" and "?stage_vol"
 
 ```{r stage_vol, eval=TRUE, echo=FALSE}
-load("../data/stage_vol.Rda")
+data(stage_vol)
 head(stage_vol)
 ```
 
@@ -221,16 +223,19 @@ head(stage_vol)
 Lastly, we also need a site dictionary which maps various ID codes for each
 measurement site to one another.
 
+See also: "?retrieve_csls_site_dictionary" and "the dataset "?site_dictionary"
+
 ```{r site_dict, eval=TRUE, echo=FALSE}
-load("../data/site_dictionary.Rda")
+data(site_dictionary)
 head(site_dictionary)
 ```
 
 ## Analysis
 ### 1. Subset for lake of interest
 First, subset the input data sets for records related to the lake of interest.
+In this example, we're using Pleasant Lake.
 
-```{r subset, eval=TRUE, echo=FALSE}
+```{r subset, eval=TRUE, echo=TRUE}
 # Subset for lake
 lake_subset <- subset_lake(lake = "Pleasant",
                            site_dictionary,
@@ -247,7 +252,7 @@ gw_levels       <- lake_subset$gw_levels
 stage_vol       <- lake_subset$stage_vol
 site_dictionary <- lake_subset$site_dictionary
 
-# Identify monthly timeseries wiht complete coverage of input data
+# Identify monthly timeseries with complete coverage of input data
 month_info      <- get_overlap_months(weather, 
                                       lst, 
                                       isotopes, 
@@ -256,23 +261,24 @@ month_info      <- get_overlap_months(weather,
 ```
 
 ### 2. Analyze at a monthly timestep
-Next, summarize records at a monthly time step. Here, we have monthly weather...
+Next, summarize records at a monthly time step. Here, we have **monthly weather**...
 
-```{r monthly_weather, eval=TRUE, echo=TRUE}
+```{r monthly_weather, eval=TRUE, echo=FALSE}
 monthly_weather   <- get_monthly_weather(weather)
 head(monthly_weather)
 ```
 
-...monthly lake surface temperature...
+...**monthly lake surface temperature**...
 
-```{r monthly_lst, eval=TRUE, echo=TRUE}
+```{r monthly_lst, eval=TRUE, echo=FALSE}
 monthly_lst       <- get_monthly_lst(lst)
 head(monthly_lst)
 ```
 
-...monthly isotope measurements (& calculations)...
+...**monthly isotope measurements**, including the calculated
+$\delta^{18}O_{E}$...
 
-```{r monthly_isotopes, eval=TRUE, echo=TRUE}
+```{r monthly_isotopes, eval=TRUE, echo=FALSE}
 monthly_isotopes  <- get_monthly_isotopes(isotopes, site_dictionary,
                                           static_wells = FALSE, lake_levels, 
                                           gw_levels, Xday = 7, 
@@ -283,9 +289,9 @@ monthly_isotopes  <- get_monthly_d18O_evap(monthly_weather,
 monthly_isotopes
 ```
 
-...monthly change in lake volume (mm)...
+...**monthly change in lake volume** as a depth (mm)...
 
-```{r monthly_dV, eval=TRUE, echo=TRUE}
+```{r monthly_dV, eval=TRUE, echo=FALSE}
 monthly_dV        <- get_monthly_dV(lake_levels,
                                     stage_vol, 
                                     month_info, 
@@ -294,9 +300,9 @@ monthly_dV        <- get_monthly_dV(lake_levels,
 head(monthly_dV)
 ```
 
-...and the monthly water balance.
+...and the **monthly water balance**, with all fluxes as a depth (mm).
 
-```{r monthly_h2o_bal, eval=TRUE, echo=TRUE}
+```{r monthly_h2o_bal, eval=TRUE, echo=FALSE}
 monthly_h2o_bal   <- get_monthly_h2o_bal(monthly_weather,
                                          monthly_isotopes,
                                          monthly_dV,
@@ -304,9 +310,28 @@ monthly_h2o_bal   <- get_monthly_h2o_bal(monthly_weather,
 monthly_h2o_bal
 ```
 
-### 3. Visualize water balance
+## Visualization
 
-```{r plot, eval=TRUE, echo=FALSE, fig.width = 5, fig.height = 3}
+This gets us to the point where we can visualize the water balance, at least for
+the months with complete input data. 
+
+**Groundwater flow-through** is much higher at all lakes during the spring than
+in the fall, presumably due to spring melt. Spring flow-through is highest at
+Plainfield Lake, which also has the highest change in lake volume. It is lowest
+at Long Lake. Does Long Lake have lower hydraulic conductivities?
+
+**Evapotranspiration** is higher in spring thatn in the fall as well. This is
+possible, but I'd like to look into the reference potential ET calculated by
+Hancock to make sure it's appropriate for a water body. My understanding of
+reference ET is that it usually most closely represents a tall grass, and
+conversions are needed to make it appropriate for other landscapes.
+
+Side note: Ideally, I'd like to get the change in lake volume to plot on top of
+ET and GWout, but that's a non-trivial change that's a lower priority right now.
+
+### 1. Pleasant Lake
+
+```{r plot, eval=TRUE, echo=FALSE, fig.width = 7, fig.height = 4}
 
 melted_bal <- melt(subset(monthly_h2o_bal, is.na(GWout) == FALSE), id.vars = "date")
 for (i in 1:nrow(melted_bal)) {
@@ -321,7 +346,8 @@ for (i in 1:nrow(melted_bal)) {
 plot_balance <- ggplot(data = melted_bal) +
                 geom_col(aes(x = in_or_out, y = value, fill = variable)) +
                 facet_wrap(~date) +
-                scale_y_continuous(expand = c(0,0)) +
+                scale_y_continuous(expand = c(0,0),
+                                   limits = c(0,800)) +
                 scale_fill_brewer(name = "Flux",
                                   palette = "Paired",
                                   breaks = c("P","E","GWin","GWout","dV"),
@@ -330,7 +356,145 @@ plot_balance <- ggplot(data = melted_bal) +
                                              "Groundwater Inflow",
                                              "Groundwater Outflow",
                                              "Change in Lake Volume")) +
-                labs(x = "", y = "Flux (mm)") +
+                labs(x = "", y = "Flux (mm)", title = "Pleasant Lake") +
+                theme_bw() + 
+                theme(text = element_text(family = "Segoe UI Semilight"))
+  
+plot_balance
+
+```
+
+### 2. Long Lake
+
+
+```{r long, eval=TRUE, echo=FALSE, fig.width = 7, fig.height = 5}
+# Data
+data(weather)
+data(lst)
+data(isotopes)
+data(water_levels)
+data(site_dictionary)
+data(stage_vol)
+
+# Subset for lake
+lake_subset <- subset_lake(lake = "Long", site_dictionary, lst, isotopes, water_levels, stage_vol)
+
+# Reassign variable names
+lst             <- lake_subset$lst
+isotopes        <- lake_subset$isotopes
+lake_levels     <- lake_subset$lake_levels
+gw_levels       <- lake_subset$gw_levels
+stage_vol       <- lake_subset$stage_vol
+site_dictionary <- lake_subset$site_dictionary
+
+# Identify monthly timeseries with complete coverage of input data
+month_info      <- get_overlap_months(weather, lst, isotopes, lake_levels, gw_levels)
+
+# Monthly summary
+monthly_weather   <- get_monthly_weather(weather)
+monthly_lst       <- get_monthly_lst(lst)
+monthly_dV        <- get_monthly_dV(lake_levels, stage_vol, month_info, as_depth = TRUE, tmp_depth_fix = TRUE)
+monthly_isotopes  <- get_monthly_isotopes(isotopes, site_dictionary,
+                                          static_wells = FALSE, lake_levels, 
+                                          gw_levels, Xday = 7, 
+                                          static_lake = FALSE)
+monthly_isotopes  <- get_monthly_d18O_evap(monthly_weather, monthly_lst, monthly_isotopes)
+monthly_h2o_bal   <- get_monthly_h2o_bal(monthly_weather, monthly_isotopes, monthly_dV, month_info)
+
+# Plot
+melted_bal <- melt(subset(monthly_h2o_bal, is.na(GWout) == FALSE), id.vars = "date")
+
+for (i in 1:nrow(melted_bal)) {
+  if (melted_bal$variable[i] == "P" |
+  melted_bal$variable[i] == "GWin") {
+    melted_bal$in_or_out[i] <- "In"
+  } else {
+    melted_bal$in_or_out[i] <- "Out"
+  }
+}
+
+plot_balance <- ggplot(data = melted_bal) +
+                geom_col(aes(x = in_or_out, y = value, fill = variable)) +
+                facet_wrap(~date) +
+                scale_y_continuous(expand = c(0,0),
+                                   limits = c(0,800)) +
+                scale_fill_brewer(name = "Flux",
+                                  palette = "Paired",
+                                  breaks = c("P","E","GWin","GWout","dV"),
+                                  labels = c("Precipitation",
+                                             "Evapotranspiration",
+                                             "Groundwater Inflow",
+                                             "Groundwater Outflow",
+                                             "Change in Lake Volume")) +
+                labs(x = "", y = "Flux (mm)", title = "Long Lake") +
+                theme_bw() + 
+                theme(text = element_text(family = "Segoe UI Semilight"))
+  
+plot_balance
+```
+
+### 3. Plainfield Lake
+
+```{r pfl, eval=TRUE, echo=FALSE, fig.width = 7, fig.height = 5}
+# Data
+data(weather)
+data(lst)
+data(isotopes)
+data(water_levels)
+data(site_dictionary)
+data(stage_vol)
+
+# Subset for lake
+lake_subset <- subset_lake(lake = "Plainfield", site_dictionary, lst, isotopes, water_levels, stage_vol)
+
+# Reassign variable names
+lst             <- lake_subset$lst
+isotopes        <- lake_subset$isotopes
+lake_levels     <- lake_subset$lake_levels
+gw_levels       <- lake_subset$gw_levels
+stage_vol       <- lake_subset$stage_vol
+site_dictionary <- lake_subset$site_dictionary
+
+# Identify monthly timeseries with complete coverage of input data
+month_info      <- get_overlap_months(weather, lst, isotopes, lake_levels, gw_levels)
+
+# Monthly summary
+monthly_weather   <- get_monthly_weather(weather)
+monthly_lst       <- get_monthly_lst(lst)
+monthly_dV        <- get_monthly_dV(lake_levels, stage_vol, month_info, as_depth = TRUE, tmp_depth_fix = TRUE)
+monthly_isotopes  <- get_monthly_isotopes(isotopes, site_dictionary,
+                                          static_wells = FALSE, lake_levels, 
+                                          gw_levels, Xday = 7, 
+                                          static_lake = FALSE)
+monthly_isotopes  <- get_monthly_d18O_evap(monthly_weather, monthly_lst, monthly_isotopes)
+monthly_h2o_bal   <- get_monthly_h2o_bal(monthly_weather, monthly_isotopes, monthly_dV, month_info)
+
+# Plot
+melted_bal <- melt(subset(monthly_h2o_bal, is.na(GWout) == FALSE), id.vars = "date")
+
+for (i in 1:nrow(melted_bal)) {
+  if (melted_bal$variable[i] == "P" |
+  melted_bal$variable[i] == "GWin") {
+    melted_bal$in_or_out[i] <- "In"
+  } else {
+    melted_bal$in_or_out[i] <- "Out"
+  }
+}
+
+plot_balance <- ggplot(data = melted_bal) +
+                geom_col(aes(x = in_or_out, y = value, fill = variable)) +
+                facet_wrap(~date) +
+                scale_y_continuous(expand = c(0,0),
+                                   limits = c(0,800)) +
+                scale_fill_brewer(name = "Flux",
+                                  palette = "Paired",
+                                  breaks = c("P","E","GWin","GWout","dV"),
+                                  labels = c("Precipitation",
+                                             "Evapotranspiration",
+                                             "Groundwater Inflow",
+                                             "Groundwater Outflow",
+                                             "Change in Lake Volume")) +
+                labs(x = "", y = "Flux (mm)", title = "Plainfield Lake") +
                 theme_bw() + 
                 theme(text = element_text(family = "Segoe UI Semilight"))
   

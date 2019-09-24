@@ -54,15 +54,10 @@ site_dictionary <- retrieve_csls_site_dictionary(site_file, filedir)
 ## Save Rda file
 Lastly, save the processed data frames to the data directory of your project.
 Note that the working directory of .Rmd "vignettes" files is diffrent from the
-project working directory.
+project working directory.The devtools command "use_data" ensures that data are
+saved in the appropriate location and format for packages.
 
 ```{r save, echo=TRUE, eval=TRUE}
-# save(weather, file = "../data/weather.rda")
-# save(lst, file = "../data/lst.rda")
-# save(isotopes, file = "../data/isotopes.rda")
-# save(water_levels, file = "../data/water_levels.rda")
-# save(stage_vol, file = "../data/stage_vol.rda")
-# save(site_dictionary, file = "../data/site_dictionary.rda")
 use_data(isotopes, lst, site_dictionary, stage_vol, water_levels, weather,
          overwrite = TRUE, compress = "xz")
 ```
