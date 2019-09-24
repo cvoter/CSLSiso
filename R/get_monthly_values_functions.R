@@ -116,11 +116,11 @@ get_monthly_lst <- function(lst){
 #' }
 #'
 #' @importFrom magrittr %>%
-#' @importFrom dplyr filter select group_by summarise
+#' @importFrom dplyr filter select group_by summarise ungroup
 #' @importFrom reshape2 dcast
 #' @importFrom rlang .data
 #' @import lubridate
-#' @importFrom stringr str_replace
+#' @importFrom stringr str_replace str_c
 #'
 #' @seealso \code{\link{retrieve_csls_isotopes}}, \code{\link{isotopes}},
 #'          \code{\link{retrieve_csls_water_levels}},
@@ -145,20 +145,45 @@ get_monthly_isotopes <- function(isotopes,
   }
 
   # Mean by month and site type
-  monthly_isotopes <- isotopes %>%
-                      group_by(date = floor_date(.data$date, unit = "month"),
-                               site_type = .data$site_type) %>%
-                      summarise(mean_d18O = mean(.data$d18O))
+  isomelt <- isotopes %>%
+             group_by(date = floor_date(.data$date, unit = "month"),
+                      site_type = .data$site_type) %>%
+             filter(is.na(.data$site_type) == FALSE &
+                      .data$site_type != "") %>%
+             summarise(mean_d18O = mean(.data$d18O),
+                       site_ids = str_c(unique(.data$site_id), collapse = ", "))
 
   # Reshape and rename columns
-  monthly_isotopes           <- dcast(monthly_isotopes,
-                                      date ~ site_type,
-                                      value.var = "mean_d18O")
+  monthly_isotopes           <- dcast(isomelt,
+                                        date ~ site_type,
+                                        value.var = "mean_d18O")
   colnames(monthly_isotopes) <- colnames(monthly_isotopes) %>%
                                 str_replace("downgradient","d18O_GWout") %>%
                                 str_replace("upgradient","d18O_GWin") %>%
                                 str_replace("precipitation","d18O_pcpn") %>%
                                 str_replace("lake","d18O_lake")
+
+  monthly_isotopes$d18O_evap <- NA
+  monthly_isotopes$GWin_sites <- ""
+  monthly_isotopes$GWout_sites <- ""
+  for (i in 1:nrow(monthly_isotopes)) {
+    if (is.na(monthly_isotopes$d18O_GWin[i]) == FALSE) {
+      monthly_isotopes$GWin_sites[i] <- isomelt %>%
+                                        filter(.data$date == monthly_isotopes$date[i],
+                                               .data$site_type == "upgradient") %>%
+                                        ungroup() %>%
+                                        select(.data$site_ids)
+    }
+    if (is.null(monthly_isotopes$d18O_GWout[i]) == FALSE) {
+      if (is.na(monthly_isotopes$d18O_GWout[i]) == FALSE) {
+        monthly_isotopes$GWout_sites[i] <- isomelt %>%
+                                           filter(.data$date == monthly_isotopes$date[i],
+                                                  .data$site_type == "downgradient") %>%
+                                           ungroup() %>%
+                                           select(.data$site_ids)
+      }
+    }
+  }
 
   # Precipitation site type: if NA, use next month's value
   for (i in 1:nrow(monthly_isotopes)) {
@@ -182,7 +207,7 @@ get_monthly_isotopes <- function(isotopes,
     }
   }
 
-  return(monthly_isotopes)
+  return(as.data.frame(monthly_isotopes))
 }
 
 # ------------------------------------------------------------------------------

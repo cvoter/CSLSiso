@@ -18,6 +18,83 @@ library(extrafont) #for fonts
 library(dplyr) #for %>% pipes
 ```
 
+```{r fcns, eval=TRUE, echo=FALSE, fig.width = 7, fig.height = 3}
+lake_h2o_bal <- function(lake, static_wells = FALSE, static_lake = FALSE) {
+  # Data
+  data(weather)
+  data(lst)
+  data(isotopes)
+  data(water_levels)
+  data(site_dictionary)
+  data(stage_vol)
+  
+  
+  # Subset for lake
+  lake_subset <- subset_lake(lake, site_dictionary, lst, isotopes, water_levels, stage_vol)
+  
+  # Reassign variable names
+  lst             <- lake_subset$lst
+  isotopes        <- lake_subset$isotopes
+  lake_levels     <- lake_subset$lake_levels
+  gw_levels       <- lake_subset$gw_levels
+  stage_vol       <- lake_subset$stage_vol
+  site_dictionary <- lake_subset$site_dictionary
+  
+  # Identify monthly timeseries with complete coverage of input data
+  month_info      <- get_overlap_months(weather, lst, isotopes, lake_levels, gw_levels)
+  
+  # Monthly summary
+  monthly_weather   <- get_monthly_weather(weather)
+  monthly_lst       <- get_monthly_lst(lst)
+  monthly_dV        <- get_monthly_dV(lake_levels, stage_vol, month_info, as_depth = TRUE, tmp_depth_fix = TRUE)
+  
+  # Sensitivity stuff
+  monthly_isotopes  <- get_monthly_isotopes(isotopes, site_dictionary,
+                                            static_wells, lake_levels, 
+                                            gw_levels, Xday = 7, static_lake)
+  monthly_isotopes  <- get_monthly_d18O_evap(monthly_weather, monthly_lst, monthly_isotopes)
+  monthly_h2o_bal   <- get_monthly_h2o_bal(monthly_weather, monthly_isotopes, monthly_dV, month_info)
+  lake_h2o_bal      <- subset(monthly_h2o_bal, is.na(GWout) == FALSE)
+  
+  return(lake_h2o_bal)
+}
+
+lake_sensitivity <- function(lake){
+  h2o_bal_default <- lake_h2o_bal(lake, static_wells = FALSE, static_lake = FALSE)
+  h2o_bal_gw      <- lake_h2o_bal(lake, static_wells = TRUE, static_lake = FALSE)
+  h2o_bal_lake    <- lake_h2o_bal(lake, static_wells = FALSE, static_lake = TRUE)
+  h2o_bal_both    <- lake_h2o_bal(lake, static_wells = TRUE, static_lake = TRUE)
+  
+  # Combine ----------------------------------------------------------------------
+  h2o_bal_default$static <- "Dynamic"
+  h2o_bal_gw$static      <- "S-GW"
+  h2o_bal_lake$static    <- "S-Lake"
+  h2o_bal_both$static    <- "Static"
+  
+  h2o_bal_combo <- rbind(h2o_bal_default, h2o_bal_gw, h2o_bal_lake, h2o_bal_both)
+  h2o_bal_combo <- select(h2o_bal_combo, c(date, static, GWin))
+  h2o_bal_combo <- h2o_bal_combo[order(h2o_bal_combo$date),]
+  h2o_bal_combo
+  
+  return(h2o_bal_combo)
+}
+
+plot_sensitivity <- function(lake, h2o_bal_combo) {
+  h2o_bal_melt     <- melt(h2o_bal_combo, id.vars = c("date", "static"))
+  plot_sensitivity <- ggplot(data = h2o_bal_melt) +
+    geom_col(aes(x = static, y = value, fill = static)) +
+    facet_grid(~date, scales = "fixed") +
+    scale_y_continuous(expand = c(0,0)) +
+    theme_bw() + 
+    labs(x = "", 
+         y = "GW Inflow (mm)", 
+         title = sprintf("%s Lake", lake)) +
+    guides(fill = FALSE) +
+    theme(text = element_text(family = "Segoe UI Semilight"))
+  return(plot_sensitivity)
+}
+```
+
 ## Sensitivity to Isotope Measurements
 
 To explore how sensitive this water balance is to the groundwater and lake
@@ -50,92 +127,9 @@ In the spring, static well classification reduces GWin by 0%. Static lake
 classification reduces GWin by 38%.
 
 ```{r psnt, eval=TRUE, echo=FALSE, fig.width = 7, fig.height = 3}
-# Data
-data(weather)
-data(lst)
-data(isotopes)
-data(water_levels)
-data(site_dictionary)
-data(stage_vol)
-
-# Subset for lake
-lake_subset <- subset_lake(lake = "Pleasant", site_dictionary, lst, isotopes, water_levels, stage_vol)
-
-# Reassign variable names
-lst             <- lake_subset$lst
-isotopes        <- lake_subset$isotopes
-lake_levels     <- lake_subset$lake_levels
-gw_levels       <- lake_subset$gw_levels
-stage_vol       <- lake_subset$stage_vol
-site_dictionary <- lake_subset$site_dictionary
-
-# Identify monthly timeseries with complete coverage of input data
-month_info      <- get_overlap_months(weather, lst, isotopes, lake_levels, gw_levels)
-
-# Monthly summary
-monthly_weather   <- get_monthly_weather(weather)
-monthly_lst       <- get_monthly_lst(lst)
-monthly_dV        <- get_monthly_dV(lake_levels, stage_vol, month_info, as_depth = TRUE, tmp_depth_fix = TRUE)
-
-# Sensitivity stuff
-monthly_isotopes  <- get_monthly_isotopes(isotopes, site_dictionary,
-                                          static_wells = FALSE, lake_levels, 
-                                          gw_levels, Xday = 7, 
-                                          static_lake = FALSE)
-monthly_isotopes  <- get_monthly_d18O_evap(monthly_weather, monthly_lst, monthly_isotopes)
-monthly_h2o_bal   <- get_monthly_h2o_bal(monthly_weather, monthly_isotopes, monthly_dV, month_info)
-h2o_bal_default   <- subset(monthly_h2o_bal, is.na(GWout) == FALSE)
-
-# Static GW Wells --------------------------------------------------------------
-monthly_isotopes  <- get_monthly_isotopes(isotopes, site_dictionary,
-                                          static_wells = TRUE, lake_levels, 
-                                          gw_levels, Xday = 7, 
-                                          static_lake = FALSE)
-monthly_isotopes  <- get_monthly_d18O_evap(monthly_weather, monthly_lst, monthly_isotopes)
-monthly_h2o_bal   <- get_monthly_h2o_bal(monthly_weather, monthly_isotopes, monthly_dV, month_info)
-h2o_bal_gw        <- subset(monthly_h2o_bal, is.na(GWout) == FALSE)
-
-# Static Lake ------------------------------------------------------------------
-monthly_isotopes  <- get_monthly_isotopes(isotopes, site_dictionary,
-                                          static_wells = FALSE, lake_levels, 
-                                          gw_levels, Xday = 7, 
-                                          static_lake = TRUE)
-monthly_isotopes  <- get_monthly_d18O_evap(monthly_weather, monthly_lst, monthly_isotopes)
-monthly_h2o_bal   <- get_monthly_h2o_bal(monthly_weather, monthly_isotopes, monthly_dV, month_info)
-h2o_bal_lake      <- subset(monthly_h2o_bal, is.na(GWout) == FALSE)
-
-# Both Static ------------------------------------------------------------------
-monthly_isotopes  <- get_monthly_isotopes(isotopes, site_dictionary,
-                                          static_wells = TRUE, lake_levels, 
-                                          gw_levels, Xday = 7, 
-                                          static_lake = TRUE)
-monthly_isotopes  <- get_monthly_d18O_evap(monthly_weather, monthly_lst, monthly_isotopes)
-monthly_h2o_bal   <- get_monthly_h2o_bal(monthly_weather, monthly_isotopes, monthly_dV, month_info)
-h2o_bal_both      <- subset(monthly_h2o_bal, is.na(GWout) == FALSE)
-
-# Combine ----------------------------------------------------------------------
-h2o_bal_default$static <- "Dynamic"
-h2o_bal_gw$static      <- "S-GW"
-h2o_bal_lake$static    <- "S-Lake"
-h2o_bal_both$static    <- "Static"
-
-h2o_bal_combo <- rbind(h2o_bal_default, h2o_bal_gw, h2o_bal_lake, h2o_bal_both)
-h2o_bal_combo <- select(h2o_bal_combo, c(date, static, GWin))
-h2o_bal_combo <- h2o_bal_combo[order(h2o_bal_combo$date),]
+h2o_bal_combo <- lake_sensitivity("Pleasant")
 h2o_bal_combo
-
-# Plot -------------------------------------------------------------------------
-h2o_bal_melt     <- melt(h2o_bal_combo, id.vars = c("date", "static"))
-plot_sensitivity <- ggplot(data = h2o_bal_melt) +
-                    geom_col(aes(x = static, y = value, fill = static)) +
-                    facet_grid(~date, scales = "fixed") +
-                    scale_y_continuous(expand = c(0,0)) +
-                    theme_bw() + 
-                    labs(x = "", y = "GW Inflow (mm)", title = "Plainfield Lake") +
-                    guides(fill = FALSE) +
-                    theme(text = element_text(family = "Segoe UI Semilight"))
-plot_sensitivity
-
+plot_sensitivity("Pleasant", h2o_bal_combo)
 ```
 
 ### Long Lake 
@@ -145,92 +139,7 @@ In the spring, static well classification reduces GWin by 14.5%. Static lake
 classification reduces GWin by 53%.
 
 ```{r long, eval=TRUE, echo=FALSE, fig.width = 7, fig.height = 3}
-# Data
-data(weather)
-data(lst)
-data(isotopes)
-data(water_levels)
-data(site_dictionary)
-data(stage_vol)
-
-# Subset for lake
-lake_subset <- subset_lake(lake = "Long", site_dictionary, lst, isotopes, water_levels, stage_vol)
-
-# Reassign variable names
-lst             <- lake_subset$lst
-isotopes        <- lake_subset$isotopes
-lake_levels     <- lake_subset$lake_levels
-gw_levels       <- lake_subset$gw_levels
-stage_vol       <- lake_subset$stage_vol
-site_dictionary <- lake_subset$site_dictionary
-
-# Identify monthly timeseries with complete coverage of input data
-month_info      <- get_overlap_months(weather, lst, isotopes, lake_levels, gw_levels)
-
-# Monthly summary
-monthly_weather   <- get_monthly_weather(weather)
-monthly_lst       <- get_monthly_lst(lst)
-monthly_dV        <- get_monthly_dV(lake_levels, stage_vol, month_info, as_depth = TRUE, tmp_depth_fix = TRUE)
-
-# Sensitivity stuff
-monthly_isotopes  <- get_monthly_isotopes(isotopes, site_dictionary,
-                                          static_wells = FALSE, lake_levels, 
-                                          gw_levels, Xday = 7, 
-                                          static_lake = FALSE)
-monthly_isotopes  <- get_monthly_d18O_evap(monthly_weather, monthly_lst, monthly_isotopes)
-monthly_h2o_bal   <- get_monthly_h2o_bal(monthly_weather, monthly_isotopes, monthly_dV, month_info)
-h2o_bal_default   <- subset(monthly_h2o_bal, is.na(GWout) == FALSE)
-
-# Static GW Wells --------------------------------------------------------------
-monthly_isotopes  <- get_monthly_isotopes(isotopes, site_dictionary,
-                                          static_wells = TRUE, lake_levels, 
-                                          gw_levels, Xday = 7, 
-                                          static_lake = FALSE)
-monthly_isotopes  <- get_monthly_d18O_evap(monthly_weather, monthly_lst, monthly_isotopes)
-monthly_h2o_bal   <- get_monthly_h2o_bal(monthly_weather, monthly_isotopes, monthly_dV, month_info)
-h2o_bal_gw        <- subset(monthly_h2o_bal, is.na(GWout) == FALSE)
-
-# Static Lake ------------------------------------------------------------------
-monthly_isotopes  <- get_monthly_isotopes(isotopes, site_dictionary,
-                                          static_wells = FALSE, lake_levels, 
-                                          gw_levels, Xday = 7, 
-                                          static_lake = TRUE)
-monthly_isotopes  <- get_monthly_d18O_evap(monthly_weather, monthly_lst, monthly_isotopes)
-monthly_h2o_bal   <- get_monthly_h2o_bal(monthly_weather, monthly_isotopes, monthly_dV, month_info)
-h2o_bal_lake      <- subset(monthly_h2o_bal, is.na(GWout) == FALSE)
-
-# Both Static ------------------------------------------------------------------
-monthly_isotopes  <- get_monthly_isotopes(isotopes, site_dictionary,
-                                          static_wells = TRUE, lake_levels, 
-                                          gw_levels, Xday = 7, 
-                                          static_lake = TRUE)
-monthly_isotopes  <- get_monthly_d18O_evap(monthly_weather, monthly_lst, monthly_isotopes)
-monthly_h2o_bal   <- get_monthly_h2o_bal(monthly_weather, monthly_isotopes, monthly_dV, month_info)
-h2o_bal_both      <- subset(monthly_h2o_bal, is.na(GWout) == FALSE)
-
-# Combine ----------------------------------------------------------------------
-h2o_bal_default$static <- "Dynamic"
-h2o_bal_gw$static      <- "S-GW"
-h2o_bal_lake$static    <- "S-Lake"
-h2o_bal_both$static    <- "Static"
-
-h2o_bal_combo <- rbind(h2o_bal_default, h2o_bal_gw, h2o_bal_lake, h2o_bal_both)
-h2o_bal_combo <- select(h2o_bal_combo, c(date, static, GWin))
-h2o_bal_combo <- h2o_bal_combo[order(h2o_bal_combo$date),]
-h2o_bal_combo
-
-# Plot -------------------------------------------------------------------------
-h2o_bal_melt     <- melt(h2o_bal_combo, id.vars = c("date", "static"))
-plot_sensitivity <- ggplot(data = h2o_bal_melt) +
-                    geom_col(aes(x = static, y = value, fill = static)) +
-                    facet_grid(~date, scales = "fixed") +
-                    scale_y_continuous(expand = c(0,0)) +
-                    theme_bw() + 
-                    labs(x = "", y = "GW Inflow (mm)", title = "Long Lake") +
-                    guides(fill = FALSE) +
-                    theme(text = element_text(family = "Segoe UI Semilight"))
-plot_sensitivity
-
+lake_sensitivity("Long")
 ```
 
 ### Plainfield Lake
@@ -240,90 +149,5 @@ In the spring, static well classification reduces GWin by 10%. Static lake
 classification reduces GWin by a huge amount - 61%.
 
 ```{r pfl, eval=TRUE, echo=FALSE, fig.width = 7, fig.height = 3}
-# Data
-data(weather)
-data(lst)
-data(isotopes)
-data(water_levels)
-data(site_dictionary)
-data(stage_vol)
-
-# Subset for lake
-lake_subset <- subset_lake(lake = "Plainfield", site_dictionary, lst, isotopes, water_levels, stage_vol)
-
-# Reassign variable names
-lst             <- lake_subset$lst
-isotopes        <- lake_subset$isotopes
-lake_levels     <- lake_subset$lake_levels
-gw_levels       <- lake_subset$gw_levels
-stage_vol       <- lake_subset$stage_vol
-site_dictionary <- lake_subset$site_dictionary
-
-# Identify monthly timeseries with complete coverage of input data
-month_info      <- get_overlap_months(weather, lst, isotopes, lake_levels, gw_levels)
-
-# Monthly summary
-monthly_weather   <- get_monthly_weather(weather)
-monthly_lst       <- get_monthly_lst(lst)
-monthly_dV        <- get_monthly_dV(lake_levels, stage_vol, month_info, as_depth = TRUE, tmp_depth_fix = TRUE)
-
-# Sensitivity stuff
-monthly_isotopes  <- get_monthly_isotopes(isotopes, site_dictionary,
-                                          static_wells = FALSE, lake_levels, 
-                                          gw_levels, Xday = 7, 
-                                          static_lake = FALSE)
-monthly_isotopes  <- get_monthly_d18O_evap(monthly_weather, monthly_lst, monthly_isotopes)
-monthly_h2o_bal   <- get_monthly_h2o_bal(monthly_weather, monthly_isotopes, monthly_dV, month_info)
-h2o_bal_default   <- subset(monthly_h2o_bal, is.na(GWout) == FALSE)
-
-# Static GW Wells --------------------------------------------------------------
-monthly_isotopes  <- get_monthly_isotopes(isotopes, site_dictionary,
-                                          static_wells = TRUE, lake_levels, 
-                                          gw_levels, Xday = 7, 
-                                          static_lake = FALSE)
-monthly_isotopes  <- get_monthly_d18O_evap(monthly_weather, monthly_lst, monthly_isotopes)
-monthly_h2o_bal   <- get_monthly_h2o_bal(monthly_weather, monthly_isotopes, monthly_dV, month_info)
-h2o_bal_gw        <- subset(monthly_h2o_bal, is.na(GWout) == FALSE)
-
-# Static Lake ------------------------------------------------------------------
-monthly_isotopes  <- get_monthly_isotopes(isotopes, site_dictionary,
-                                          static_wells = FALSE, lake_levels, 
-                                          gw_levels, Xday = 7, 
-                                          static_lake = TRUE)
-monthly_isotopes  <- get_monthly_d18O_evap(monthly_weather, monthly_lst, monthly_isotopes)
-monthly_h2o_bal   <- get_monthly_h2o_bal(monthly_weather, monthly_isotopes, monthly_dV, month_info)
-h2o_bal_lake      <- subset(monthly_h2o_bal, is.na(GWout) == FALSE)
-
-# Both Static ------------------------------------------------------------------
-monthly_isotopes  <- get_monthly_isotopes(isotopes, site_dictionary,
-                                          static_wells = TRUE, lake_levels, 
-                                          gw_levels, Xday = 7, 
-                                          static_lake = TRUE)
-monthly_isotopes  <- get_monthly_d18O_evap(monthly_weather, monthly_lst, monthly_isotopes)
-monthly_h2o_bal   <- get_monthly_h2o_bal(monthly_weather, monthly_isotopes, monthly_dV, month_info)
-h2o_bal_both      <- subset(monthly_h2o_bal, is.na(GWout) == FALSE)
-
-# Combine ----------------------------------------------------------------------
-h2o_bal_default$static <- "Dynamic"
-h2o_bal_gw$static      <- "S-GW"
-h2o_bal_lake$static    <- "S-Lake"
-h2o_bal_both$static    <- "Static"
-
-h2o_bal_combo <- rbind(h2o_bal_default, h2o_bal_gw, h2o_bal_lake, h2o_bal_both)
-h2o_bal_combo <- select(h2o_bal_combo, c(date, static, GWin))
-h2o_bal_combo <- h2o_bal_combo[order(h2o_bal_combo$date),]
-h2o_bal_combo
-
-# Plot -------------------------------------------------------------------------
-h2o_bal_melt     <- melt(h2o_bal_combo, id.vars = c("date", "static"))
-plot_sensitivity <- ggplot(data = h2o_bal_melt) +
-                    geom_col(aes(x = static, y = value, fill = static)) +
-                    facet_grid(~date, scales = "fixed") +
-                    scale_y_continuous(expand = c(0,0)) +
-                    theme_bw() + 
-                    labs(x = "", y = "GW Inflow (mm)", title = "Plainfield Lake") +
-                    guides(fill = FALSE) +
-                    theme(text = element_text(family = "Segoe UI Semilight"))
-plot_sensitivity
-
+lake_sensitivity("Plainfield")
 ```

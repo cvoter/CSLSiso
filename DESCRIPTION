@@ -1,7 +1,7 @@
 Package: isoH2Obudget
 Type: Package
 Title: Lake Water Budget Using Stable Isotopes
-Version: 0.2.0
+Version: 0.2.1
 Author: Carolyn Voter <cvoter@wisc.edu>
 Maintainer: Carolyn Voter <cvoter@wisc.edu>
 Description: Calculates the water budget for a lake.

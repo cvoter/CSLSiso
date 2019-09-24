@@ -33,12 +33,20 @@ plot_facet <- function(plot_obj, df) {
   label2        <- start_date + months(round(nmonths/2))
   label3        <- end_date - months(round(quarter/2))
 
+  precip <- df %>%
+            filter(.data$site_id == "PRECIP")
 
   new_obj <- plot_obj +
              geom_abline(slope =  7.8,
                          intercept = 12.7,
-                         color = "darkred",
-                         size = 1.5) +
+                         linetype = "dashed",
+                         size = 1) +
+             geom_smooth(data = precip,
+                         aes(x = .data$d18O, y = .data$d2H),
+                         method = "lm",
+                         se = FALSE,
+                         size = 1,
+                         color = "darkred") +
              geom_path(color = "black") +
              geom_point(aes(fill = as.numeric(date, origin = "1970-01-01")),
                         shape = 21,

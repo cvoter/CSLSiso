@@ -12,21 +12,67 @@ vignette: >
 ```{r setup, echo=FALSE, warning=FALSE, message=FALSE}
 library(devtools)
 library(isoH2Obudget)
+library(bit64) #for as.integer64
 library(dplyr) #for pipes, filtering, and selecting
+library(stringr) #for str_c
 library(reshape2) #for melting
 library(ggplot2) #for plotting
 library(extrafont) #for fonts
 library(knitr)
 ```
 
-```{r isotopes, eval=TRUE, echo=FALSE}
-data(isotopes)
-psnt_isotopes <- isotopes %>% 
-                 filter(lake == "Pleasant" | site_id == "PRECIP")
-ll_isotopes   <- isotopes %>% 
-                 filter(lake == "Long" | site_id == "PRECIP")
-pfl_isotopes  <- isotopes %>% 
-                 filter(lake == "Plainfield" | site_id == "PRECIP")
+```{r fcns, eval=TRUE, echo=FALSE}
+get_gw_levels <- function(lake, water_levels, site_dictionary){
+  gw_sites <- site_dictionary %>%
+              filter(.data$lake == !!lake,
+                     .data$obs_type == "GW")
+  gw_levels <- water_levels %>%
+               filter(.data$site_no %in% c(gw_sites$USGS_id),
+                      .data$obs_type == "GW")
+  for (i in 1:nrow(gw_levels)) {
+    site_no              <- gw_levels$site_no[i]
+    site_id              <- as.character(gw_sites$site_id[gw_sites$USGS_id == site_no])
+    gw_levels$site_id[i] <- site_id
+  }
+  
+  return(gw_levels)
+}
+
+get_lake_levels <- function(lake, water_levels, site_dictionary){
+  USGS_id     <- site_dictionary %>%
+                 filter(.data$lake == !!lake,
+                        .data$obs_type == "LK") %>%
+                 select(.data$USGS_id) %>%
+                 as.numeric() %>%
+                 as.integer64()
+  lake_levels <- water_levels %>%
+                 filter(.data$site_no == USGS_id,
+                        .data$obs_type == "LK")
+  return(lake_levels)
+}
+
+get_water_level_diff <- function(lake, water_levels, site_dictionary){
+  gw_levels   <- get_gw_levels(lake, water_levels, site_dictionary)
+  lake_levels <- get_lake_levels(lake, water_levels, site_dictionary)
+  for (i in 1:nrow(gw_levels)) {
+    today <- gw_levels$date[i]
+    gw    <- gw_levels$level_m[i]
+    lk    <- lake_levels$level_m[lake_levels$date == today]
+    if (length(lk) > 0) {
+      gw_levels$diff_m[i] <- gw - lk
+    } else {
+      gw_levels$diff_m[i] <- NA
+    }
+  }
+  return(gw_levels)
+}
+
+```
+
+```{r data, eval=TRUE, echo=FALSE}
+data("isotopes")
+data("water_levels")
+data("site_dictionary")
 ```
 
 ## Updates
@@ -50,117 +96,175 @@ include_graphics(system.file("images",
 ```
 
 ## Pleasant Lake
-The original classifications for each well (as noted by Justin P.) were:
+```{r psnt_upgradient, eval=TRUE, echo=FALSE}
+lake = "Pleasant"
 
-| Upgradient | Downgradient |
-|:-----------|:-------------|
-|PSNT-01     |PSNT-03       |
-|PSNT-07     |PSNT-05       |
-|PSNT-08     |PSNT-06       |
-|PSNT-09     |PSNT-10       |
-|PSNT-14     |PSNT-11       |
-|PSNT-15     |              |
-|PSNT-16     |              |
+upgradient_sites <- site_dictionary %>% 
+                    filter(.data$lake == !!lake,
+                           .data$static_iso_class == "upgradient") %>%
+                    select(.data$static_iso_class,
+                           .data$site_id)
+upgradient_sites <- str_c(unique(upgradient_sites$site_id), collapse = ", ")
+```
 
-For the current approach to static well classification, only **PSNT-01** and
-**PSNT-16** are used for upgradient measurements.
+When well classification is **static**, the only **upgradient** wells used are: **`r upgradient_sites`** 
 
-Aaron mentioned at an earlier meeting that PSNT-11 and PSNT-06 may have well
-construction issues which cause them to respond very strongly to precipitation
-events.
+Aaron mentioned at an earlier meeting that PSNT-11 (and maybe PSNT-06?) may have
+well construction issues which cause them to respond very strongly to
+precipitation events.
 
-```{r psnt_facet, eval=TRUE, echo=FALSE, warning=FALSE, message=FALSE, fig.width=7, fig.height=6, fig.align="center"}
-psnt_facet <- ggplot(data = psnt_isotopes,
+It looks like most wells at Pleasant Lake have had a consistent relationship
+with the lake over time:
+
+ * **Consistently upgradient:** PSNT-01, PSNT-14, PSNT-15, and PSNT-16
+ * **Consistently downgradient:** PSNT-03, PSNT-05, PSNT-06, PSNT-07, PSNT-08,
+ PSNT-09, PSNT-10
+ * **Inconsistent relationship:** PSNT-11
+
+```{r psnt, eval=TRUE, echo=FALSE, warning=FALSE, message=FALSE, fig.width=7, fig.height=6, fig.align="center"}
+lake = "Pleasant"
+
+lake_isotopes         <- isotopes %>% 
+                         filter(lake == !!lake | site_id == "PRECIP")
+lake_isotopes$diff_m  <- 0
+water_level_diff      <- get_water_level_diff(lake, water_levels, site_dictionary)
+
+plot_levels <- ggplot() +
+               geom_hline(yintercept = 0,
+                          linetype = "dashed") +
+               geom_line(data = water_level_diff,
+                         aes(x = date, y = diff_m)) +
+               geom_point(data = lake_isotopes,
+                          aes(x = date, y = diff_m, fill = d18O),
+                          shape = 21,
+                          size = 3,
+                          color = "black") +
+               scale_fill_distiller(name = "d18O",
+                                    palette = "RdYlBu",
+                                    direction = 1) +
+               facet_wrap(~site_id) +
+               labs(x = "", y = "GW Level (m) - Lake Level (m)") +
+               theme_bw() +
+               theme(text = element_text(family = "Segoe UI Semilight"),
+                     panel.grid.major = element_blank(),
+                     panel.grid.minor = element_blank(),
+                     legend.position = "top")
+              
+plot_levels
+
+facet_plot <- ggplot(data = lake_isotopes,
                     aes(x = d18O, y = d2H, group = site_id))
-psnt_facet <- plot_facet(psnt_facet, df = psnt_isotopes)
-psnt_facet
-```
+facet_plot <- plot_facet(facet_plot, df = lake_isotopes)
+facet_plot
 
-<br>
-```{r psnt_level, out.width = "90%", eval=TRUE, echo=FALSE, fig.align="center"}
-include_graphics(system.file("images", 
-                             "pleasant_lake_water_levels.png", 
-                             package = "isoH2Obudget", 
-                             mustWork = TRUE))
-```
-
-<br>
-For completeness, here are all sites on the same plot.
-
-```{r psnt_colors, eval=TRUE, echo=FALSE, warning=FALSE, message=FALSE, fig.width=6, fig.height=4, fig.align="center"}
-psnt_colors <- ggplot(data = psnt_isotopes,
-                      aes(x = d18O, y = d2H, group = site_id))
-psnt_colors <- plot_colors(psnt_colors)
-psnt_colors
 ```
 
 ## Long Lake
-The original classifications for each well (as noted by Justin P.) were:
+```{r ll_upgradient, eval=TRUE, echo=FALSE}
+lake = "Long"
 
-| Upgradient | Downgradient |
-|:-----------|:-------------|
-|LL-01       |LL-02         |
-|LL-06       |LL-03         |
-|LL-07       |LL-04         |
-|LL-08       |LL-05         |
-|            |LL-09         |
-|            |LL-10         |
+upgradient_sites <- site_dictionary %>% 
+                    filter(.data$lake == !!lake,
+                           .data$static_iso_class == "upgradient") %>%
+                    select(.data$static_iso_class,
+                           .data$site_id)
+upgradient_sites <- str_c(unique(upgradient_sites$site_id), collapse = ", ")
+```
 
-For the current approach to static well classification, only **LL-06** and
-**LL-07** are used for upgradient measurements.
+When well classification is **static**, the only **upgradient** wells used are: **`r upgradient_sites`** 
 
-```{r ll_facet, eval=TRUE, echo=FALSE, warning=FALSE, message=FALSE, fig.width=7, fig.height=6, fig.align="center"}
-ll_facet <- ggplot(data = ll_isotopes,
+For Long Lake, I need to straighten out which wells with water level records are
+being sampled for isotopes for: LL-01, LL-02, LL-05, and LL-09.
+
+```{r long, eval=TRUE, echo=FALSE, warning=FALSE, message=FALSE, fig.width=7, fig.height=8, fig.align="center"}
+lake = "Long"
+
+lake_isotopes         <- isotopes %>% 
+                         filter(lake == !!lake | site_id == "PRECIP")
+lake_isotopes$diff_m  <- 0
+water_level_diff      <- get_water_level_diff(lake, water_levels, site_dictionary)
+
+plot_levels <- ggplot() +
+               geom_hline(yintercept = 0,
+                          linetype = "dashed") +
+               geom_line(data = water_level_diff,
+                         aes(x = date, y = diff_m)) +
+               geom_point(data = lake_isotopes,
+                          aes(x = date, y = diff_m, fill = d18O),
+                          shape = 21,
+                          size = 3,
+                          color = "black") +
+               scale_fill_distiller(name = "d18O",
+                                    palette = "RdYlBu",
+                                    direction = 1) +
+               facet_wrap(~site_id) +
+               labs(x = "", y = "GW Level (m) - Lake Level (m)") +
+               theme_bw() +
+               theme(text = element_text(family = "Segoe UI Semilight"),
+                     panel.grid.major = element_blank(),
+                     panel.grid.minor = element_blank(),
+                     legend.position = "top")
+              
+plot_levels
+
+facet_plot <- ggplot(data = lake_isotopes,
                     aes(x = d18O, y = d2H, group = site_id))
-ll_facet <- plot_facet(ll_facet, df = ll_isotopes)
-ll_facet
-```
-<br>
-```{r ll_pfl_level, out.width = "90%", eval=TRUE, echo=FALSE, fig.align="center"}
-include_graphics(system.file("images", 
-                             "long_plainfield_lake_water_levels.png", 
-                             package = "isoH2Obudget", 
-                             mustWork = TRUE))
-```
-<br>
-For completeness, here are all sites on the same plot.
+facet_plot <- plot_facet(facet_plot, df = lake_isotopes)
+facet_plot
 
-```{r ll_colors, eval=TRUE, echo=FALSE, warning=FALSE, message=FALSE, fig.width=6, fig.height=4, fig.align="center"}
-ll_colors <- ggplot(data = ll_isotopes,
-                      aes(x = d18O, y = d2H, group = site_id))
-ll_colors <- plot_colors(ll_colors)
-ll_colors
 ```
 
 
 ## Plainfield Lake
-The original classifications for each well (as noted by Justin P.) were:
+```{r pfl_upgradient, eval=TRUE, echo=FALSE}
+lake = "Plainfield"
 
-| Upgradient | Downgradient |
-|:-----------|:-------------|
-|PFL-02      |PFL-03        |
-|PFL-04      |PFL-05        |
-|PFL-11      |PFL-07        |
-|PFL-13      |PFL-09        |
-|PFL-14      |              |
-
-For the current approach to static well classification, only **PFL-02** and
-**PFL-05** are used for upgradient measurements.
-
-```{r pfl_facet, eval=TRUE, echo=FALSE, warning=FALSE, message=FALSE, fig.width=7, fig.height=6, fig.align="center"}
-pfl_facet <- ggplot(data = pfl_isotopes,
-                    aes(x = d18O, y = d2H, group = site_id))
-pfl_facet <- plot_facet(pfl_facet, df = pfl_isotopes)
-pfl_facet
+upgradient_sites <- site_dictionary %>% 
+                    filter(.data$lake == !!lake,
+                           .data$static_iso_class == "upgradient") %>%
+                    select(.data$static_iso_class,
+                           .data$site_id)
+upgradient_sites <- str_c(unique(upgradient_sites$site_id), collapse = ", ")
 ```
-<br>
-For completeness, here are all sites on the same plot.
 
-```{r pfl_colors, eval=TRUE, echo=FALSE, warning=FALSE, message=FALSE, fig.width=6, fig.height=4, fig.align="center"}
-pfl_colors <- ggplot(data = pfl_isotopes,
-                      aes(x = d18O, y = d2H, group = site_id))
-pfl_colors <- plot_colors(pfl_colors)
-pfl_colors
+When well classification is **static**, the only **upgradient** wells used are: **`r upgradient_sites`** 
+
+```{r pfl, eval=TRUE, echo=FALSE, warning=FALSE, message=FALSE, fig.width=7, fig.height=6, fig.align="center"}
+lake = "Plainfield"
+
+lake_isotopes         <- isotopes %>% 
+                         filter(lake == !!lake | site_id == "PRECIP")
+lake_isotopes$diff_m  <- 0
+water_level_diff      <- get_water_level_diff(lake, water_levels, site_dictionary)
+
+plot_levels <- ggplot() +
+               geom_hline(yintercept = 0,
+                          linetype = "dashed") +
+               geom_line(data = water_level_diff,
+                         aes(x = date, y = diff_m)) +
+               geom_point(data = lake_isotopes,
+                          aes(x = date, y = diff_m, fill = d18O),
+                          shape = 21,
+                          size = 3,
+                          color = "black") +
+               scale_fill_distiller(name = "d18O",
+                                    palette = "RdYlBu",
+                                    direction = 1) +
+               facet_wrap(~site_id) +
+               labs(x = "", y = "GW Level (m) - Lake Level (m)") +
+               theme_bw() +
+               theme(text = element_text(family = "Segoe UI Semilight"),
+                     panel.grid.major = element_blank(),
+                     panel.grid.minor = element_blank(),
+                     legend.position = "top")
+              
+plot_levels
+
+facet_plot <- ggplot(data = lake_isotopes,
+                    aes(x = d18O, y = d2H, group = site_id))
+facet_plot <- plot_facet(facet_plot, df = lake_isotopes)
+facet_plot
+
 ```
 
 ## Session Info
