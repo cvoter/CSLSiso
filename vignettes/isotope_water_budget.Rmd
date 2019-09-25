@@ -292,11 +292,7 @@ monthly_isotopes
 ...**monthly change in lake volume** as a depth (mm)...
 
 ```{r monthly_dV, eval=TRUE, echo=FALSE}
-monthly_dV        <- get_monthly_dV(lake_levels,
-                                    stage_vol, 
-                                    month_info, 
-                                    as_depth = TRUE,
-                                    tmp_depth_fix = TRUE)
+monthly_dV        <- get_monthly_dV(lake_levels, month_info)
 head(monthly_dV)
 ```
 
@@ -393,7 +389,7 @@ month_info      <- get_overlap_months(weather, lst, isotopes, lake_levels, gw_le
 # Monthly summary
 monthly_weather   <- get_monthly_weather(weather)
 monthly_lst       <- get_monthly_lst(lst)
-monthly_dV        <- get_monthly_dV(lake_levels, stage_vol, month_info, as_depth = TRUE, tmp_depth_fix = TRUE)
+monthly_dV        <- get_monthly_dV(lake_levels, month_info)
 monthly_isotopes  <- get_monthly_isotopes(isotopes, site_dictionary,
                                           static_wells = FALSE, lake_levels, 
                                           gw_levels, Xday = 7, 
@@ -461,7 +457,7 @@ month_info      <- get_overlap_months(weather, lst, isotopes, lake_levels, gw_le
 # Monthly summary
 monthly_weather   <- get_monthly_weather(weather)
 monthly_lst       <- get_monthly_lst(lst)
-monthly_dV        <- get_monthly_dV(lake_levels, stage_vol, month_info, as_depth = TRUE, tmp_depth_fix = TRUE)
+monthly_dV        <- get_monthly_dV(lake_levels, month_info)
 monthly_isotopes  <- get_monthly_isotopes(isotopes, site_dictionary,
                                           static_wells = FALSE, lake_levels, 
                                           gw_levels, Xday = 7, 

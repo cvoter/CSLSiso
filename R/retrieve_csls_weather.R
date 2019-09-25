@@ -16,9 +16,9 @@
 #' \describe{
 #' \item{date}{date and time of weather observation}
 #' \item{atmp}{air temperature (deg C)}
-#' \item{pcpn}{precipitation (mm)}
-#' \item{relh}{relative humidity (percent)}
-#' \item{rpet}{reference potential evapotranspiration (mm)}
+#' \item{P}{precipitation (mm)}
+#' \item{RH}{relative humidity (percent)}
+#' \item{ET}{reference potential evapotranspiration (mm)}
 #' }
 #'
 #' @importFrom lubridate mdy_hm
@@ -53,6 +53,7 @@ retrieve_csls_weather <- function(filename,
                     .data$pcpn,
                     .data$relh,
                     .data$rpet)
+  colnames(weather) <- c("date","atmp","P","RH","ET")
 
   # Interpolate NAs
   zoo.weather   <- read.zoo(weather)

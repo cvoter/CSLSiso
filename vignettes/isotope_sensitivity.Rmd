@@ -46,7 +46,7 @@ lake_h2o_bal <- function(lake, static_wells = FALSE, static_lake = FALSE) {
   # Monthly summary
   monthly_weather   <- get_monthly_weather(weather)
   monthly_lst       <- get_monthly_lst(lst)
-  monthly_dV        <- get_monthly_dV(lake_levels, stage_vol, month_info, as_depth = TRUE, tmp_depth_fix = TRUE)
+  monthly_dV        <- get_monthly_dV(lake_levels, month_info)
   
   # Sensitivity stuff
   monthly_isotopes  <- get_monthly_isotopes(isotopes, site_dictionary,

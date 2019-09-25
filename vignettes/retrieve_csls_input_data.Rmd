@@ -26,9 +26,9 @@ these functions to process different raw csv files, update `filedir` with the
 relative path to the directory with these other csv files.
 
 ```{r filenames, eval=TRUE, echo=TRUE}
-weather_file   <- "weather_hancock_hourly_2019_09_06.csv"
-SWIMS_file     <- "SWIMS_2019_09_05.csv"
-isotope_file   <- "isotope_samples_2019_09_06.csv"
+weather_file   <- "csls_weather_hancock_hourly_2019_09_06.csv"
+SWIMS_file     <- "csls_SWIMS_2019_09_05.csv"
+isotope_file   <- "csls_isotope_samples_2019_09_06.csv"
 site_file      <- "csls_site_dictionary.csv"
 stage_vol_file <- "csls_stage_volume.csv"
 

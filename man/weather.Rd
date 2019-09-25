@@ -8,9 +8,9 @@
 \describe{
 \item{date}{date and time of weather observation}
 \item{atmp}{air temperature (deg C)}
-\item{pcpn}{precipitation (mm)}
-\item{relh}{relative humidity (percent)}
-\item{rpet}{reference potential evapotranspiration (mm)}
+\item{P}{precipitation (mm)}
+\item{RH}{relative humidity (percent)}
+\item{ET}{reference potential evapotranspiration (mm)}
 }}
 \source{
 \url{https://enviroweather.msu.edu/weather.php?stn=hck}
