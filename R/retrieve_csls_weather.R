@@ -18,7 +18,8 @@
 #' \item{atmp}{air temperature (deg C)}
 #' \item{P}{precipitation (mm)}
 #' \item{RH}{relative humidity (percent)}
-#' \item{ET}{reference potential evapotranspiration (mm)}
+#' \item{Rs}{incoming solar or shortwave radiation (MJ/m^2/hr)}
+#' \item{wind}{wind speed (m/s)}
 #' }
 #'
 #' @importFrom lubridate mdy_hm
@@ -41,6 +42,7 @@ retrieve_csls_weather <- function(filename,
   weather$date <- as.character(weather$date)
   weather$time <- as.character(weather$time)
   weather$atmp <- as.numeric(as.character(weather$atmp))
+  weather$srad <- weather$srad/1000 #kJ to MJ
 
   # Fix times
   weather$time[which(weather$time == "24:00:00")] <- "24:00"
@@ -52,13 +54,14 @@ retrieve_csls_weather <- function(filename,
                     .data$atmp,
                     .data$pcpn,
                     .data$relh,
-                    .data$rpet)
-  colnames(weather) <- c("date","atmp","P","RH","ET")
+                    .data$srad,
+                    .data$wspd)
+  colnames(weather) <- c("date","atmp","P","RH","Rs","wind")
 
   # Interpolate NAs
   zoo.weather   <- read.zoo(weather)
   zoo.weather   <- as.data.frame(na.approx(zoo.weather))
-  weather[,2:5] <- zoo.weather
+  weather[,2:6] <- zoo.weather
 
   return(weather)
 }

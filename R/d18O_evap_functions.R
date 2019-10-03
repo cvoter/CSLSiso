@@ -101,8 +101,8 @@ d18O_evap_normalized_humidity <- function(RH, es_a, es_l) {
 #'
 #' @export
 
-d18O_evap_isotope_frac <- function(ltmp) {
-  alpha <- exp((-2.0667 - (415.6/ltmp) + (1137/(ltmp^2))*(10^3))/1000)
+d18O_evap_isotope_frac <- function(ltmp){
+  alpha <- exp(-7.685e-3 + 6.7123/(ltmp) - 1666.4/(ltmp)^2 + 350410/(ltmp)^3)
   return(alpha)
 }
 # ------------------------------------------------------------------------------
@@ -152,27 +152,30 @@ d18O_evap_kinetic_frac <- function(h, K = 14.3) {
 
 d18O_evap_total_frac <- function(alpha, delta_epsilon) {
   epsilon <- 1000*(1 - 1/alpha) + delta_epsilon
+  return(epsilon)
 }
 # ------------------------------------------------------------------------------
 #' Atmosphere d18O
 #'
 #' Calculates the d18O isotope composition of the atmosphere based on equation
-#' 14 in Ozaydin et al. (2001).
+#' 18 in Gibson et al. (2016).
 #'
-#' @references Ozaydin, V., U. Sendil, and D. Altinbilek. (2001). Stable isotope
-#'   mass balance method to find the water budget of a lake. Turkish Journal of
-#'   Engineering and Environmental Sciences, 25:329-344. Retrieved from:
-#'   https://dergipark.org.tr/download/article-file/126752
+#' @references Gibson, J.J., S.J. Birks, and Y. Yi. 2016. Stable isotope mass
+#'   balance of lakes: a contemporary perspective. Quaternary Science Reviews,
+#'   131:316-328. https://doi.org/10.1016/j.quascirev.2015.04.013
 #'
 #' @param d18O_pcpn isotopic composition of precipitation
-#' @param alpha equilibrium isotope fractionation factor at the temperature of
-#'              the air-water interface (-)
+#' @param alpha isotope fractionation factor (-)
+#' @param k weighted factor which reflects seasonality, ranging from 0.5 for
+#'          highly seasonal climates to 1 for non-seasonal climates. Defaults
+#'          to 0.8
 #'
 #' @return d18O_atm - the d18O isotope composition of the atmosphere
 #'
 #' @export
 
-d18O_evap_d18O_atm <- function(d18O_pcpn, alpha) {
-  d18O_atm <- d18O_pcpn/alpha - (1 - 1/alpha)
+d18O_evap_d18O_atm <- function(d18O_pcpn, alpha, k = 1) {
+  epsilon_plus     <- (alpha - 1)*1000
+  d18O_atm         <- (d18O_pcpn - k*epsilon_plus)/(1 + k*1e-3*epsilon_plus)
   return(d18O_atm)
 }

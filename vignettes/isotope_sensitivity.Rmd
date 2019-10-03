@@ -44,14 +44,15 @@ lake_h2o_bal <- function(lake, static_wells = FALSE, static_lake = FALSE) {
   month_info      <- get_overlap_months(weather, lst, isotopes, lake_levels, gw_levels)
   
   # Monthly summary
-  monthly_weather   <- get_monthly_weather(weather)
+  monthly_weather   <- get_monthly_weather(weather, lst, stage_vol, site_dictionary)
   monthly_lst       <- get_monthly_lst(lst)
   monthly_dV        <- get_monthly_dV(lake_levels, month_info)
   
   # Sensitivity stuff
   monthly_isotopes  <- get_monthly_isotopes(isotopes, site_dictionary,
                                             static_wells, lake_levels, 
-                                            gw_levels, Xday = 7, static_lake)
+                                            gw_levels, median_threshold = 0.01, 
+                                            static_lake)
   monthly_isotopes  <- get_monthly_d18O_evap(monthly_weather, monthly_lst, monthly_isotopes)
   monthly_h2o_bal   <- get_monthly_h2o_bal(monthly_weather, monthly_isotopes, monthly_dV, month_info)
   lake_h2o_bal      <- subset(monthly_h2o_bal, is.na(GWout) == FALSE)
@@ -133,21 +134,25 @@ plot_sensitivity("Pleasant", h2o_bal_combo)
 ```
 
 ### Long Lake 
-In the fall, static well classification reduces GWin by 6.5%. 
+In the fall, static well classification reduces GWin by 0%. 
 
 In the spring, static well classification reduces GWin by 14.5%. Static lake
 classification reduces GWin by 53%.
 
 ```{r long, eval=TRUE, echo=FALSE, fig.width = 7, fig.height = 3}
-lake_sensitivity("Long")
+h2o_bal_combo <- lake_sensitivity("Long")
+h2o_bal_combo
+plot_sensitivity("Long", h2o_bal_combo)
 ```
 
 ### Plainfield Lake
-In the fall, static well classification reduces GWin by 3%. 
+In the fall, static well classification reduces GWin by 11%. 
 
-In the spring, static well classification reduces GWin by 10%. Static lake
+In the spring, static well classification reduces GWin by 0%. Static lake
 classification reduces GWin by a huge amount - 61%.
 
 ```{r pfl, eval=TRUE, echo=FALSE, fig.width = 7, fig.height = 3}
-lake_sensitivity("Plainfield")
+h2o_bal_combo <- lake_sensitivity("Plainfield")
+h2o_bal_combo
+plot_sensitivity("Plainfield", h2o_bal_combo)
 ```

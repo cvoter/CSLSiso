@@ -24,7 +24,8 @@ weather, a data frame with the following columns for hourly weather:
 \item{atmp}{air temperature (deg C)}
 \item{P}{precipitation (mm)}
 \item{RH}{relative humidity (percent)}
-\item{ET}{reference potential evapotranspiration (mm)}
+\item{Rs}{incoming solar or shortwave radiation (MJ/m^2/hr)}
+\item{wind}{wind speed (m/s)}
 }
 }
 \description{

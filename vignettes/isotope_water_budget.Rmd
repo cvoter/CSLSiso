@@ -135,7 +135,7 @@ on Krabbenhoft et al. (1990):
 \end{align}
 
 The total fractionation factor (-), $\epsilon$, combines both the isotopic
-fractionation factor and the kinetic fracitonation factor (Krabbenhoft et al.,
+fractionation factor and the kinetic fractionation factor (Krabbenhoft et al.,
 1990):
 \begin{align}
 \tag{8}
@@ -143,10 +143,12 @@ fractionation factor and the kinetic fracitonation factor (Krabbenhoft et al.,
 \end{align}
 
 Lastly, the isotopic composition of the atmosphere, $\delta^{18}O_{A}$, is
-calculated based on Ozaydin et al. (2001):
+calculated based on Gibson et al. (2016). $k$ represents the seasonality of a
+location, varying from 0.5 for highly seasonal climates to 1.0 for non-seasonal
+climates. Here, $k$ defaults to 0.8.
 \begin{align}
 \tag{9}
-\delta^{18}O_{A} = \frac{\delta^{18}O_{P}}{\alpha} - (1 - \frac{1}{\alpha})
+\delta^{18}O_{A} = \frac{\delta^{18}O_{P} - k*\epsilon}{1 + 10^{-3}*k*\epsilon}
 \end{align}
 
 ## Input data
@@ -264,7 +266,7 @@ month_info      <- get_overlap_months(weather,
 Next, summarize records at a monthly time step. Here, we have **monthly weather**...
 
 ```{r monthly_weather, eval=TRUE, echo=FALSE}
-monthly_weather   <- get_monthly_weather(weather)
+monthly_weather   <- get_monthly_weather(weather, lst, stage_vol, site_dictionary)
 head(monthly_weather)
 ```
 
@@ -281,7 +283,7 @@ $\delta^{18}O_{E}$...
 ```{r monthly_isotopes, eval=TRUE, echo=FALSE}
 monthly_isotopes  <- get_monthly_isotopes(isotopes, site_dictionary,
                                           static_wells = FALSE, lake_levels, 
-                                          gw_levels, Xday = 7, 
+                                          gw_levels, median_threshold = 0.01, 
                                           static_lake = FALSE)
 monthly_isotopes  <- get_monthly_d18O_evap(monthly_weather,
                                            monthly_lst,
@@ -342,8 +344,7 @@ for (i in 1:nrow(melted_bal)) {
 plot_balance <- ggplot(data = melted_bal) +
                 geom_col(aes(x = in_or_out, y = value, fill = variable)) +
                 facet_wrap(~date) +
-                scale_y_continuous(expand = c(0,0),
-                                   limits = c(0,800)) +
+                scale_y_continuous(expand = c(0,0)) +
                 scale_fill_brewer(name = "Flux",
                                   palette = "Paired",
                                   breaks = c("P","E","GWin","GWout","dV"),
@@ -387,12 +388,12 @@ site_dictionary <- lake_subset$site_dictionary
 month_info      <- get_overlap_months(weather, lst, isotopes, lake_levels, gw_levels)
 
 # Monthly summary
-monthly_weather   <- get_monthly_weather(weather)
+monthly_weather   <- get_monthly_weather(weather, lst, stage_vol, site_dictionary)
 monthly_lst       <- get_monthly_lst(lst)
 monthly_dV        <- get_monthly_dV(lake_levels, month_info)
 monthly_isotopes  <- get_monthly_isotopes(isotopes, site_dictionary,
                                           static_wells = FALSE, lake_levels, 
-                                          gw_levels, Xday = 7, 
+                                          gw_levels, median_threshold = 0.01, 
                                           static_lake = FALSE)
 monthly_isotopes  <- get_monthly_d18O_evap(monthly_weather, monthly_lst, monthly_isotopes)
 monthly_h2o_bal   <- get_monthly_h2o_bal(monthly_weather, monthly_isotopes, monthly_dV, month_info)
@@ -412,8 +413,7 @@ for (i in 1:nrow(melted_bal)) {
 plot_balance <- ggplot(data = melted_bal) +
                 geom_col(aes(x = in_or_out, y = value, fill = variable)) +
                 facet_wrap(~date) +
-                scale_y_continuous(expand = c(0,0),
-                                   limits = c(0,800)) +
+                scale_y_continuous(expand = c(0,0)) +
                 scale_fill_brewer(name = "Flux",
                                   palette = "Paired",
                                   breaks = c("P","E","GWin","GWout","dV"),
@@ -455,12 +455,12 @@ site_dictionary <- lake_subset$site_dictionary
 month_info      <- get_overlap_months(weather, lst, isotopes, lake_levels, gw_levels)
 
 # Monthly summary
-monthly_weather   <- get_monthly_weather(weather)
+monthly_weather   <- get_monthly_weather(weather, lst, stage_vol, site_dictionary)
 monthly_lst       <- get_monthly_lst(lst)
 monthly_dV        <- get_monthly_dV(lake_levels, month_info)
 monthly_isotopes  <- get_monthly_isotopes(isotopes, site_dictionary,
                                           static_wells = FALSE, lake_levels, 
-                                          gw_levels, Xday = 7, 
+                                          gw_levels, median_threshold = 0.01, 
                                           static_lake = FALSE)
 monthly_isotopes  <- get_monthly_d18O_evap(monthly_weather, monthly_lst, monthly_isotopes)
 monthly_h2o_bal   <- get_monthly_h2o_bal(monthly_weather, monthly_isotopes, monthly_dV, month_info)
@@ -480,8 +480,7 @@ for (i in 1:nrow(melted_bal)) {
 plot_balance <- ggplot(data = melted_bal) +
                 geom_col(aes(x = in_or_out, y = value, fill = variable)) +
                 facet_wrap(~date) +
-                scale_y_continuous(expand = c(0,0),
-                                   limits = c(0,800)) +
+                scale_y_continuous(expand = c(0,0)) +
                 scale_fill_brewer(name = "Flux",
                                   palette = "Paired",
                                   breaks = c("P","E","GWin","GWout","dV"),

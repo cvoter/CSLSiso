@@ -19,6 +19,9 @@
 \item{static_iso_class}{static site type for isotope site classification
                         (upgradient, downgradient, precipitation, lake, or
                         NA)}
+\item{elev_m}{elevation of the lake above mean sea level (m)}
+\item{lat_deg}{latitude of the lake (decimal degrees)}
+\item{long_deg}{longitude of the lake (decimal degrees)}
 }}
 \usage{
 data(site_dictionary)

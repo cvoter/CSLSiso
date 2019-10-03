@@ -12,7 +12,6 @@ vignette: >
 ```{r setup, echo=FALSE, warning=FALSE, message=FALSE}
 library(devtools)
 library(isoH2Obudget)
-library(bit64) #for as.integer64
 library(dplyr) #for pipes, filtering, and selecting
 library(stringr) #for str_c
 library(reshape2) #for melting
@@ -28,7 +27,7 @@ get_dynamic_sites <- function(lake, site_dictionary, lst, isotopes,
                                   water_levels, stage_vol)
   monthly_isotopes <- get_monthly_isotopes(lk$isotopes, lk$site_dictionary, 
                                            static_wells = FALSE, lk$lake_levels, 
-                                           lk$gw_levels, Xday = 7, 
+                                           lk$gw_levels, median_threshold = 0.01, 
                                            static_lake = FALSE)
   monthly_isotopes            <- monthly_isotopes %>%
                                  filter(is.na(.data$GWin_sites) == FALSE &
@@ -81,33 +80,35 @@ data("stage_vol")
 Updates since last discussion include:
  * **Timeseries of d18O**. Added a timeseries plot of d18O for each site, as in
  Krabbenhoft paper.
+ * **PSNT-11.** Is now coded as "invalid" in the site dictionary so that it is
+ not included in monthly isotope averages.
+ * **Water level averaging rules adjusted.** Instead of looking at the
+ difference between the 7 day mean lake level and 7 day mean gw level before
+ each isotope measurmeent, now look at the daily difference in groundwater and
+ lake levels for one month before each isotope measurement. Measurements are not
+ used in monthly averages if the median difference is less than 1cm (i.e., the
+ precision of HOBO U20 loggers). Otherwise, if the mean daily difference in lake
+ levels and well levels is greater than zero, the measurement is classified as
+ an "upgradient" measurement.
 
 ## Issues
 Current issues include:
 
- * **Pleasant Lake PSNT-11.** While this technically meets the threshold for an
- upgradient well frequently, it's pretty much right at the lake level and
- behaves much more like the lake. According to Aaron, the well construction
- might be faulty on this well. **To Do:** Remove this from analysis.
- * **Dynamic Well Classification.** With PSNT-11 removed, all other wells at all
- other lakes seem legit. Suggest retaining dynamic classification approach for
- upgradient/downgradient wells. **To Do:** Adjust averageing rules. Increase to
- 30 days, consider how consistently the well is in a single category during that
- time (e.g., what percent of time it is in one category, or how many times it
- flips categories). Start with calendar year month, but may be more accurate to
- count one month back from sampling date.
  * **Precipitation Isotopes.** Use Maribeth's values in addition to CSLS values.
- * **Long Lake Wells.** There are more Long Lake monitoring wells in the DNR
- database than are used for monitoring, and they have confusing names like
- "LL-05B" and "LL-05C". Need to dig deeper and maybe talk with Bob to make sure
- I'm only using the wells associated with well chemistry measurements.
 
 ## Overview
 
 When looking at the **water level difference** plots, keep in mind that when the
 well plots above the dashed line, it is upgradient of the lake. When it plots
 below the dashed line, it is downgradient of the lake. Water level measurements
-are shown at a daily timestep.
+are shown at a daily timestep. 
+
+To determine if a well is upgradient or downgradient for a given measurement
+record, we look at the previous month of daily water level differences. If the
+median of these daily differences is less than 1cm (i.e, less than the precision
+of HOBO U20 loggers), the isotope measurement is not used. Otherwise, if the
+mean of the daily differences is greater than 0, it is considered an upgradient
+well.
 
 ```{r schematic1, out.width = "75%", eval=TRUE, echo=FALSE, fig.align="center"}
 include_graphics(system.file("images", 
@@ -155,8 +156,7 @@ issue which causes it to respond very strongly to precipitation events. We
 should probably remove this well from analysis.
 
 Currently, when well classification is **static**, the only upgradient wells
-used are: **`r upgradient_sites`**. We could likely add PSNT-01, PSNT-14, and
-PSNT-15 to this list.
+used are: **`r upgradient_sites`**.
 
 When well classification is **dynamic**, the upgradient wells each month are:
 ```{r psnt_iso, eval=TRUE, echo=FALSE}
@@ -188,12 +188,12 @@ Lake, but classifications are more dynamic here:
  * *Inconsistent relationship:* LL-02, LL-03, LL-04, LL-05
  * *Typically downgradient:* LL-09, LL-10
  
-I need to straighten out which wells with water level records are being sampled
-for isotopes for: LL-01, LL-02, LL-05, and LL-09.
+Note that: LL-01B, LL-02B, LL-05C, and LL-09B are deeper wells drilled next to
+the shallower monitoring wells. What plots as LL-05 here is called LL-05B in the
+DNR water levels database.
 
 Currently, when well classification is **static**, the only upgradient wells
-used are: **`r upgradient_sites`**. We could likely add LL-01 and LL-08 to this
-list.
+used are: **`r upgradient_sites`**.
 
 When well classification is **dynamic**, the upgradient wells each month are:
 ```{r long_iso, eval=TRUE, echo=FALSE}
@@ -228,7 +228,7 @@ classifications are more dynamic here:
  * *Consistently downgradient:* PFL-14
 
 Currently, when well classification is **static**, the only upgradient wells
-used are: **`r upgradient_sites`**. We could likely add PFL-04 to this list.
+used are: **`r upgradient_sites`**.
 
 When well classification is **dynamic**, the upgradient wells each month are:
 ```{r pfl_iso, eval=TRUE, echo=FALSE}

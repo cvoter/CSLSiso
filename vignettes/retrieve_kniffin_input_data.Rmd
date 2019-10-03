@@ -1,0 +1,91 @@
+---
+title: "Retrieve Kniffin Input Data"
+output: 
+  rmarkdown::html_vignette:
+    toc: true
+vignette: >
+  %\VignetteIndexEntry{Put the title of your vignette here}
+  %\VignetteEngine{knitr::rmarkdown}
+  \usepackage[utf8]{inputenc}
+---
+
+This document retrieves raw input data from Maribeth Kniffin's data csv files
+and savse it as an .Rda file in the format required for isoH2Obudget functions.
+
+```{r setup, echo=FALSE, warning=FALSE, message=FALSE}
+library(devtools)
+library(isoH2Obudget)
+```
+
+## Specify csv filenames
+First, identify the filenames of each required raw csv file. Example raw csv
+files for the CSLS are stored in inst/extdata in the working version of the
+package. Once the package is intalled, these example raw csv files can be
+retrieved by specifying `filedir <- "system.file"`. If you would like to use
+these functions to process different raw csv files, update `filedir` with the
+relative path to the directory with these other csv files.
+
+```{r filenames, eval=TRUE, echo=TRUE}
+weather_file   <- "kniffin_weather_monthly.csv"
+isotope_file   <- "kniffin_isotope_samples.csv"
+site_file      <- "kniffin_site_dictionary.csv"
+d18O_evap_file <- "kniffin_d18O_evap.csv"
+
+filedir        <- "../inst/extdata"  #"system.file"
+```
+
+## Retrieve data
+For now, only need Maribeth's isotopes data.
+
+```{r data, eval=TRUE, echo=TRUE}
+site_dictionary  <- load_pkg_csv(site_file, filedir)
+
+isotopes         <- load_pkg_csv(isotope_file, filedir)
+isotopes$date    <- as_datetime(mdy(isotopes$date))
+kniffin_isotopes <- get_monthly_isotopes(isotopes,
+                                         site_dictionary, 
+                                         static_wells = TRUE, 
+                                         static_lake = FALSE)
+kniffin_isotopes$d18O_evap <- NULL
+
+# d18O_evap        <- load_pkg_csv(d18O_evap_file, filedir)
+# d18O_evap$date   <- as_datetime(mdy(d18O_evap$date))
+# monthly_isotopes <- merge(monthly_isotopes, d18O_evap, by = "date")
+
+# weather               <- load_pkg_csv(weather_file, filedir)
+# monthly_weather       <- NULL
+# monthly_weather$date  <- as_datetime(mdy(weather$date))
+# monthly_weather$P_mm  <- NISTinchTOmeter(weather$P_in)*1000
+# monthly_weather$ET_mm <- NISTinchTOmeter(weather$E_in)*1000
+# monthly_weather       <- as.data.frame(monthly_weather)
+# 
+# start_date <- min(monthly_weather$date)
+# end_date   <- max(monthly_weather$date)
+# nmonths    <- get_nmonths(start_date, end_date)
+# month_info <- list(start_date = start_date, 
+#                    end_date = end_date, 
+#                    nmonths = nmonths)
+# 
+# monthly_h2o_budget <- get_monthly_h2o_bal(monthly_weather, 
+#                                           monthly_isotopes,
+#                                           monthly_dV = NULL,
+#                                           month_info)
+```
+
+## Save Rda file
+Lastly, save the processed data frames to the data directory of your project.
+Note that the working directory of .Rmd "vignettes" files is diffrent from the
+project working directory.The devtools command "use_data" ensures that data are
+saved in the appropriate location and format for packages.
+
+```{r save, echo=TRUE, eval=TRUE}
+use_data(kniffin_isotopes, overwrite = TRUE, compress = "xz")
+```
+
+## Session info
+The version of R and the versions of packages in use when this R Markdown file
+was created are listed here:
+
+```{r session_info, include=TRUE, echo=TRUE, results='markup'}
+devtools::session_info()
+```

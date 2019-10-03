@@ -4,13 +4,34 @@
 \alias{get_monthly_weather}
 \title{Monthly Weather}
 \usage{
-get_monthly_weather(weather)
+get_monthly_weather(weather, lst, stage_vol, site_dictionary,
+  wind_elev = 3, z0 = 0.02)
 }
 \arguments{
-\item{weather}{a data frame with sub-monthly weather including date, TMP (air
+\item{weather}{a data frame with sub-monthly weather including date, atmp (air
 temperature, deg C), RH (relative humidity, percent), P
-(precipitation, mm), and ET (evapotranspiration, mm) as
-formatted in the \code{\link{weather}} dataset.}
+(precipitation, mm), Rs (incoming solar radiation, MJ/m^2),
+and wind (wind speed, m/s) as formatted in the
+\code{\link{weather}} dataset.}
+
+\item{lst}{a data frame with sub-monthly lake surface temperature
+measurements as formatted in the \code{\link{lst}} dataset, subset
+for a single lake.}
+
+\item{stage_vol}{a data frame with the lake, stage_m, surf_area_m2, and
+volume_m3 as in the \code{\link{stage_vol}} dataset, subset
+for a single lake.}
+
+\item{site_dictionary}{a data frame with the lake, obs_type, site_id,
+SWIMS_station, USGS_id, WBIC, and static_iso_type of
+measurement sites, as in the
+\code{\link{site_dictionary}} dataset, subset for a
+single lake.}
+
+\item{wind_elev}{height of wind measurement, defaults to 3m for Hancock station.}
+
+\item{z0}{aeorodynamic roughness of landcover at site of weather measurements
+(m), defaults to 0.02 for a grass.}
 }
 \value{
 monthly_weather, a data frame with the following columns:
@@ -19,7 +40,7 @@ monthly_weather, a data frame with the following columns:
 \item{atmp_K}{mean monthly air temperature (K)}
 \item{RH_pct}{mean monthly relative humidity (percent)}
 \item{P_mm}{monthly precipitaiton (mm)}
-\item{ET_mm}{monthly reference potential evapotranspiration (mm)}
+\item{ET_mm}{monthly lake evaporation (mm)}
 }
 }
 \description{

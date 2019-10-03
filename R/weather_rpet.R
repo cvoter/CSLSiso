@@ -1,4 +1,4 @@
-#' CSLS Hourly Weather Data
+#' CSLS Hourly Weather Data - RPET version
 #'
 #' Hourly weather data from the Hancock Agricultural Research Station website
 #' (\url{https://enviroweather.msu.edu/weather.php?stn=hck}) (station id: hck)
@@ -10,11 +10,11 @@
 #' To download raw data, go to the Hancock Station website and click on "Weather
 #' Station at Hancock" or "More weather for this station" to be routed to a page
 #' with options for "Custom Reports (Data-on-Demand)". Select Data Type "Hourly
-#' Data", then check Air Temperature, Precipitation, Relative Humidity, Total
-#' Solar Flux, and Wind Speed. Select starting date and end date, display units
-#' (metric), and output (csv), then "Generate Report". Note that the earliest
-#' starting date allowed (as of January and September 2019) is February 15,
-#' 2018.
+#' Data", then check Air Temperature, Precipitation, Relative Humidity, and
+#' Reference Potential Evapotranspiration. Select starting date and end date,
+#' display units (metric), and output (csv), then "Generate Report". Note that
+#' the earliest starting date allowed (as of January and September 2019) is
+#' February 15, 2018.
 #'
 #' Raw csv data is processed with the function
 #' \code{\link{retrieve_csls_weather}} from the isoH2Obudget package. This
@@ -33,9 +33,8 @@
 #' \item{atmp}{air temperature (deg C)}
 #' \item{P}{precipitation (mm)}
 #' \item{RH}{relative humidity (percent)}
-#' \item{Rs}{incoming solar radiation (MJ/m^2)}
-#' \item{wind}{wind speed (m/s)}
+#' \item{ET}{reference potential evapotranspiration (mm)}
 #' }
 #'
 #' @source \url{https://enviroweather.msu.edu/weather.php?stn=hck}
-"weather"
+"weather_rpet"

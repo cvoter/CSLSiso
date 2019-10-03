@@ -19,11 +19,13 @@ Imports:
     NISTunits,
     stringr,
     zoo,
-    reshape2
+    reshape2,
+    faoET
 Suggests:
     knitr,
     devtools,
-    roxygen2
+    roxygen2,
+    testthat (>= 2.1.0)
 License: MIT + file LICENSE
 Encoding: UTF-8
 LazyData: true

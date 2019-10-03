@@ -5,8 +5,8 @@
 \title{Monthly Isotope Measurements}
 \usage{
 get_monthly_isotopes(isotopes, site_dictionary, static_wells = TRUE,
-  lake_levels = NULL, gw_levels = NULL, Xday = 7,
-  static_lake = TRUE)
+  lake_levels = NULL, gw_levels = NULL, median_threshold = 0.01,
+  static_lake = TRUE, use_kniffin_pcpn = TRUE)
 }
 \arguments{
 \item{isotopes}{a data frame with isotopes measurements as formatted in the
@@ -31,12 +31,16 @@ formatted in the \code{\link{water_levels}} dataset,
 subset to groundwater level records at the lake of
 interest.}
 
-\item{Xday}{number of days to consider when calculating average water level
-before isotope measurements, defaults to 7 days.}
+\item{median_threshold}{minimum median difference between lake levels and
+groundwater levels during the month of measurement in
+order to classify groundwater measurement.}
 
 \item{static_lake}{logical defaults to TRUE to use mean of fall (Sept-Nov)
 isotope samples for the lake. If FALSE, uses actual
 measurement for each month.}
+
+\item{use_kniffin_pcpn}{logical defaults to TRUE to average in precipitation
+measurements by Maribeth Kniffin for each month.}
 }
 \value{
 monthly_isotopes, a data frame with the following columns:

@@ -4,24 +4,26 @@
 \alias{d18O_evap_d18O_atm}
 \title{Atmosphere d18O}
 \usage{
-d18O_evap_d18O_atm(d18O_pcpn, alpha)
+d18O_evap_d18O_atm(d18O_pcpn, alpha, k = 1)
 }
 \arguments{
 \item{d18O_pcpn}{isotopic composition of precipitation}
 
-\item{alpha}{equilibrium isotope fractionation factor at the temperature of
-the air-water interface (-)}
+\item{alpha}{isotope fractionation factor (-)}
+
+\item{k}{weighted factor which reflects seasonality, ranging from 0.5 for
+highly seasonal climates to 1 for non-seasonal climates. Defaults
+to 0.8}
 }
 \value{
 d18O_atm - the d18O isotope composition of the atmosphere
 }
 \description{
 Calculates the d18O isotope composition of the atmosphere based on equation
-14 in Ozaydin et al. (2001).
+18 in Gibson et al. (2016).
 }
 \references{
-Ozaydin, V., U. Sendil, and D. Altinbilek. (2001). Stable isotope
-  mass balance method to find the water budget of a lake. Turkish Journal of
-  Engineering and Environmental Sciences, 25:329-344. Retrieved from:
-  https://dergipark.org.tr/download/article-file/126752
+Gibson, J.J., S.J. Birks, and Y. Yi. 2016. Stable isotope mass
+  balance of lakes: a contemporary perspective. Quaternary Science Reviews,
+  131:316-328. https://doi.org/10.1016/j.quascirev.2015.04.013
 }

@@ -5,7 +5,7 @@
 \title{Classify Stable Isotope Measurements (Dynamic)}
 \usage{
 classify_iso_site_dynamic(isotopes, lake_levels, gw_levels,
-  site_dictionary, Xday = 7)
+  site_dictionary, median_threshold = 0.03)
 }
 \arguments{
 \item{isotopes}{a data frame with isotope measurements as formatted in the
@@ -25,8 +25,9 @@ interest.}
 \code{\link{site_dictionary}} dataset, subset to
 records for the lake of interest.}
 
-\item{Xday}{number of days to consider when calculating average water level
-before isotope measurements, defaults to 7 days.}
+\item{median_threshold}{minimum median difference between lake levels and
+groundwater levels during the month of measurement in
+order to classify groundwater measurement.}
 }
 \value{
 isotopes - the same data frame provided to the function, but with an
