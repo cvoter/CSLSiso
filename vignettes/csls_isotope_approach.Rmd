@@ -1,0 +1,781 @@
+---
+title: "CSLS Lake Water Budgets - Isotope Approach"
+output: 
+  rmarkdown::html_vignette:
+    toc: true
+vignette: >
+  %\VignetteIndexEntry{Put the title of your vignette here}
+  %\VignetteEngine{knitr::rmarkdown}
+  \usepackage[utf8]{inputenc}
+---
+
+```{r setup, echo=FALSE, warning=FALSE, message=FALSE}
+library(devtools)
+library(isoH2Obudget)
+library(lubridate) # for dates
+library(dplyr) #for %>% pipes
+library(ggplot2) # for plotting
+library(extrafont) # for fonts
+library(reshape2) # for melting
+library(NISTunits) # for unit conversions
+```
+
+```{r d18O, eval=TRUE, echo=FALSE}
+data(isotopes)
+
+# Months with data
+d18O_G <- isotopes %>%
+          filter(!.data$site_id %in% c("PRECIP", "CHAFFEE", "LONG", 
+                                       "PLEAS", "PLAIN", "TAGATZ")) %>%
+          group_by(date = floor_date(.data$date, unit = "month")) %>%
+          select(date) %>%
+          unique()
+monthsGW <- format(d18O_G$date, "%b %Y")
+
+d18O_L <- isotopes %>%
+          filter(.data$site_id %in% c("LONG", "PLEAS", "PLAIN")) %>%
+          group_by(date = floor_date(.data$date, unit = "month")) %>%
+          select(date) %>%
+          unique()
+
+d18O_P <- isotopes %>%
+          filter(.data$site_id == "PRECIP") %>%
+          group_by(date = floor_date(.data$date, unit = "month")) %>%
+          select(date) %>%
+          unique()
+
+month_start <- floor_date(min(isotopes$date), unit = "month")
+month_end   <- floor_date(max(isotopes$date), unit = "month") + months(1) - days(1)
+nmonths     <- get_nmonths(month_start, month_end)
+
+have_data <- NULL
+for (i in 1:nmonths){
+  this_month <- month_start + months(i-1)
+  have_data$Month[i] <- format(this_month, "%b %Y")
+  if (this_month %in% d18O_P$date){
+    have_data$Precipitation[i] <- "X"
+  } else {
+    have_data$Precipitation[i] <- ""
+  }
+  if (this_month %in% d18O_L$date){
+    have_data$Lake[i] <- "X"
+  } else {
+    have_data$Lake[i] <- ""
+  }
+  if (this_month %in% d18O_G$date){
+    have_data$Groundwater[i] <- "X"
+  } else {
+    have_data$Groundwater[i] <- ""
+  }
+  if (have_data$Precipitation[i] == "X" &
+      have_data$Lake[i] == "X" &
+      have_data$Groundwater[i] == "X"){
+    have_data$All[i] <- "X"
+  } else {
+    have_data$All[i] <- ""
+  }
+}
+
+# Precipitation - Measured
+d18O_P <- isotopes %>%
+          filter(.data$site_id == "PRECIP") %>%
+          group_by(date = floor_date(.data$date, unit = "day")) %>%
+          summarise(d18O = mean(.data$d18O),
+                    d2H = mean(.data$d2H))
+
+# Precipitation - Extended
+september <- list(date = mdy("9/28/2018"), 
+                  d18O = d18O_P$d18O[1], 
+                  d2H = d18O_P$d2H[1])
+april     <- list(date = mdy("4/19/2019"), 
+                  d18O = d18O_P$d18O[3], 
+                  d2H = d18O_P$d2H[3])
+d18O_P_ext    <- as.data.frame(rbind(d18O_P, september, april))
+d18O_P_ext    <- d18O_P[order(d18O_P$date), ]
+
+# Precipitation - Kniffin
+kniffin_isotopes <- load_pkg_csv(filename = "kniffin_isotope_samples.csv", 
+                                 filedir = "system.file")
+kniffin_isotopes <- kniffin_isotopes %>%
+                    filter(.data$site_id == "PRECIP") %>%
+                    select(.data$date, .data$d18O, .data$d2H)
+kniffin_isotopes$date <- mdy(kniffin_isotopes$date)
+
+month_abbr <- c("Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sept", 
+           "Oct", "Nov", "Dec")
+
+combo_iso <- NULL
+for (i in 1:length(month_abbr)) {
+  csls_pcpn           <- d18O_P_ext %>%
+                         filter(month(.data$date) == i)
+  if (nrow(csls_pcpn) == 0){
+    csls_pcpn[1, ]    <- rep(NA, 3)
+  }
+  kniffin_pcpn        <- kniffin_isotopes %>%
+                         filter(month(.data$date) == i)
+  if (nrow(kniffin_pcpn) == 0){
+    kniffin_pcpn[1, ] <- rep(NA, 3)
+  }
+  
+  combo_iso$month[i]  <- month_abbr[i]
+  combo_iso$d18O[i]   <- mean(c(csls_pcpn$d18O, kniffin_pcpn$d18O), na.rm = TRUE)
+  combo_iso$d2H[i]    <- mean(c(csls_pcpn$d2H, kniffin_pcpn$d2H), na.rm = TRUE)
+}
+
+d18O_P$proj           <- "CSLS"
+kniffin_isotopes$proj <- "Kniffin"
+
+LMWL                  <- as.data.frame(rbind(kniffin_isotopes, d18O_P))
+
+plot_LMWL <- ggplot(data = LMWL,
+                    aes(x = d18O, y = d2H, group = proj)) +
+             geom_point(aes(color = proj)) +
+             geom_smooth(aes(color = proj),
+                         method = "lm",
+                         se = FALSE,
+                         size = 1) + 
+             scale_color_manual(name = "Data Source",
+                                values = c("Kniffin" = "blue3", "CSLS" = "red3")) +
+             labs(title = "Local Meteoric Water Line") +
+             theme_bw() + 
+             theme(text = element_text(family = "Segoe UI Semilight"))
+```
+
+## Overview
+
+This document walks through how we're summarizing isotope data and using key
+equations to calculate the water budget at each of the 3 lakes in the Central
+Sands Lakes Study. Specific questions we have for you are:
+
+1. Would you have any concerns about the way we are extending our
+$\delta^{18}O_{P}$ and $\delta^{18}O_{L}$ datasets?
+2. Would you suggest a different approach for defining "upgradient wells" for
+$\delta^{18}O_{GW}$ measurements?
+3. Would you calculate $\alpha^{*}$ using a different equation?
+4. Do you have suggestions for how to adjust the theoretical $\delta^{18}O_{A}$
+to account for vapour being out of equilibrium during maximum evaporation
+months?
+5. Are we missing any reason that calculation of $GW_{in}$ should change due to
+a non-zero $dV/dt$?
+6. Is it possible to calculate the monthly water balance using this approach
+over the winter (ice-on) months?
+
+## Data Sources
+
+### Meteorological Data
+
+Hourly precipitation and lake evaporation inputs (air temperature, relative
+humidity, solar radiation, wind speed) are sourced from the [Hancock
+Agricultural Research
+Station](https://enviroweather.msu.edu/weather.php?stn=hck). This station is
+approximately 8 miles from Plainfield Lake, 8.5 miles from Long Lake, and 14.5
+miles from Pleasant Lake. Missing records for lake evaporation inputs are filled
+in via linear interpolation.
+
+### Lake Surface Temperature
+
+Surface depth measurements from every-other-week lake temperature profiles are
+averaged to yield monthly average lake surface temperature for
+$\delta^{18}O_{E}$ calculations. Field measurements were not taken from November
+2018 - January 2019, but we do have continuous temperature probe measurements at
+0.5 m depth which we could use instead.
+
+### Stable Isotope Measurements
+
+**Precipitation:** $\delta^{18}O_{P}$ is measured using two collectors at the Hancock Agricultural
+Research Station (approximately 8 miles from Plainfield Lake, 8.5 miles from
+Long Lake, and 14.5 miles from Pleasant Lake). Collectors were initially
+deployed Sept. 28, 2018 and redeployed after the winter on April 19, 2019.
+
+**Lake:** $\delta^{18}O_{L}$ is measured less than every-other-month at the lake
+surface. We do not have any profiles measurements of $\delta^{18}O_{L}$. 
+
+**Groundwater:** $\delta^{18}O_{GW}$ is measured every-other-month at 2-4 wells that are
+upgradient of each lake.
+
+<br>
+
+<span style="color:red">**Tricky Issue #1:</span> Months with no measurements.**
+Only one month has the perfect storm of $\delta^{18}O_{P}$, $\delta^{18}O_{L}$,
+and $\delta^{18}O_{GW}$ measurements.
+
+```{r measurements, eval=TRUE, echo=FALSE, fig.height=3, fig.width=5, fig.align='center'}
+knitr::kable(as.data.frame(have_data), caption = "CSLS Isotope Measurements")
+```
+
+We are extending our $\delta^{18}O_{P}$ dataset by making two assumptions:
+
+1. For months when a) precipitation collectors were active, but b) we did not
+collect a $\delta^{18}O_{P}$ sample, we assume that the measurement in the
+following month also represents the month with no measurement. This extends our
+coverage to include September 2018 and April 2019.
+2. For all months, we average in monthly measurements of $\delta^{18}O_{P}$ made
+by Maribeth Kniffin at the same location (Hancock Agricultural Resarch Station)
+from May 2016 to April 2017. The Local Metoroic Water Lines from each set of
+measurements match pretty well.
+
+```{r LMWL, eval=TRUE, echo=FALSE, fig.height=3, fig.width=5, fig.align='center'}
+plot_LMWL
+```
+
+<br>
+
+We are extending our $\delta^{18}O_{L}$ dataset by making one assumption:
+
+1. For any month with measurements of $\delta^{18}O_{P}$ and
+$\delta^{18}O_{GW}$, but not $\delta^{18}O_{L}$, we are using the mean fall
+$\delta^{18}O_{L}$ (i.e., the Oct 2018 measurement)
+
+<br>
+
+<span style="color:red">**Tricky Issue #2:</span> Which Wells are Upgradient?**
+Groundwater levels have risen markedly over the last year and many wells at
+Plainfield Lake and Long Lake have flipped from being "downgrdient" wells to
+"upgradient" wells.
+
+To decide if a well is upgradient or downgradient for a given
+$\delta^{18}O_{GW}$ measurement, we look at the previous 30 days of daily water
+level differences (lake level - groundwater level). If the median daily
+difference is 1 cm or less (i.e., less than the precision of HOBO U20 loggers),
+the isotope measurement is not used. Otherwise, if the mean daily difference is
+greater than zero, it is considered an "upgradient" well.
+
+For a deeper dive into how each well behaves, see
+"*csls_isotope_timeseries.html*".
+
+## Analysis
+
+### Lake Evaporation
+
+We are calculating lake evaporation based on the method of [McJannet et
+al.](http://www.clw.csiro.au/publications/waterforahealthycountry/mdbsy/technical/U-OpenWaterEvaporation.pdf)
+(2008), which [McMahon et
+al.](https://www.hydrol-earth-syst-sci.net/17/1331/2013/) (2013) suggest is
+appropriate for both shallow and deep lakes. CSLS lake depths range from about
+2.5 m (Plainfield and Long) to about 8 m (Pleasant).
+
+```{r ET, eval=TRUE, echo=FALSE, fig.height=4, fig.width=7, fig.align='center'}
+plot_lake_ET <- function(lake){
+# Data
+data(weather)
+data(lst)
+data(isotopes)
+data(water_levels)
+data(site_dictionary)
+data(stage_vol)
+
+# Subset for lake
+lake_subset <- subset_lake(lake, site_dictionary, lst, isotopes, 
+                           water_levels, stage_vol)
+
+# Reassign variable names
+lst             <- lake_subset$lst
+isotopes        <- lake_subset$isotopes
+lake_levels     <- lake_subset$lake_levels
+gw_levels       <- lake_subset$gw_levels
+stage_vol       <- lake_subset$stage_vol
+site_dictionary <- lake_subset$site_dictionary
+
+# Monthly summary
+monthly_weather   <- get_monthly_weather(weather, lst, stage_vol, 
+                                         site_dictionary)
+
+monthly_ET  <- monthly_weather %>%
+               select(date = .data$date, 
+                      ET = .data$ET_mm)
+
+return(monthly_ET)
+}
+
+psnt_ET <- plot_lake_ET("Pleasant")
+long_ET <- plot_lake_ET("Long")
+pfl_ET  <- plot_lake_ET("Plainfield")
+
+colnames(psnt_ET) <- c("date", "Pleasant")
+colnames(long_ET) <- c("date", "Long")
+colnames(pfl_ET) <- c("date", "Plainfield")
+
+monthly_ET <- merge(psnt_ET, long_ET)
+monthly_ET <- merge(monthly_ET, pfl_ET)
+monthly_ET <- monthly_ET[2:nrow(monthly_ET), ]
+melted_ET  <- melt(monthly_ET, id.vars = "date")
+
+plot_ET <- ggplot(data = melted_ET, 
+                  aes(x = as.Date(date), y = value, fill = variable)) +
+           geom_col(position = "dodge") +
+           scale_y_continuous(limits = c(0, 200),
+                              expand = c(0, 0)) +
+           scale_x_date(date_breaks = "2 months",
+                        date_labels = "%b %y") +
+           scale_fill_manual(name = "Flux",
+                             values = c("steelblue4", 
+                                        "steelblue3", 
+                                        "steelblue2"),
+                             breaks = c("Pleasant", 
+                                        "Long", 
+                                        "Plainfield"),
+                             labels = c("Pleasant", 
+                                        "Long", 
+                                        "Plainfield")) +
+           labs(x = "", y = "ET (mm)") +
+           theme_bw() + 
+           theme(text = element_text(family = "Segoe UI Semilight"))
+plot_ET
+```
+
+### Groundwater Inflow
+
+We are calculating groundwater inflow as presented in Krabbenhoft et al. (1990)
+for a lake with no surface inputs.
+
+\begin{align}
+\tag{1}
+GW_{in} = \frac{P*(\delta^{18}O_{L} - \delta^{18}O_{P}) + E*(\delta^{18}O_{E} - 
+          \delta^{18}O_{L})}{\delta^{18}O_{GW_{in}} - \delta^{18}O_{L}}
+\end{align}
+
+where $GW_{in}$ is the groundwater inflow (mm), $P$ is precipitation (mm), $E$
+is evaporation (mm), $\delta^{18}O_{L}$ is measured at the lake,
+$\delta^{18}O_{P}$ is measured from precipitation, $\delta^{18}O_{GW_{in}}$ is
+measured at inflowing groundwater wells, and $\delta^{18}O_{E}$ is estimated for
+evaporation.
+
+<br>
+
+To estimate $\delta^{18}O_{E}$, the only remaining term in the equation, we are
+also using the approach presented in Krabbenhoft et al. (1990).
+
+\begin{align}
+\tag{2}
+\delta^{18}O_{E} = \frac{\alpha^{*} * \delta^{18}O_{L} - h*\delta^{18}O_{A} - 
+                  \epsilon}{1 - h +10^{-3}\Delta \epsilon}
+\end{align}
+
+* We're calculating $h$, the relative humidity normalized to the temperature of
+the surface water (-), as follows:
+\begin{align}
+\tag{3}
+h = \frac{RH}{100}*\frac{es_{A}}{es_{L}}
+\end{align}
+
+    where $RH$ is the relative humidity (%), $es_{A}$ is the saturated vapor
+pressure for the air (kPa), and $es_{L}$ is the saturated vapor pressure for the
+lake (kPa). We're calculating saturated vapor pressure based on Allen et al. (1998) 
+using air temperature (degrees C) or lake temperature (degrees C) for $T$ as appropriate:
+
+\begin{align}
+\tag{4}
+es = 0.6108*exp(\frac{17.27T}{237 + T})
+\end{align}
+
+* We're calculating $\alpha$, the equilibrium isotope fractionation factor
+($\alpha = 1/\alpha^{*}$), based on Gibson et al. (2016), where $T$ is the lake
+surface temperature (K):
+
+\begin{align}
+\tag{5}
+\alpha &= exp(-7.685*10^{-3} + \frac{6.7123}{T} - \frac{1666.4}{T^{2}} + \frac{350410}{T^{3}})
+\end{align}
+
+* We're calculating $\Delta \epsilon$, the kinetic fractionation factor (-), based
+on Krabbenhoft et al. (1990):
+\begin{align}
+\tag{6}
+\Delta \epsilon = 14.3*(1 - h)
+\end{align}
+
+* We're calculating $\epsilon$, the total fractionation factor (-), based on
+Krabbenhoft et al. (1990) as well:
+
+\begin{align}
+\tag{7}
+\epsilon = 1000(1 - \alpha^{*}) + \Delta \epsilon
+\end{align}
+
+* Lastly, we're calculating $\delta^{18}O_{A}$, the isotopic composition of the
+atmosphere, based on Gibson et al. (2016):
+
+\begin{align}
+\tag{8}
+\delta^{18}O_{A} &= \frac{\delta^{18}O_{P} - k*\epsilon}{1 + 10^{-3}*k*\epsilon^{+}}
+\end{align}
+
+* where $k$ can vary from 0.5 for highly seasonal climates to 1.0 for
+non-seasonal climates but is set to 1.0 here and $\epsilon^{+}$ is defined as:
+
+\begin{align}
+\tag{9}
+\epsilon^{+} &= (\alpha - 1)*1000
+\end{align}
+
+<br>
+
+<span style="color:red">**Tricky Issue #3:</span> alpha equations can't match
+reported values in Krabbenhoft et al. (1990).** We've checked two different
+equations (both Gibson et al., 2016, Equation 16a shown above and Ozaydin et
+al., 2001, Equation 9). While both agree with one another, they cannot reproduce
+the values for $\alpha^{*}$ reported in Table 1 of Krabbenhoft et al. (1990)
+using the lake surface temperature values also reported in Table 1. Is there a
+different/more accepted way to calculate $\alpha$ or $\alpha^{*}$?
+
+```{r fcns, echo=FALSE, warning=FALSE, message=FALSE, fig.width = 7, fig.height = 5}
+alpha_Gibson <- function(ltmp){
+  alpha <- exp(-7.685e-3 + 6.7123/(ltmp) - 1666.4/(ltmp)^2 + 350410/(ltmp)^3)
+  return(alpha)
+}
+
+alpha_Ozaydin <- function(ltmp){
+  alpha <- exp((-2.0667 - (415.6/ltmp) + (1137/(ltmp^2))*(10^3))/1000)
+  return(alpha)
+}
+
+date          <- c("4/1/86", "5/1/86", "6/1/86", "7/1/86", "8/1/86", "9/1/86", 
+                   "10/1/86", "11/1/86")
+ltmp          <- c(4, 11.9, 18.1, 22.2, 22.3, 18.1, 11.3, 6.0)
+atmp          <- c(3.7, 11.8, 16.0, 19.4, 18.7, 12.7, 6.3, -1.3)
+d18O_pcpn     <- c(-14.8, -10.7, -6.3, -5.1, -5.3, -8.4, -11.1, -13.8)
+d18O_evap     <- c(-3.95, -13.90, -25.24, -23.97, -17.13, -10.40, -6.12, 33.24)
+h             <- c(0.76, 0.75, 0.78, 0.84, 0.86, 0.86, 0.82, 0.90)
+alphas        <- c(0.98878, 0.98956, 0.98994, 0.99024, 0.99018, 0.98964, 
+                   0.98904, 0.98826)
+delta_epsilon <- c(3.36, 3.36, 3.12, 2.27, 1.96, 1.96, 2.62, 1.43)
+epsilon       <- c(14.68, 14.07, 13.17, 12.04, 11.78, 12.31, 13.58, 13.17)
+d18O_atm      <- c(-25.88, -21.70, -17.07, -16.56, -17.46, -19.30, -22.07, -24.57)
+d18O_lake      <- rep(-5.8, 8)
+
+Krabbenhoft_data <- as.data.frame(cbind(date, d18O_evap, d18O_pcpn, d18O_atm, 
+                                        d18O_lake, ltmp, atmp, h, alphas, 
+                                        delta_epsilon, epsilon))
+Krabbenhoft_data$date <- mdy(Krabbenhoft_data$date)
+
+ltmp_K            <- NISTdegCtOk(ltmp)
+alpha             <- alpha_Ozaydin(ltmp_K)
+Ozaydin           <- as.data.frame(cbind(date, alpha))
+colnames(Ozaydin) <- c("date", "alpha")
+Ozaydin$date      <- mdy(Ozaydin$date)
+
+alpha            <- alpha_Gibson(ltmp_K)
+Gibson           <- as.data.frame(cbind(date, alpha))
+colnames(Gibson) <- c("date", "alpha")
+Gibson$date      <- mdy(Gibson$date)
+
+cols <- c("c1" = "black", "c2" = "red3", "c3" = "blue3")
+
+ggplot() +
+  geom_point(data = Krabbenhoft_data,
+             aes(x = date, 
+                 y = as.numeric(as.character(alphas)),
+                 color = "c1"),
+             size = 3) +
+  geom_point(data = Ozaydin,
+             aes(x = date, 
+                 y = 1/as.numeric(as.character(alpha)),
+                 color = "c2"),
+             size = 3) +
+  geom_point(data = Gibson,
+             aes(x = date, 
+                 y = 1/as.numeric(as.character(alpha)),
+                 color = "c3"),
+             size = 3) +
+  scale_color_manual(name = "Value",
+                     breaks = c("c1", "c2", "c3"),
+                     values = cols,
+                     labels = c("Krabbenhoft", "Ozaydin", "Gibson")) +
+  labs(x = "Sparkling Lake, 1986", y = "alpha*") +
+  theme_bw() +
+  theme(text = element_text(family = "Segoe UI Semilight"))
+```
+
+<br>
+
+<span style="color:red">**Tricky Issue #4:</span> d18O_atm is hypothetical, not
+adjusted for evaporation.** Since we did not measure $\delta^{18}O_{A}$, we must
+estimate it as well. Unfortunately, the equations we're using seem to be for a
+hypothetical $\delta^{18}O_{A}$ assuming vapor is in equilibrium with average
+monthly precipitation at the average monthly temperature. This is a bad
+assumption in Wisconsin, as is clear when we try to reproduce the values for
+$\delta^{18}O_{A}$ reported in Krabbenhoft et al. (1990). Any suggestions for
+how we can adjust for evaporation?
+
+```{r d18O_atm, eval=TRUE, echo=FALSE, fig.width = 7, fig.height = 5}
+d18O_atm_Gibson <- function(d18O_pcpn, alpha, k = 1) {
+  epsilon_plus     <- (alpha - 1)*1000
+  d18O_atm         <- (d18O_pcpn - k*epsilon_plus)/(1 + k*1e-3*epsilon_plus)
+  return(d18O_atm)
+}
+d18O_atm         <- d18O_atm_Gibson(d18O_pcpn, 1/alphas, k = 1)
+Gibson           <- as.data.frame(cbind(date, d18O_atm))
+colnames(Gibson) <- c("date", "d18O_atm")
+Gibson$date      <- mdy(Gibson$date)
+Gibson$d18O_atm  <- as.numeric(as.character(Gibson$d18O_atm))
+
+cols <- c("c1" = "black", "c3" = "blue3")
+
+ggplot() +
+  geom_point(data = Gibson,
+             aes(x = date, 
+                 y = d18O_atm,
+                 color = "c3"),
+             size = 3) +
+  geom_point(data = Krabbenhoft_data,
+             aes(x = date, 
+                 y = as.numeric(as.character(d18O_atm)),
+                 color = "c1"),
+             size = 3) +
+  scale_color_manual(name = "Value",
+                     breaks = c("c1", "c3"),
+                     values = cols,
+                     labels = c("Krabbenhoft","Gibson")) +
+  labs(x = "Sparkling Lake, 1986", y = "d18O_atm") +
+  theme_bw() +
+  theme(text = element_text(family = "Segoe UI Semilight"))
+
+```
+
+### Change in Lake Volume
+
+<span style="color:red">**Tricky Issue #5:</span> Change in Lake Volume is not
+zero.** Water levels in all three lakes have risen markedly over the past year
+(>1 m in Plainfield and Long Lakes, >0.5m in Pleasant Lake), so we cannot assume
+change in lake level is zero. We don't think this changes the approach for
+calculating groundwater inflow, but of course we do need to account for change
+in volume when calculating groundwtater outflow.
+
+```{r lake_levels, eval=TRUE, echo=FALSE, fig.width = 7, fig.height = 5}
+data("water_levels")
+data("site_dictionary")
+psnt <- subset_lake_levels("Pleasant", water_levels, site_dictionary)
+pfl  <- subset_lake_levels("Plainfield", water_levels, site_dictionary)
+long <- subset_lake_levels("Long", water_levels, site_dictionary)
+
+psnt$lake <- "Pleasant"
+pfl$lake  <- "Plainfield"
+long$lake <- "Long"
+
+lake_levels <- as.data.frame(rbind(psnt, long, pfl))
+
+ggplot(data = lake_levels, 
+       aes(x = as.Date(date), y = level_m)) +
+  geom_line(color = "black") +
+  facet_wrap(~lake, scales="free_y") +
+  scale_x_date(date_breaks = "4 months",
+               date_labels = "%b %y") +
+  labs(x = "", y = "Lake Level (mamsl)") +
+  theme_bw() +
+  theme(text = element_text(family = "Segoe UI Semilight"))
+
+```
+
+### Overall Water Balance
+
+We're planning to a) make a few updates to the lake evaporation term, and b)
+convert all fluxes to volumes instead of depths, but our preliminary balances
+for each lake are shown below.
+
+<span style="color:red">**Tricky Issue #6:</span> Negative GWin over winter
+months.** We're getting negative groundwater inflow values during the winter
+(i.e., in February) at all lakes and we've noticed that no one seems to estimate
+groundwater inflow/outflow during the winter months using this method. Right
+now, we're also getting negative values for the smaller lakes (Plainfield and
+Long) in October which is a little more puzzling. We're thinking we'll also have
+to limit our water balance calculations to only the ice-free months, but we'd
+like to get that groundwater flow component during the winter if at all
+possible.
+
+```{r psnt, eval=TRUE, echo=FALSE, fig.width = 7, fig.height = 5}
+# Data
+data(weather)
+data(lst)
+data(isotopes)
+data(water_levels)
+data(site_dictionary)
+data(stage_vol)
+
+# Subset for lake
+lake_subset <- subset_lake(lake = "Pleasant", site_dictionary, lst, isotopes, water_levels, stage_vol)
+
+# Reassign variable names
+lst             <- lake_subset$lst
+isotopes        <- lake_subset$isotopes
+lake_levels     <- lake_subset$lake_levels
+gw_levels       <- lake_subset$gw_levels
+stage_vol       <- lake_subset$stage_vol
+site_dictionary <- lake_subset$site_dictionary
+
+# Identify monthly timeseries with complete coverage of input data
+month_info      <- get_overlap_months(weather, lst, isotopes, lake_levels, gw_levels)
+
+# Monthly summary
+monthly_weather   <- get_monthly_weather(weather, lst, stage_vol, site_dictionary)
+monthly_lst       <- get_monthly_lst(lst)
+monthly_dV        <- get_monthly_dV(lake_levels, month_info)
+monthly_isotopes  <- get_monthly_isotopes(isotopes, site_dictionary,
+                                          static_wells = FALSE, lake_levels, 
+                                          gw_levels, median_threshold = 0.01, 
+                                          static_lake = FALSE)
+monthly_isotopes  <- get_monthly_d18O_evap(monthly_weather, monthly_lst, monthly_isotopes)
+monthly_h2o_bal   <- get_monthly_h2o_bal(monthly_weather, monthly_isotopes, monthly_dV, month_info)
+
+# Plot
+melted_bal <- melt(subset(monthly_h2o_bal, is.na(GWout) == FALSE), id.vars = "date")
+
+for (i in 1:nrow(melted_bal)) {
+  if (melted_bal$variable[i] == "P" |
+  melted_bal$variable[i] == "GWin") {
+    melted_bal$in_or_out[i] <- "In"
+  } else {
+    melted_bal$in_or_out[i] <- "Out"
+  }
+}
+
+plot_balance <- ggplot(data = melted_bal) +
+                geom_col(aes(x = in_or_out, y = value, fill = variable)) +
+                facet_wrap(~date) +
+                scale_y_continuous(expand = c(0,0)) +
+                scale_fill_brewer(name = "Flux",
+                                  palette = "Paired",
+                                  breaks = c("P","E","GWin","GWout","dV"),
+                                  labels = c("Precipitation",
+                                             "Evapotranspiration",
+                                             "Groundwater Inflow",
+                                             "Groundwater Outflow",
+                                             "Change in Lake Volume")) +
+                labs(x = "", y = "Flux (mm)", title = "Pleasant Lake") +
+                theme_bw() + 
+                theme(text = element_text(family = "Segoe UI Semilight"))
+  
+plot_balance
+
+```
+
+```{r long, eval=TRUE, echo=FALSE, fig.width = 7, fig.height = 5}
+# Data
+data(weather)
+data(lst)
+data(isotopes)
+data(water_levels)
+data(site_dictionary)
+data(stage_vol)
+
+# Subset for lake
+lake_subset <- subset_lake(lake = "Long", site_dictionary, lst, isotopes, water_levels, stage_vol)
+
+# Reassign variable names
+lst             <- lake_subset$lst
+isotopes        <- lake_subset$isotopes
+lake_levels     <- lake_subset$lake_levels
+gw_levels       <- lake_subset$gw_levels
+stage_vol       <- lake_subset$stage_vol
+site_dictionary <- lake_subset$site_dictionary
+
+# Identify monthly timeseries with complete coverage of input data
+month_info      <- get_overlap_months(weather, lst, isotopes, lake_levels, gw_levels)
+
+# Monthly summary
+monthly_weather   <- get_monthly_weather(weather, lst, stage_vol, site_dictionary)
+monthly_lst       <- get_monthly_lst(lst)
+monthly_dV        <- get_monthly_dV(lake_levels, month_info)
+monthly_isotopes  <- get_monthly_isotopes(isotopes, site_dictionary,
+                                          static_wells = FALSE, lake_levels, 
+                                          gw_levels, median_threshold = 0.01, 
+                                          static_lake = FALSE)
+monthly_isotopes  <- get_monthly_d18O_evap(monthly_weather, monthly_lst, monthly_isotopes)
+monthly_h2o_bal   <- get_monthly_h2o_bal(monthly_weather, monthly_isotopes, monthly_dV, month_info)
+
+# Plot
+melted_bal <- melt(subset(monthly_h2o_bal, is.na(GWout) == FALSE), id.vars = "date")
+
+for (i in 1:nrow(melted_bal)) {
+  if (melted_bal$variable[i] == "P" |
+  melted_bal$variable[i] == "GWin") {
+    melted_bal$in_or_out[i] <- "In"
+  } else {
+    melted_bal$in_or_out[i] <- "Out"
+  }
+}
+
+plot_balance <- ggplot(data = melted_bal) +
+                geom_col(aes(x = in_or_out, y = value, fill = variable)) +
+                facet_wrap(~date) +
+                scale_y_continuous(expand = c(0,0)) +
+                scale_fill_brewer(name = "Flux",
+                                  palette = "Paired",
+                                  breaks = c("P","E","GWin","GWout","dV"),
+                                  labels = c("Precipitation",
+                                             "Evapotranspiration",
+                                             "Groundwater Inflow",
+                                             "Groundwater Outflow",
+                                             "Change in Lake Volume")) +
+                labs(x = "", y = "Flux (mm)", title = "Long Lake") +
+                theme_bw() + 
+                theme(text = element_text(family = "Segoe UI Semilight"))
+  
+plot_balance
+
+```
+
+```{r pfl, eval=TRUE, echo=FALSE, fig.width = 7, fig.height = 5}
+# Data
+data(weather)
+data(lst)
+data(isotopes)
+data(water_levels)
+data(site_dictionary)
+data(stage_vol)
+
+# Subset for lake
+lake_subset <- subset_lake(lake = "Plainfield", site_dictionary, lst, isotopes, water_levels, stage_vol)
+
+# Reassign variable names
+lst             <- lake_subset$lst
+isotopes        <- lake_subset$isotopes
+lake_levels     <- lake_subset$lake_levels
+gw_levels       <- lake_subset$gw_levels
+stage_vol       <- lake_subset$stage_vol
+site_dictionary <- lake_subset$site_dictionary
+
+# Identify monthly timeseries with complete coverage of input data
+month_info      <- get_overlap_months(weather, lst, isotopes, lake_levels, gw_levels)
+
+# Monthly summary
+monthly_weather   <- get_monthly_weather(weather, lst, stage_vol, site_dictionary)
+monthly_lst       <- get_monthly_lst(lst)
+monthly_dV        <- get_monthly_dV(lake_levels, month_info)
+monthly_isotopes  <- get_monthly_isotopes(isotopes, site_dictionary,
+                                          static_wells = FALSE, lake_levels, 
+                                          gw_levels, median_threshold = 0.01, 
+                                          static_lake = FALSE)
+monthly_isotopes  <- get_monthly_d18O_evap(monthly_weather, monthly_lst, monthly_isotopes)
+monthly_h2o_bal   <- get_monthly_h2o_bal(monthly_weather, monthly_isotopes, monthly_dV, month_info)
+
+# Plot
+melted_bal <- melt(subset(monthly_h2o_bal, is.na(GWout) == FALSE), id.vars = "date")
+
+for (i in 1:nrow(melted_bal)) {
+  if (melted_bal$variable[i] == "P" |
+  melted_bal$variable[i] == "GWin") {
+    melted_bal$in_or_out[i] <- "In"
+  } else {
+    melted_bal$in_or_out[i] <- "Out"
+  }
+}
+
+plot_balance <- ggplot(data = melted_bal) +
+                geom_col(aes(x = in_or_out, y = value, fill = variable)) +
+                facet_wrap(~date) +
+                scale_y_continuous(expand = c(0,0)) +
+                scale_fill_brewer(name = "Flux",
+                                  palette = "Paired",
+                                  breaks = c("P","E","GWin","GWout","dV"),
+                                  labels = c("Precipitation",
+                                             "Evapotranspiration",
+                                             "Groundwater Inflow",
+                                             "Groundwater Outflow",
+                                             "Change in Lake Volume")) +
+                labs(x = "", y = "Flux (mm)", title = "Plainfield Lake") +
+                theme_bw() + 
+                theme(text = element_text(family = "Segoe UI Semilight"))
+  
+plot_balance
+
+```

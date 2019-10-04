@@ -116,7 +116,7 @@ the lake (kPa). Saturated vapor pressure is calculated based on Allen et al.
 $t$ as appropriate:
 \begin{align}
 \tag{5}
-es = 0.6108e^{\frac{17.27t}{237+t}}
+es = 0.6108e^{\frac{17.27T}{237 + T}}
 \end{align}
 
 The equilibrium isotope fractionation factor (-), $\alpha$, is calculated
@@ -143,12 +143,18 @@ fractionation factor and the kinetic fractionation factor (Krabbenhoft et al.,
 \end{align}
 
 Lastly, the isotopic composition of the atmosphere, $\delta^{18}O_{A}$, is
-calculated based on Gibson et al. (2016). $k$ represents the seasonality of a
-location, varying from 0.5 for highly seasonal climates to 1.0 for non-seasonal
-climates. Here, $k$ defaults to 0.8.
+calculated based on Gibson et al. (2016):
 \begin{align}
 \tag{9}
-\delta^{18}O_{A} = \frac{\delta^{18}O_{P} - k*\epsilon}{1 + 10^{-3}*k*\epsilon}
+\delta^{18}O_{A} &= \frac{\delta^{18}O_{P} - k*\epsilonv}{1 + 10^{-3}*k*\epsilon^{+}})
+\end{align}
+
+where $k$ can vary from 0.5 for highly seasonal climates to 1.0 for non-seasonal
+climates but is set to 1.0 here and $\epsilon^{+}$ is defined as:
+
+\begin{align}
+\tag{10}
+\epsilon^{+} &= (\alpha - 1)*1000
 \end{align}
 
 ## Input data
