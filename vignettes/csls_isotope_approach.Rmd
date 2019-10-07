@@ -159,6 +159,9 @@ months?
 a non-zero $dV/dt$?
 6. Is it possible to calculate the monthly water balance using this approach
 over the winter (ice-on) months?
+7. Would you suggest sticking with a monthly water balance based on calendar
+months, or do you see benefits to switching to periods determined by relative
+water levels in the lake and the wells?
 
 ## Data Sources
 
@@ -182,16 +185,22 @@ $\delta^{18}O_{E}$ calculations. Field measurements were not taken from November
 
 ### Stable Isotope Measurements
 
-**Precipitation:** $\delta^{18}O_{P}$ is measured using two collectors at the Hancock Agricultural
-Research Station (approximately 8 miles from Plainfield Lake, 8.5 miles from
-Long Lake, and 14.5 miles from Pleasant Lake). Collectors were initially
-deployed Sept. 28, 2018 and redeployed after the winter on April 19, 2019.
+**Precipitation:** $\delta^{18}O_{P}$ is measured using two collectors at the
+Hancock Agricultural Research Station (approximately 8 miles from Plainfield
+Lake, 8.5 miles from Long Lake, and 14.5 miles from Pleasant Lake). Collectors
+were initially deployed Sept. 28, 2018 and redeployed after the winter on April
+19, 2019 (i.e., we did not collect snow samples).
 
 **Lake:** $\delta^{18}O_{L}$ is measured less than every-other-month at the lake
-surface. We do not have any profiles measurements of $\delta^{18}O_{L}$. 
+surface. We do not have any profiles measurements of $\delta^{18}O_{L}$. Only
+Plesant Lake stratifies during the summer.
 
-**Groundwater:** $\delta^{18}O_{GW}$ is measured every-other-month at 2-4 wells that are
-upgradient of each lake.
+**Groundwater:** $\delta^{18}O_{GW}$ is measured every-other-month at 2-4 wells
+that are upgradient of each lake. The initial sampling design involved
+monitoring 2 upradient and 2 downgradient wells, but groundwater levels have
+been rising rapidly this year and one or both of the "downgradient" wells at
+Long Lake and Plainfield Lake have now flipped to "upgradient" wells. Pleasant
+Lake wells have not flipped.
 
 <br>
 
@@ -224,7 +233,11 @@ We are extending our $\delta^{18}O_{L}$ dataset by making one assumption:
 
 1. For any month with measurements of $\delta^{18}O_{P}$ and
 $\delta^{18}O_{GW}$, but not $\delta^{18}O_{L}$, we are using the mean fall
-$\delta^{18}O_{L}$ (i.e., the Oct 2018 measurement)
+$\delta^{18}O_{L}$ (i.e., the Oct 2018 measurement). 
+
+Alternatively, we could use the measurement from the nearest month. For a deeper
+dive into how much of a difference this makes, see
+"*csls_isotope_sensitivity.html*".
 
 <br>
 
@@ -572,15 +585,30 @@ We're planning to a) make a few updates to the lake evaporation term, and b)
 convert all fluxes to volumes instead of depths, but our preliminary balances
 for each lake are shown below.
 
+<br>
+
 <span style="color:red">**Tricky Issue #6:</span> Negative GWin over winter
 months.** We're getting negative groundwater inflow values during the winter
 (i.e., in February) at all lakes and we've noticed that no one seems to estimate
 groundwater inflow/outflow during the winter months using this method. Right
 now, we're also getting negative values for the smaller lakes (Plainfield and
-Long) in October which is a little more puzzling. We're thinking we'll also have
-to limit our water balance calculations to only the ice-free months, but we'd
-like to get that groundwater flow component during the winter if at all
-possible.
+Long) in October which is a little more puzzling. We're thinking we'll have to
+limit our water balance calculations to only the ice-free months, but we'd like
+to get that groundwater flow component during the winter if at all possible. Is
+it possible to do that with this isotope method?
+
+<br>
+
+<span style="color:red">**Tricky Issue #7:</span> Relationship between lake and
+well levels change over time.** The flip in well water levels at Long Lake and
+Plainfield Lake (some downgradient --> all upgradient) occurred around
+mid-April. One thing we've been considering is if it is appropriate to present
+the water balance for each calendar month, as we are currently doing, or if we
+should switch to presenting the water balance for different periods determined
+by the relative water levels in the lake and wells (e.g., when wells that had
+been downgradient become upgradient of the lake).
+
+<br>
 
 ```{r psnt, eval=TRUE, echo=FALSE, fig.width = 7, fig.height = 5}
 # Data

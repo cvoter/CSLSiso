@@ -33,7 +33,7 @@ plot_d18O <- function(lake, lake_isotopes) {
               facet_wrap(~site_id) +
               labs(x = "",
                    y = "d18O",
-                   title = sprintf("%s Lake", lake)) +
+                   title = sprintf("%s Lake - d18O", lake)) +
               theme_bw() +
               theme(text = element_text(family = "Segoe UI Semilight"),
                     legend.position = "top")
@@ -83,7 +83,7 @@ plot_levels <- function(lake, water_level_diff, lake_isotopes){
               facet_wrap(~site_id) +
               labs(x = "",
                    y = "GW Level (m) - Lake Level (m)",
-                   title = sprintf("%s Lake", lake)) +
+                   title = sprintf("%s Lake -  Water Level Comparison", lake)) +
               theme_bw() +
               theme(text = element_text(family = "Segoe UI Semilight"),
                     panel.grid.major = element_blank(),
@@ -148,7 +148,7 @@ plot_iso <- function(lake, lake_isotopes) {
              facet_wrap(~site_id) +
              labs(x = "d18O",
                   y = "d2H",
-                  title = sprintf("%s Lake", lake)) +
+                  title = sprintf("%s Lake - LMWL Comparison", lake)) +
              scale_fill_distiller(name = "Date",
                                   palette = "Greys",
                                   direction = 1,
