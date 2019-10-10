@@ -5,55 +5,7 @@
 # - classify_iso_site_dynamic
 
 # ------------------------------------------------------------------------------
-#' Classify Stable Isotope Measurements (Static)
-#'
-#' Classifies the site type of isotope measurements as precipitation, lake,
-#' upgradient, or downgradient. Upgradient vs. downgradient wells are determined
-#' by static definitions in the site dictionary.
-#'
-#' @param isotopes a data frame with isotope measurements as formatted in the
-#'                \code{\link{isotopes}} dataset, subset to records for the lake
-#'                of interest.
-#' @param site_dictionary a data frame with site id numbers and static isotope
-#'                        site classifications as formatted in the
-#'                        \code{\link{site_dictionary}} dataset, subset to
-#'                        records for the lake of interest.
-#'
-#' @return isotopes - the same data frame provided to the function, but with an
-#'                    additional column for "site_type" with values of
-#'                    "precipitation", "lake", "upgradient", "downgradient", or
-#'                    "".
-#'
-#' @importFrom magrittr %>%
-#' @importFrom dplyr filter select
-#' @importFrom rlang .data
-#'
-#' @export
-
-classify_iso_site_static <- function(isotopes,
-                                     site_dictionary) {
-  # Subset sites to those with a static isotope site type
-  iso_sites                  <- site_dictionary %>%
-                                filter(is.na(.data$static_iso_class) == FALSE)
-  iso_sites$site_id          <- as.character(iso_sites$site_id)
-  iso_sites$static_iso_class <- as.character(iso_sites$static_iso_class)
-  isotopes$site_id           <- as.character(isotopes$site_id)
-
-  # Classify measurements (upgradient, downgradient, precipitation, lake)
-  isotopes$site_type <- NA
-  for (i in 1:nrow(isotopes)) {
-    if (isotopes$site_id[i] %in% iso_sites$site_id) {
-      isotopes$site_type[i] <- iso_sites %>%
-                               filter(.data$site_id == isotopes$site_id[i]) %>%
-                               select(.data$static_iso_class) %>%
-                               as.character()
-    }
-  }
-  return(isotopes)
-}
-
-# ------------------------------------------------------------------------------
-#' Classify Stable Isotope Measurements (Dynamic)
+#' Classify Groundwater Stable Isotope Measurements (Dynamic)
 #'
 #' Classifies the site type of isotope measurements as precipitation, lake,
 #' upgradient, or downgradient. Upgradient vs. downgradient wells are determined
@@ -90,11 +42,8 @@ classify_iso_site_static <- function(isotopes,
 #'
 #' @export
 
-classify_iso_site_dynamic <- function(isotopes,
-                                      lake_levels,
-                                      gw_levels,
-                                      site_dictionary,
-                                      median_threshold = 0.03) {
+iso_gw_dynamic <- function(isotopes, lake_levels, gw_levels, site_dictionary,
+                           median_threshold = 0.03) {
   # Identify which sites are groundwater sites
   gw_sites <- site_dictionary %>%
               filter(.data$obs_type == "GW",

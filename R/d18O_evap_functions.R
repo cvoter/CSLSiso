@@ -30,7 +30,7 @@
 #'
 #' @export
 
-d18O_evap <- function(atmp, ltmp, RH, d18O_pcpn, d18O_lake) {
+calculate_d18O_evap <- function(atmp, ltmp, RH, d18O_pcpn, d18O_lake) {
   # Required parameters
   es_a          <- d18O_evap_sat_vapor_press(atmp - 273.15)
   es_l          <- d18O_evap_sat_vapor_press(ltmp - 273.15)

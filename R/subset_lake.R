@@ -1,0 +1,61 @@
+#' Subset Inputs for Given Lake
+#'
+#' This function subsets input data for isoH2Obudget for just the lake of
+#' interest. Includes: site_dictionary, lst, isotopes, water_levels (to
+#' gw_levels and lake_levels), and stage_vol.
+#'
+#' @param lake lake of interest (e.g., "Pleasant", "Long", or "Plainfield")
+#' @param site_dictionary a data frame with the lake, obs_type, site_id,
+#'                        SWIMS_station, USGS_id, WBIC, and static_iso_type of
+#'                        measurement sites, as in the
+#'                        \code{\link{site_dictionary}} dataset
+#' @param lst a data frame with the WBIC, date, ltmp, and units of
+#'            every-other-week lake surface temperature measurements, as in the
+#'            \code{\link{lst}} dataset
+#' @param isotopes a data frame with the date, lake, site_id, d18O, and d2H of
+#'                 isotope measurements, as in the \code{\link{isotopes}}
+#'                 dataset
+#' @param water_levels a data frame with the date, site_no, obs_type, and
+#'                     level_m of daily water level observations, as in the
+#'                     \code{\link{water_levels}} dataset.
+#' @param stage_vol a data frame with the lake, stage_m, surf_area_m2, and
+#'                  volume_m3 as in the \code{\link{stage_vol}} dataset.
+#'
+#' @return a list with the input data frames subsetted to measurements
+#'   associated with the lake of interest. Includes:
+#' \describe{
+#' \item{lst}{data frame with lake surface temperatures (deg C)}
+#' \item{isotopes}{data frame with lake isotope measurements, including
+#'                 precipitation measurements}
+#' \item{lake_levels}{data frame with lake levels (m)}
+#' \item{gw_levels}{data frame with groundwater levels (m) around the lake}
+#' \item{stage_vol}{data frame with relationships among stage (m), volume (m^3),
+#'                  and surface area (m^2) for the lake}
+#' \item{site_dictionary}{data frame with all names, identification codes, and
+#'                        classifications of measurment sites associated with
+#'                        the lake}
+#' }
+#'
+#' @export
+
+subset_lake <- function(lake,
+                        site_dictionary,
+                        lst,
+                        isotopes,
+                        water_levels,
+                        stage_vol) {
+
+  lst             <- subset_lst(lake, lst, site_dictionary)
+  isotopes        <- subset_isotopes(lake, isotopes)
+  lake_levels     <- subset_lake_levels(lake, water_levels, site_dictionary)
+  gw_levels       <- subset_gw_levels(lake, water_levels, site_dictionary)
+  stage_vol       <- subset_stage_vol(lake, stage_vol)
+  site_dictionary <- subset_site_dictionary(lake, site_dictionary)
+
+  return(list(lst = lst,
+              isotopes = isotopes,
+              lake_levels = lake_levels,
+              gw_levels = gw_levels,
+              stage_vol = stage_vol,
+              site_dictionary = site_dictionary))
+}

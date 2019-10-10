@@ -6,9 +6,8 @@
 #' @param lake_levels a data frame with daily water level measurements as
 #'                    formatted in the \code{\link{water_levels}} dataset,
 #'                    subset to lake level records for the lake of interest.
-#' @param month_info a list with with the start date, end date, and number of
-#'                   months in the common timeseries of input data, as output by
-#'                   \code{\link{get_overlap_months}}
+#' @param timeseries a vector of all months in the common timeseries among input
+#'                   datasets
 #'
 #' @return monthly_dV, a data frame with the following columns:
 #' \describe{
@@ -23,10 +22,10 @@
 #'
 #' @export
 
-get_monthly_dV <- function(lake_levels, month_info) {
+summarise_dV <- function(lake_levels, timeseries) {
   monthly_dV <- NULL
-  for (i in 1:month_info$nmonths) {
-    this_month  <- month_info$start_date + months(i-1)
+  for (i in 1:length(timeseries)) {
+    this_month  <- timeseries[i]
 
     daily_stage <- lake_levels %>%
                    filter(month(.data$date) == month(this_month),

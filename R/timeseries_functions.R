@@ -1,11 +1,43 @@
-# monthly_timeseries_functions.R
+# timeseries_functions.R
 # Functions to calculate starting date, ending date, and number of months in a
 # monthly timeseries.
 # Includes:
-# - get_overlap_months
-# - get_start_date
-# - get_end_date
-# - get_nmonths
+# - fill_timeseries_gaps
+# - find_overlap_timeseries
+# - find_start_date
+# - find_end_date
+# - find_nmonths
+
+# ------------------------------------------------------------------------------
+#' Fill Gaps in Summary Data
+#'
+#' This function compares dates in a given (complete) timeseries and dataframe,
+#' then adds blank rows for the dates that are missing in the dataframe.
+#'
+#' @param df data frame with a "date" column
+#' @param timeseries vector with complete list of dates that should be in the
+#'                   "date" column of df
+#'
+#' @return df, the same data frame with blank rows added to fill in timeseries,
+#'        then sorted by date.
+#'
+#' @import lubridate
+#'
+#' @export
+
+fill_timeseries_gaps <- function (df, timeseries){
+  no_dates <- timeseries[which(!timeseries %in% df$date)]
+  no_dates <- as_datetime(no_dates)
+  if (length(no_dates) > 0) {
+    for (i in 1:length(no_dates)){
+      df[nrow(df)+1,]     <- NA
+      df$date[nrow(df)]   <- no_dates[i]
+    }
+  }
+  df <- df %>% arrange(.data$date)
+  return(df)
+}
+
 # ------------------------------------------------------------------------------
 #' Identify Months With Overlapping Data
 #'
@@ -63,36 +95,42 @@
 #'
 #' @export
 
-get_overlap_months <- function(weather, lst, isotopes, lake_levels, gw_levels){
-  start_weather  <- get_start_date(weather$date, all_days = TRUE)
-  start_lst      <- get_start_date(lst$date)
-  start_isotopes <- get_start_date(isotopes$date)
-  start_lake     <- get_start_date(lake_levels$date, all_days = TRUE)
-  start_gw       <- get_start_date(gw_levels$date)
+find_overlap_timeseries <- function(weather, lst, isotopes, lake_levels,
+                                    gw_levels){
+  start_weather  <- find_start_date(weather$date, all_days = TRUE)
+  start_lst      <- find_start_date(lst$date)
+  start_isotopes <- find_start_date(isotopes$date)
+  start_lake     <- find_start_date(lake_levels$date, all_days = TRUE)
+  start_gw       <- find_start_date(gw_levels$date)
   start_date     <- max(start_weather,
                         start_lst,
                         start_isotopes,
                         start_lake,
                         start_gw)
 
-  end_weather  <- get_end_date(weather$date, all_days = TRUE)
-  end_lst      <- get_end_date(lst$date)
-  end_isotopes <- get_end_date(isotopes$date)
-  end_lake     <- get_end_date(lake_levels$date, all_days = TRUE)
-  end_gw       <- get_end_date(gw_levels$date)
+  end_weather  <- find_end_date(weather$date, all_days = TRUE)
+  end_lst      <- find_end_date(lst$date)
+  end_isotopes <- find_end_date(isotopes$date)
+  end_lake     <- find_end_date(lake_levels$date, all_days = TRUE)
+  end_gw       <- find_end_date(gw_levels$date)
   end_date     <- min(end_weather,
                       end_lst,
                       end_isotopes,
                       end_lake,
                       end_gw)
 
-  nmonths <- get_nmonths(start_date, end_date)
+  nmonths <- find_nmonths(start_date, end_date)
 
-  return(list(start_date = start_date, end_date = end_date, nmonths = nmonths))
+  timeseries <- NULL
+  for (i in 1:nmonths){
+    timeseries[i] <- start_date + months(i-1)
+  }
+
+  return(timeseries)
 }
 
 # ------------------------------------------------------------------------------
-#' Identify Start Date
+#' Identify Start Date of Timeseries
 #'
 #' Identifies the starting date of a monthly timeseries (forced to the 1st of
 #' the month)
@@ -108,7 +146,7 @@ get_overlap_months <- function(weather, lst, isotopes, lake_levels, gw_levels){
 #' @import lubridate
 #'
 #' @export
-get_start_date <- function(date_vector, all_days = FALSE){
+find_start_date <- function(date_vector, all_days = FALSE){
   start_date   <- min(date_vector)
   prev_date    <- start_date - days(1)
   if (month(start_date) == month(prev_date) & all_days == TRUE) {
@@ -120,7 +158,7 @@ get_start_date <- function(date_vector, all_days = FALSE){
 }
 
 # ------------------------------------------------------------------------------
-#' Identify End Date
+#' Identify End Date of Timeseries
 #'
 #' Identifies the ending date of a monthly timeseries (forced to the last day of
 #' the month)
@@ -136,7 +174,7 @@ get_start_date <- function(date_vector, all_days = FALSE){
 #' @importFrom lubridate days month floor_date ceiling_date
 #'
 #' @export
-get_end_date <- function(date_vector, all_days = FALSE){
+find_end_date <- function(date_vector, all_days = FALSE){
   end_date   <- max(date_vector)
   next_date  <- end_date + days(1)
   if (month(end_date) == month(next_date) & all_days == TRUE) {
@@ -148,7 +186,7 @@ get_end_date <- function(date_vector, all_days = FALSE){
 }
 
 # ------------------------------------------------------------------------------
-#' Number of Months in Timeseries
+#' Identify Number of Months in Timeseries
 #'
 #' Calculates the number of months in a timeseries given a start and end date.
 #'
@@ -162,7 +200,7 @@ get_end_date <- function(date_vector, all_days = FALSE){
 #' @importFrom lubridate interval time_length
 #'
 #' @export
-get_nmonths <- function(start_date, end_date){
+find_nmonths <- function(start_date, end_date){
   date_interval <- interval(start = start_date, end = end_date)
   nmonths       <- round(time_length(date_interval, unit = "month"))
   return(nmonths)

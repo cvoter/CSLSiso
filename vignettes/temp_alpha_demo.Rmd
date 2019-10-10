@@ -1,0 +1,28 @@
+---
+title: "Untitled"
+author: "Carolyn Voter"
+date: "10/9/2019"
+output: html_document
+---
+```{r units, echo=TRUE, eval=TRUE}
+library(NISTunits)
+```
+
+Check code for Gibson $\alpha$ equation, where $\alpha = 1/\alpha^{*}$. Expect
+that $\alpha > 1$ (i.e., L/V) because $\alpha^{*} < 1$ (i.e., V/L).
+```{r setup, echo=TRUE, eval=TRUE}
+# Gibson equation. ltmp in Kelvin, should yield alpha > 1
+alpha_Gibson <- function(ltmp){
+  alpha <- exp(-7.685e-3 + 6.7123/(ltmp) - 1666.4/(ltmp)^2 + 350410/(ltmp)^3)
+  return(alpha)
+}
+
+# Input temps
+ltmp   <- c(4, 11.9, 18.1, 22.2, 22.3, 18.1, 11.3, 6.0) # Krabbenhoft 1990 values
+ltmp_K <- NISTdegCtOk(ltmp) # convert degC to Kelvin
+ltmp_K # print out converted temps to check that it's actually Kelvin
+
+# Calculated alpha
+alpha  <- alpha_Gibson(ltmp_K)
+alpha # print out calculated alpha values, expect alpha > 1
+```

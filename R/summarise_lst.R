@@ -22,9 +22,11 @@
 #' @seealso \code{\link{retrieve_csls_lst}}, \code{\link{lst}}
 #'
 #' @export
-get_monthly_lst <- function(lst){
+summarise_lst <- function(lst, timeseries){
   monthly_lst <- lst %>%
-    group_by(date = floor_date(.data$date, unit = "month")) %>%
-    summarise(ltmp_K = NISTdegCtOk(mean(.data$ltmp)))
+                 group_by(date = floor_date(.data$date, unit = "month")) %>%
+                 filter(date %in% timeseries) %>%
+                 summarise(ltmp_K = NISTdegCtOk(mean(.data$ltmp)))
+  monthly_lst <- fill_timeseries_gaps(monthly_lst, timeseries)
   return(monthly_lst)
 }
