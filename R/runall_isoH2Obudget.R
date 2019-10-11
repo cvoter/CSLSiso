@@ -25,27 +25,31 @@
 #' \item{GWin}{monthly groundwater inflow to the lake (mm)}
 #' \item{GWout}{monthly groundwater outflow to the lake (mm)}
 #' \item{dV}{monthly change in lake volume (mm)}
+#' }
 #'
-#' @example
+#' @examples
+#' \dontrun{
 #' csls_files <- list(weather_file = "csls_weather_hancock_hourly_2019_09_30.csv",
 #'                    SWIMS_file = "csls_SWIMS_2019_09_05.csv",
 #'                    isotope_file = "csls_isotope_samples_2019_10_02.csv",
 #'                    site_file = "csls_site_dictionary.csv",
 #'                    stage_vol_file = "csls_stage_volume.csv")
 #' lake = "Pleasant"
-#' monthly_h2o_bal <- runall_isoH2Obudget(lake, files, filedir = "system.file",
+#' monthly_h2o_bal <- runall_isoH2Obudget(lake, csls_files,
+#'                                        filedir = "system.file",
 #'                                        dataset = "csls")
 #'
-#' @example
+#'
 #' kniffin_files <- list(weather_file = "kniffin_weather_monthly.csv",
 #'                       isotope_file = "kniffin_isotope_samples.csv",
 #'                       site_file = "kniffin_site_dictionary.csv",
 #'                       d18O_evap_file = "kniffin_d18O_evap.csv")
 #' lake = "Long"
-#' monthly_h2o_bal <- runall_isoH2Obudget(lake, files, filedir = "system.file",
+#' monthly_h2o_bal <- runall_isoH2Obudget(lake, kniffin_files,
+#'                                        filedir = "system.file",
 #'                                        dataset = "kniffin")
-#'
-#' @importFrom devtools use_data
+#' }
+#' @importFrom usethis use_data
 #' @importFrom NISTunits NISTinchTOmeter
 #' @import lubridate
 #'

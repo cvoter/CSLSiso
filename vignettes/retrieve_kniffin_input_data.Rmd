@@ -31,7 +31,7 @@ isotope_file   <- "kniffin_isotope_samples.csv"
 site_file      <- "kniffin_site_dictionary.csv"
 d18O_evap_file <- "kniffin_d18O_evap.csv"
 
-filedir        <- "../inst/extdata"  #"system.file"
+filedir        <- "system.file" #"../inst/extdata"
 ```
 
 ## Retrieve data
@@ -42,10 +42,12 @@ site_dictionary  <- load_pkg_csv(site_file, filedir)
 
 isotopes         <- load_pkg_csv(isotope_file, filedir)
 isotopes$date    <- as_datetime(mdy(isotopes$date))
-kniffin_isotopes <- get_monthly_isotopes(isotopes,
-                                         site_dictionary, 
-                                         static_wells = TRUE, 
-                                         static_lake = FALSE)
+kniffin_isotopes <- summarise_isotopes(isotopes,
+                                       site_dictionary,
+                                       isotopes$date,
+                                       static_gw = TRUE, 
+                                       static_lake = FALSE, 
+                                       use_kniffin_pcpn = FALSE)
 kniffin_isotopes$d18O_evap <- NULL
 
 # d18O_evap        <- load_pkg_csv(d18O_evap_file, filedir)

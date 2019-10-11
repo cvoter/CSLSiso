@@ -6,6 +6,8 @@
 #' @param lst a data frame with sub-monthly lake surface temperature
 #'            measurements as formatted in the \code{\link{lst}} dataset, subset
 #'            for a single lake.
+#' @param timeseries a vector of all months in the common timeseries among input
+#'                   datasets
 #'
 #' @return monthly_lst, a data frame with the following columns:
 #' \describe{

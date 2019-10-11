@@ -23,18 +23,29 @@ library(knitr)
 ```{r fcns, eval=TRUE, echo=FALSE}
 get_dynamic_sites <- function(lake, site_dictionary, lst, isotopes, 
                                   water_levels, stage_vol){
-  lk               <- subset_lake(lake, site_dictionary, lst, isotopes, 
-                                  water_levels, stage_vol)
-  monthly_isotopes <- get_monthly_isotopes(lk$isotopes, lk$site_dictionary, 
-                                           static_wells = FALSE, lk$lake_levels, 
-                                           lk$gw_levels, median_threshold = 0.01, 
-                                           static_lake = FALSE)
+  lst             <- subset_lst(lake, lst, site_dictionary)
+  isotopes        <- subset_isotopes(lake, isotopes)
+  lake_levels     <- subset_lake_levels(lake, water_levels, site_dictionary)
+  gw_levels       <- subset_gw_levels(lake, water_levels, site_dictionary)
+  stage_vol       <- subset_stage_vol(lake, stage_vol)
+  site_dictionary <- subset_site_dictionary(lake, site_dictionary)
+  
+  # Identify monthly timeseries with complete coverage of input data
+  timeseries <- find_overlap_timeseries(weather, lst, isotopes, lake_levels,
+                                        gw_levels)
+  timeseries <- as_datetime(timeseries)
+
+  monthly_isotopes  <- summarise_isotopes(isotopes, site_dictionary, timeseries,
+                                        static_gw = FALSE, lake_levels,
+                                        gw_levels, 
+                                        median_threshold = 0.01,
+                                        static_lake= FALSE, 
+                                        use_kniffin_pcpn = TRUE)
   monthly_isotopes            <- monthly_isotopes %>%
                                  filter(is.na(.data$GWin_sites) == FALSE &
                                           .data$GWin_sites != "") %>%
                                  select(.data$date, .data$GWin_sites)
   monthly_isotopes$date       <- format(monthly_isotopes$date, "%b %Y")
-  monthly_isotopes$GWin_sites <- unlist(monthly_isotopes$GWin_sites)
   upgradient_sites            <- as.data.frame(cbind(monthly_isotopes$date, 
                                                      monthly_isotopes$GWin_sites))
   colnames(upgradient_sites)  <- c("Month", "Upgradient Wells")

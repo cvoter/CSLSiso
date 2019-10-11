@@ -10,6 +10,8 @@
   \item{d18O_lake}{d18O isotopic composition, lake (per mil)}
   \item{d18O_pcpn}{d18O isotopic composition, precipitation (per mil)}
   \item{d18O_GWin}{d18O isotopic composition, inflowing groundwater (per mil)}
+  \item{d18O_GWout}{d18O isotopic composition, inflowing groundwater (per
+                    mil), not measured by Kniffin}
   \item{GWin_sites}{sites used for GWin measurement}
   \item{GWout_sites}{sites used for GWout measurement}
 }}

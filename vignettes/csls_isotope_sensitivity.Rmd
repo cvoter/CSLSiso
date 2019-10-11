@@ -19,8 +19,7 @@ library(dplyr) #for %>% pipes
 ```
 
 ```{r fcns, eval=TRUE, echo=FALSE, fig.width = 7, fig.height = 3}
-lake_h2o_bal <- function(lake, static_wells = FALSE, static_lake = FALSE) {
-  # Data
+lake_sensitivity <- function(lake){
   data(weather)
   data(lst)
   data(isotopes)
@@ -28,45 +27,28 @@ lake_h2o_bal <- function(lake, static_wells = FALSE, static_lake = FALSE) {
   data(site_dictionary)
   data(stage_vol)
   
+  h2o_bal_default <- summarise_h2o_bal(lake, weather, lst, isotopes, water_levels,
+                                       site_dictionary, stage_vol, 
+                                       static_gw = FALSE, median_threshold = 0.01, 
+                                       static_lake = FALSE, 
+                                       use_kniffin_pcpn = TRUE)
+  h2o_bal_gw <- summarise_h2o_bal(lake, weather, lst, isotopes, water_levels,
+                                       site_dictionary, stage_vol, 
+                                       static_gw = TRUE, median_threshold = 0.01, 
+                                       static_lake = FALSE, 
+                                       use_kniffin_pcpn = TRUE)
+  h2o_bal_lake <- summarise_h2o_bal(lake, weather, lst, isotopes, water_levels,
+                                       site_dictionary, stage_vol, 
+                                       static_gw = FALSE, median_threshold = 0.01, 
+                                       static_lake = TRUE, 
+                                       use_kniffin_pcpn = TRUE)
+  h2o_bal_both <- summarise_h2o_bal(lake, weather, lst, isotopes, water_levels,
+                                       site_dictionary, stage_vol, 
+                                       static_gw = TRUE, median_threshold = 0.01, 
+                                       static_lake = TRUE, 
+                                       use_kniffin_pcpn = TRUE)
   
-  # Subset for lake
-  lake_subset <- subset_lake(lake, site_dictionary, lst, isotopes, water_levels, stage_vol)
-  
-  # Reassign variable names
-  lst             <- lake_subset$lst
-  isotopes        <- lake_subset$isotopes
-  lake_levels     <- lake_subset$lake_levels
-  gw_levels       <- lake_subset$gw_levels
-  stage_vol       <- lake_subset$stage_vol
-  site_dictionary <- lake_subset$site_dictionary
-  
-  # Identify monthly timeseries with complete coverage of input data
-  month_info      <- get_overlap_months(weather, lst, isotopes, lake_levels, gw_levels)
-  
-  # Monthly summary
-  monthly_weather   <- get_monthly_weather(weather, lst, stage_vol, site_dictionary)
-  monthly_lst       <- get_monthly_lst(lst)
-  monthly_dV        <- get_monthly_dV(lake_levels, month_info)
-  
-  # Sensitivity stuff
-  monthly_isotopes  <- get_monthly_isotopes(isotopes, site_dictionary,
-                                            static_wells, lake_levels, 
-                                            gw_levels, median_threshold = 0.01, 
-                                            static_lake)
-  monthly_isotopes  <- get_monthly_d18O_evap(monthly_weather, monthly_lst, monthly_isotopes)
-  monthly_h2o_bal   <- get_monthly_h2o_bal(monthly_weather, monthly_isotopes, monthly_dV, month_info)
-  lake_h2o_bal      <- subset(monthly_h2o_bal, is.na(GWout) == FALSE)
-  
-  return(lake_h2o_bal)
-}
-
-lake_sensitivity <- function(lake){
-  h2o_bal_default <- lake_h2o_bal(lake, static_wells = FALSE, static_lake = FALSE)
-  h2o_bal_gw      <- lake_h2o_bal(lake, static_wells = TRUE, static_lake = FALSE)
-  h2o_bal_lake    <- lake_h2o_bal(lake, static_wells = FALSE, static_lake = TRUE)
-  h2o_bal_both    <- lake_h2o_bal(lake, static_wells = TRUE, static_lake = TRUE)
-  
-  # Combine ----------------------------------------------------------------------
+  # Combine
   h2o_bal_default$static <- "Dynamic"
   h2o_bal_gw$static      <- "S-GW"
   h2o_bal_lake$static    <- "S-Lake"
@@ -75,6 +57,7 @@ lake_sensitivity <- function(lake){
   h2o_bal_combo <- rbind(h2o_bal_default, h2o_bal_gw, h2o_bal_lake, h2o_bal_both)
   h2o_bal_combo <- select(h2o_bal_combo, c(date, static, GWin))
   h2o_bal_combo <- h2o_bal_combo[order(h2o_bal_combo$date),]
+  h2o_bal_combo <- subset(h2o_bal_combo, is.na(GWin) == FALSE)
   h2o_bal_combo
   
   return(h2o_bal_combo)
@@ -84,7 +67,7 @@ plot_sensitivity <- function(lake, h2o_bal_combo) {
   h2o_bal_melt     <- melt(h2o_bal_combo, id.vars = c("date", "static"))
   plot_sensitivity <- ggplot(data = h2o_bal_melt) +
     geom_col(aes(x = static, y = value, fill = static)) +
-    facet_grid(~date, scales = "fixed") +
+    facet_grid(~as.Date(date), scales = "fixed") +
     scale_y_continuous(expand = c(0,0)) +
     theme_bw() + 
     labs(x = "", 

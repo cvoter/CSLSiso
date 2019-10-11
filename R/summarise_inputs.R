@@ -40,6 +40,12 @@
 #'                    samples for the lake.
 #' @param use_kniffin_pcpn logical defaults to TRUE to average in precipitation
 #'                         measurements by Maribeth Kniffin for each month.
+#' @param pcpnfile name of file with dates of precipitation collector deployment.
+#'                 Defaults to "csls_isotope_precipitation_deployment.csv"
+#' @param pcpndir name of directory with file with dates of precipitation
+#'                collector deployment. Defaults to "system.file" to indicate is
+#'                stored within inst/extdata within the installed isoH2Obudget
+#'                package files.
 #'
 #' @return h2o_bal_inputs, a data frame ordered by date with data only for the
 #'         overlap timeseries for:
@@ -74,7 +80,9 @@
 summarise_inputs <- function(weather, lst, isotopes, lake_levels, gw_levels,
                              stage_vol, site_dictionary, static_gw = FALSE,
                              median_threshold = 0.01, static_lake = FALSE,
-                             use_kniffin_pcpn = TRUE){
+                             use_kniffin_pcpn = TRUE,
+                             pcpnfile = 'csls_isotope_precipitation_deployment.csv',
+                             pcpndir = "system.file"){
 
   # Identify monthly timeseries with complete coverage of input data
   timeseries <- find_overlap_timeseries(weather, lst, isotopes, lake_levels,
@@ -89,7 +97,8 @@ summarise_inputs <- function(weather, lst, isotopes, lake_levels, gw_levels,
   monthly_isotopes  <- summarise_isotopes(isotopes, site_dictionary, timeseries,
                                           static_gw, lake_levels,
                                           gw_levels, median_threshold,
-                                          static_lake, use_kniffin_pcpn)
+                                          static_lake, use_kniffin_pcpn,
+                                          pcpnfile, pcpndir)
   monthly_isotopes  <- summarise_d18O_evap(monthly_weather, monthly_lst,
                                            monthly_isotopes)
   h2o_bal_inputs <- merge(monthly_weather, monthly_lst)

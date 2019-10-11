@@ -29,7 +29,7 @@
 
 iso_pcpn_gapfill <- function(monthly_isotopes, use_kniffin_pcpn = TRUE,
                              file = 'csls_isotope_precipitation_deployment.csv',
-                             filedir = "inst/extdata"){
+                             filedir = "system.file"){
   # 1. Extend measurements to previous months if collector was active
   deployment            <- load_pkg_csv(file, filedir)
   deployment$start_date <- floor_date(mdy_hm(deployment$start_date), unit = "month")
@@ -51,6 +51,7 @@ iso_pcpn_gapfill <- function(monthly_isotopes, use_kniffin_pcpn = TRUE,
 
   # 2. Average in Maribeth Kniffin values
   if (use_kniffin_pcpn) {
+    kniffin_isotopes <- NULL
     data(kniffin_isotopes, envir = environment())
     for (i in 1:nrow(monthly_isotopes)) {
       # Average in Maribeth Kniffin data from same location

@@ -41,9 +41,14 @@ gw_levels       <- lake_subset$gw_levels
 stage_vol       <- lake_subset$stage_vol
 site_dictionary <- lake_subset$site_dictionary
 
+timeseries <- find_overlap_timeseries(weather, lst, isotopes, lake_levels,
+                                      gw_levels)
+timeseries <- as_datetime(timeseries)
+
 # Monthly summary
-monthly_weather   <- get_monthly_weather(weather, lst, stage_vol, 
-                                         site_dictionary)
+monthly_weather   <- summarise_weather(weather, lst, stage_vol, site_dictionary, 
+                                       timeseries, wind_elev = 3, z0 = 0.02, 
+                                       Lz = 90, lake_albedo = 0.08)
 
 monthly_ET  <- monthly_weather %>%
                select(date = .data$date, 

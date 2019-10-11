@@ -7,10 +7,10 @@
 #'                        atmp_K (air temperature, K), RH_pct (relative humidity,
 #'                        percent), P_mm (precipitation, mm), and ET_mm
 #'                        (evapotranspiration, mm) as output by
-#'                        \code{\link{get_monthly_weather}}
-#' @param monthly_lst a data frame as output by \code{\link{get_monthly_lst}}
+#'                        \code{\link{summarise_weather}}
+#' @param monthly_lst a data frame as output by \code{\link{summarise_lst}}
 #' @param monthly_isotopes a data frame as output by
-#'                         \code{\link{get_monthly_isotopes}}
+#'                         \code{\link{summarise_isotopes}}
 #'
 #' @return monthly_isotopes with d18O_evap column added
 #'
@@ -25,9 +25,9 @@ summarise_d18O_evap <- function(monthly_weather, monthly_lst,
                                                          .data$ltmp_K,
                                                          .data$RH_pct,
                                                          .data$d18O_pcpn,
-                                                         .data$d18O_lake))
-  monthly_isotopes <- merge(monthly_isotopes,
-                            subset(d18O_evap_in, select = c(date, d18O_evap)))
+                                                         .data$d18O_lake)) %>%
+                  select(.data$date, .data$d18O_evap)
+  monthly_isotopes <- merge(monthly_isotopes, d18O_evap_in)
 
   return(monthly_isotopes)
 }

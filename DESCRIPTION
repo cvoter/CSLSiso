@@ -20,10 +20,12 @@ Imports:
     stringr,
     zoo,
     reshape2,
-    faoET
+    faoET,
+    usethis
 Suggests:
-    knitr,
     devtools,
+    rmarkdown,
+    knitr,
     roxygen2,
     testthat (>= 2.1.0)
 License: MIT + file LICENSE

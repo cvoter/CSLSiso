@@ -1,7 +1,66 @@
 # isoplot_functions.R
-# Functions include;
-# - plot_facet
+# Functions include:
+# - plot_d18O
+# - plot_levels
+# - plot_iso
 # - plot_colors
+
+# ------------------------------------------------------------------------------
+#' Plot d18O
+#'
+#' This function creates a plot object to evaluate the timeseries of d18O
+#' measurements over time at each site.
+#'
+#' @param lake lake of interest (e.g., "Pleasant", "Long", or "Plainfield")
+#' @param monthly_h2o_bal a data frame with the date and all fluxes into and out
+#'                        of the lake.
+#'
+#' @return plot_obj - a plot object with aesthetics added
+#'
+#' @import ggplot2
+#' @import extrafont
+#' @import lubridate
+#' @importFrom rlang .data
+#' @importFrom reshape2 melt
+#'
+#' @export
+
+plot_balance <- function(lake, monthly_h2o_bal) {
+  monthly_h2o_bal <- monthly_h2o_bal %>%
+                     filter (is.na(.data$GWout) == FALSE)
+
+  melted_bal <- melt(monthly_h2o_bal, id.vars = "date")
+
+  for (i in 1:nrow(melted_bal)) {
+    if (melted_bal$variable[i] == "P" |
+        melted_bal$variable[i] == "GWin") {
+      melted_bal$in_or_out[i] <- "In"
+    } else {
+      melted_bal$in_or_out[i] <- "Out"
+    }
+  }
+
+  plot_obj <- ggplot(data = melted_bal) +
+              geom_col(aes(x = .data$in_or_out,
+                           y = .data$value,
+                           fill = .data$variable)) +
+              facet_wrap(~as.Date(.data$date)) +
+              scale_y_continuous(expand = c(0,0)) +
+              scale_fill_brewer(name = "Flux",
+                                palette = "Paired",
+                                breaks = c("P","E","GWin","GWout","dV"),
+                                labels = c("Precipitation",
+                                           "Evapotranspiration",
+                                           "Groundwater Inflow",
+                                           "Groundwater Outflow",
+                                           "Change in Lake Volume")) +
+             labs(x = "", y = "Flux (mm)", title = sprintf("%s Lake", lake)) +
+             theme_bw() +
+             theme(text = element_text(family = "Segoe UI Semilight"))
+
+    return(plot_obj)
+}
+
 
 # ------------------------------------------------------------------------------
 #' Plot d18O
@@ -24,13 +83,15 @@
 
 plot_d18O <- function(lake, lake_isotopes) {
   plot_obj <- ggplot(data = lake_isotopes,
-                     aes(x = .data$date,
+                     aes(x = as.Date(.data$date),
                          y = .data$d18O,
                          group = .data$site_id)) +
               geom_point(shape = 16,
                          size = 3,
                          color = "black") +
               facet_wrap(~site_id) +
+              scale_x_date(date_breaks = "4 months",
+                           date_labels = "%b %y") +
               labs(x = "",
                    y = "d18O",
                    title = sprintf("%s Lake - d18O", lake)) +

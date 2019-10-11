@@ -18,6 +18,10 @@
 #' @param site_dictionary a data frame with site id numbers as formatted in the
 #'                        \code{\link{site_dictionary}} dataset, subset to
 #'                        records for the lake of interest.
+#' @param static_gw logical defaults to FALSE to use lake_levels and gw_levels
+#'                  to define upgradient/downgradient wells at each measurement
+#'                  date. If TRUE, uses static definitions of
+#'                  upgradient/downgradient wells in site dictionary.
 #' @param median_threshold minimum median difference between lake levels and
 #'                         groundwater levels during the month of measurement in
 #'                         order to classify groundwater measurement.

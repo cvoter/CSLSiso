@@ -15,12 +15,18 @@
 #'                        measurement sites, as in the
 #'                        \code{\link{site_dictionary}} dataset, subset for a
 #'                        single lake.
+#' @param timeseries a vector of all months in the common timeseries among input
+#'                   datasets
 #' @param stage_vol a data frame with the lake, stage_m, surf_area_m2, and
 #'                  volume_m3 as in the \code{\link{stage_vol}} dataset, subset
 #'                  for a single lake.
 #' @param wind_elev height of wind measurement, defaults to 3m for Hancock station.
 #' @param z0 aeorodynamic roughness of landcover at site of weather measurements
 #'          (m), defaults to 0.02 for a grass.
+#' @param Lz the longitude of the local timezone (degrees west of Greenwich,
+#'           ranges from 0 to 360 degrees). Defaults to 90 for Central Time
+#'           Zone, USA.
+#' @param lake_albedo albedo of the lake, defaults to 0.08 for open water.
 #'
 #' @return monthly_weather, a data frame with the following columns:
 #' \describe{

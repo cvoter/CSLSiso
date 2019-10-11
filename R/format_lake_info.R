@@ -13,7 +13,7 @@
 #' \item{depth_m}{depth of the lake (m)}
 #' }
 #'
-#' @seealso \code{\link{retrieve_csls_stage_vol}},
+#' @seealso \code{\link{retrieve_csls_stage_volume}},
 #'          \code{\link{stage_vol}}
 #'
 #' @export

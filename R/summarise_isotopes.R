@@ -8,6 +8,8 @@
 #'                        site classifications as formatted in the
 #'                        \code{\link{site_dictionary}} dataset, subset to
 #'                        records for the lake of interest.
+#' @param timeseries a vector of all months in the common timeseries among input
+#'                   datasets
 #' @param static_gw logical defaults to FALSE to use lake_levels and gw_levels
 #'                  to define upgradient/downgradient wells at each measurement
 #'                  date. If TRUE, uses static definitions of
@@ -27,6 +29,12 @@
 #'                    samples for the lake.
 #' @param use_kniffin_pcpn logical defaults to TRUE to average in precipitation
 #'                         measurements by Maribeth Kniffin for each month.
+#' @param pcpnfile name of file with dates of precipitation collector deployment.
+#'                 Defaults to "csls_isotope_precipitation_deployment.csv"
+#' @param pcpndir name of directory with file with dates of precipitation
+#'                collector deployment. Defaults to "system.file" to indicate is
+#'                stored within inst/extdata within the installed isoH2Obudget
+#'                package files.
 #'
 #'
 #' @return monthly_isotopes, a data frame with the following columns:
@@ -60,7 +68,9 @@
 summarise_isotopes <- function(isotopes, site_dictionary, timeseries,
                                static_gw = FALSE, lake_levels = NULL,
                                gw_levels = NULL, median_threshold = 0.01,
-                               static_lake = FALSE, use_kniffin_pcpn = TRUE) {
+                               static_lake = FALSE, use_kniffin_pcpn = TRUE,
+                               pcpnfile = 'csls_isotope_precipitation_deployment.csv',
+                               pcpndir = "system.file") {
   # Assign site type to each measurement
   isotopes <- iso_site_type(isotopes, site_dictionary, static_gw,
                             lake_levels, gw_levels, median_threshold)
@@ -82,13 +92,17 @@ summarise_isotopes <- function(isotopes, site_dictionary, timeseries,
                                 str_replace("upgradient","d18O_GWin") %>%
                                 str_replace("precipitation","d18O_pcpn") %>%
                                 str_replace("lake","d18O_lake")
+  if (!"d18O_GWout" %in% colnames(monthly_isotopes)) {
+    monthly_isotopes$d18O_GWout <- NA
+  }
 
   # Fill gaps in timeseries, values, and add notes on which gw well used
   monthly_isotopes <- monthly_isotopes %>%
                       filter(.data$date %in% timeseries)
   monthly_isotopes <- fill_timeseries_gaps(monthly_isotopes, timeseries)
   monthly_isotopes <- iso_lake_gapfill(monthly_isotopes)
-  monthly_isotopes <- iso_pcpn_gapfill(monthly_isotopes, use_kniffin_pcpn)
+  monthly_isotopes <- iso_pcpn_gapfill(monthly_isotopes, use_kniffin_pcpn,
+                                       pcpnfile, pcpndir)
   monthly_isotopes <- iso_gw_site_names(monthly_isotopes, isotopes)
 
   return(as.data.frame(monthly_isotopes))

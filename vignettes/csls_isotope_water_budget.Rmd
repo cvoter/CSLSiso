@@ -245,41 +245,34 @@ In this example, we're using Pleasant Lake.
 
 ```{r subset, eval=TRUE, echo=TRUE}
 # Subset for lake
-lake_subset <- subset_lake(lake = "Pleasant",
-                           site_dictionary,
-                           lst,
-                           isotopes,
-                           water_levels,
-                           stage_vol)
+lake = "Pleasant"
 
-# Reassign variable names
-lst             <- lake_subset$lst
-isotopes        <- lake_subset$isotopes
-lake_levels     <- lake_subset$lake_levels
-gw_levels       <- lake_subset$gw_levels
-stage_vol       <- lake_subset$stage_vol
-site_dictionary <- lake_subset$site_dictionary
+lst             <- subset_lst(lake, lst, site_dictionary)
+isotopes        <- subset_isotopes(lake, isotopes)
+lake_levels     <- subset_lake_levels(lake, water_levels, site_dictionary)
+gw_levels       <- subset_gw_levels(lake, water_levels, site_dictionary)
+stage_vol       <- subset_stage_vol(lake, stage_vol)
+site_dictionary <- subset_site_dictionary(lake, site_dictionary)
 
 # Identify monthly timeseries with complete coverage of input data
-month_info      <- get_overlap_months(weather, 
-                                      lst, 
-                                      isotopes, 
-                                      lake_levels, 
-                                      gw_levels)
+timeseries <- find_overlap_timeseries(weather, lst, isotopes, lake_levels,
+                                        gw_levels)
+timeseries <- as_datetime(timeseries)
 ```
 
 ### 2. Analyze at a monthly timestep
 Next, summarize records at a monthly time step. Here, we have **monthly weather**...
 
 ```{r monthly_weather, eval=TRUE, echo=FALSE}
-monthly_weather   <- get_monthly_weather(weather, lst, stage_vol, site_dictionary)
+monthly_weather   <- summarise_weather(weather, lst, stage_vol, site_dictionary,
+                                       timeseries)
 head(monthly_weather)
 ```
 
 ...**monthly lake surface temperature**...
 
 ```{r monthly_lst, eval=TRUE, echo=FALSE}
-monthly_lst       <- get_monthly_lst(lst)
+monthly_lst       <- summarise_lst(lst, timeseries)
 head(monthly_lst)
 ```
 
@@ -287,12 +280,13 @@ head(monthly_lst)
 $\delta^{18}O_{E}$...
 
 ```{r monthly_isotopes, eval=TRUE, echo=FALSE}
-monthly_isotopes  <- get_monthly_isotopes(isotopes, site_dictionary,
-                                          static_wells = FALSE, lake_levels, 
-                                          gw_levels, median_threshold = 0.01, 
-                                          static_lake = FALSE)
-monthly_isotopes  <- get_monthly_d18O_evap(monthly_weather,
-                                           monthly_lst,
+monthly_isotopes  <- summarise_isotopes(isotopes, site_dictionary, timeseries,
+                                        static_gw = FALSE, lake_levels,
+                                        gw_levels, 
+                                        median_threshold = 0.01,
+                                        static_lake= FALSE, 
+                                        use_kniffin_pcpn = TRUE)
+monthly_isotopes  <- summarise_d18O_evap(monthly_weather, monthly_lst,
                                            monthly_isotopes)
 monthly_isotopes
 ```
@@ -300,24 +294,30 @@ monthly_isotopes
 ...**monthly change in lake volume** as a depth (mm)...
 
 ```{r monthly_dV, eval=TRUE, echo=FALSE}
-monthly_dV        <- get_monthly_dV(lake_levels, month_info)
+monthly_dV        <- summarise_dV(lake_levels, timeseries)
 head(monthly_dV)
 ```
 
 ...and the **monthly water balance**, with all fluxes as a depth (mm).
 
 ```{r monthly_h2o_bal, eval=TRUE, echo=FALSE}
-monthly_h2o_bal   <- get_monthly_h2o_bal(monthly_weather,
-                                         monthly_isotopes,
-                                         monthly_dV,
-                                         month_info)
+h2o_bal_inputs  <- merge(monthly_weather, monthly_lst)
+h2o_bal_inputs  <- merge(h2o_bal_inputs, monthly_dV)
+h2o_bal_inputs  <- merge(h2o_bal_inputs, monthly_isotopes)
+
+h2o_bal_inputs  <- h2o_bal_inputs %>%
+                   select(.data$date, .data$atmp_degC, .data$RH_pct,
+                          .data$P_mm, .data$ET_mm, .data$atmp_K, .data$ltmp_K,
+                          .data$dV, .data$d18O_lake, .data$d18O_pcpn,
+                          .data$d18O_GWin, .data$d18O_GWout, .data$d18O_evap,
+                          .data$GWin_sites, .data$GWout_sites)
+monthly_h2o_bal <- calculate_h2o_bal(h2o_bal_inputs)
 monthly_h2o_bal
 ```
 
 ## Visualization
 
-This gets us to the point where we can visualize the water balance, at least for
-the months with complete input data. 
+This gets us to the point where we can visualize the water balance. 
 
 **Groundwater flow-through** is much higher at all lakes during the spring than
 in the fall, presumably due to spring melt. Spring flow-through is highest at
@@ -336,35 +336,7 @@ ET and GWout, but that's a non-trivial change that's a lower priority right now.
 ### 1. Pleasant Lake
 
 ```{r plot, eval=TRUE, echo=FALSE, fig.width = 7, fig.height = 4}
-
-melted_bal <- melt(subset(monthly_h2o_bal, is.na(GWout) == FALSE), id.vars = "date")
-for (i in 1:nrow(melted_bal)) {
-  if (melted_bal$variable[i] == "P" |
-  melted_bal$variable[i] == "GWin") {
-    melted_bal$in_or_out[i] <- "In"
-  } else {
-    melted_bal$in_or_out[i] <- "Out"
-  }
-}
-
-plot_balance <- ggplot(data = melted_bal) +
-                geom_col(aes(x = in_or_out, y = value, fill = variable)) +
-                facet_wrap(~date) +
-                scale_y_continuous(expand = c(0,0)) +
-                scale_fill_brewer(name = "Flux",
-                                  palette = "Paired",
-                                  breaks = c("P","E","GWin","GWout","dV"),
-                                  labels = c("Precipitation",
-                                             "Evapotranspiration",
-                                             "Groundwater Inflow",
-                                             "Groundwater Outflow",
-                                             "Change in Lake Volume")) +
-                labs(x = "", y = "Flux (mm)", title = "Pleasant Lake") +
-                theme_bw() + 
-                theme(text = element_text(family = "Segoe UI Semilight"))
-  
-plot_balance
-
+plot_balance(lake, monthly_h2o_bal)
 ```
 
 ### 2. Long Lake
@@ -379,128 +351,29 @@ data(water_levels)
 data(site_dictionary)
 data(stage_vol)
 
-# Subset for lake
-lake_subset <- subset_lake(lake = "Long", site_dictionary, lst, isotopes, water_levels, stage_vol)
+lake = "Long"
 
-# Reassign variable names
-lst             <- lake_subset$lst
-isotopes        <- lake_subset$isotopes
-lake_levels     <- lake_subset$lake_levels
-gw_levels       <- lake_subset$gw_levels
-stage_vol       <- lake_subset$stage_vol
-site_dictionary <- lake_subset$site_dictionary
+monthly_h2o_bal <- summarise_h2o_bal(lake, weather, lst, isotopes, water_levels,
+                                     site_dictionary, stage_vol, 
+                                     static_gw = FALSE, median_threshold = 0.01, 
+                                     static_lake = FALSE, 
+                                     use_kniffin_pcpn = TRUE)
 
-# Identify monthly timeseries with complete coverage of input data
-month_info      <- get_overlap_months(weather, lst, isotopes, lake_levels, gw_levels)
-
-# Monthly summary
-monthly_weather   <- get_monthly_weather(weather, lst, stage_vol, site_dictionary)
-monthly_lst       <- get_monthly_lst(lst)
-monthly_dV        <- get_monthly_dV(lake_levels, month_info)
-monthly_isotopes  <- get_monthly_isotopes(isotopes, site_dictionary,
-                                          static_wells = FALSE, lake_levels, 
-                                          gw_levels, median_threshold = 0.01, 
-                                          static_lake = FALSE)
-monthly_isotopes  <- get_monthly_d18O_evap(monthly_weather, monthly_lst, monthly_isotopes)
-monthly_h2o_bal   <- get_monthly_h2o_bal(monthly_weather, monthly_isotopes, monthly_dV, month_info)
-
-# Plot
-melted_bal <- melt(subset(monthly_h2o_bal, is.na(GWout) == FALSE), id.vars = "date")
-
-for (i in 1:nrow(melted_bal)) {
-  if (melted_bal$variable[i] == "P" |
-  melted_bal$variable[i] == "GWin") {
-    melted_bal$in_or_out[i] <- "In"
-  } else {
-    melted_bal$in_or_out[i] <- "Out"
-  }
-}
-
-plot_balance <- ggplot(data = melted_bal) +
-                geom_col(aes(x = in_or_out, y = value, fill = variable)) +
-                facet_wrap(~date) +
-                scale_y_continuous(expand = c(0,0)) +
-                scale_fill_brewer(name = "Flux",
-                                  palette = "Paired",
-                                  breaks = c("P","E","GWin","GWout","dV"),
-                                  labels = c("Precipitation",
-                                             "Evapotranspiration",
-                                             "Groundwater Inflow",
-                                             "Groundwater Outflow",
-                                             "Change in Lake Volume")) +
-                labs(x = "", y = "Flux (mm)", title = "Long Lake") +
-                theme_bw() + 
-                theme(text = element_text(family = "Segoe UI Semilight"))
-  
-plot_balance
+plot_balance(lake, monthly_h2o_bal)
 ```
 
 ### 3. Plainfield Lake
 
 ```{r pfl, eval=TRUE, echo=FALSE, fig.width = 7, fig.height = 5}
-# Data
-data(weather)
-data(lst)
-data(isotopes)
-data(water_levels)
-data(site_dictionary)
-data(stage_vol)
+lake = "Plainfield"
 
-# Subset for lake
-lake_subset <- subset_lake(lake = "Plainfield", site_dictionary, lst, isotopes, water_levels, stage_vol)
+monthly_h2o_bal <- summarise_h2o_bal(lake, weather, lst, isotopes, water_levels,
+                                     site_dictionary, stage_vol, 
+                                     static_gw = FALSE, median_threshold = 0.01, 
+                                     static_lake = FALSE, 
+                                     use_kniffin_pcpn = TRUE)
 
-# Reassign variable names
-lst             <- lake_subset$lst
-isotopes        <- lake_subset$isotopes
-lake_levels     <- lake_subset$lake_levels
-gw_levels       <- lake_subset$gw_levels
-stage_vol       <- lake_subset$stage_vol
-site_dictionary <- lake_subset$site_dictionary
-
-# Identify monthly timeseries with complete coverage of input data
-month_info      <- get_overlap_months(weather, lst, isotopes, lake_levels, gw_levels)
-
-# Monthly summary
-monthly_weather   <- get_monthly_weather(weather, lst, stage_vol, site_dictionary)
-monthly_lst       <- get_monthly_lst(lst)
-monthly_dV        <- get_monthly_dV(lake_levels, month_info)
-monthly_isotopes  <- get_monthly_isotopes(isotopes, site_dictionary,
-                                          static_wells = FALSE, lake_levels, 
-                                          gw_levels, median_threshold = 0.01, 
-                                          static_lake = FALSE)
-monthly_isotopes  <- get_monthly_d18O_evap(monthly_weather, monthly_lst, monthly_isotopes)
-monthly_h2o_bal   <- get_monthly_h2o_bal(monthly_weather, monthly_isotopes, monthly_dV, month_info)
-
-# Plot
-melted_bal <- melt(subset(monthly_h2o_bal, is.na(GWout) == FALSE), id.vars = "date")
-
-for (i in 1:nrow(melted_bal)) {
-  if (melted_bal$variable[i] == "P" |
-  melted_bal$variable[i] == "GWin") {
-    melted_bal$in_or_out[i] <- "In"
-  } else {
-    melted_bal$in_or_out[i] <- "Out"
-  }
-}
-
-plot_balance <- ggplot(data = melted_bal) +
-                geom_col(aes(x = in_or_out, y = value, fill = variable)) +
-                facet_wrap(~date) +
-                scale_y_continuous(expand = c(0,0)) +
-                scale_fill_brewer(name = "Flux",
-                                  palette = "Paired",
-                                  breaks = c("P","E","GWin","GWout","dV"),
-                                  labels = c("Precipitation",
-                                             "Evapotranspiration",
-                                             "Groundwater Inflow",
-                                             "Groundwater Outflow",
-                                             "Change in Lake Volume")) +
-                labs(x = "", y = "Flux (mm)", title = "Plainfield Lake") +
-                theme_bw() + 
-                theme(text = element_text(family = "Segoe UI Semilight"))
-  
-plot_balance
-
+plot_balance(lake, monthly_h2o_bal)
 ```
 
 ## Session Info

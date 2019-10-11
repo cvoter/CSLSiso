@@ -9,15 +9,41 @@
 #'   Isotope Mass Balance Method. Water Resources Research, 26(10):2445-2453.
 #'   https://doi.org/10.1029/WR026i010p02445
 #'
-#' @param monthly_weather a data frame as output by
-#'                        \code{\link{get_monthly_weather}}
-#' @param monthly_isotopes a data frame as output by
-#'                         \code{\link{get_monthly_isotopes}}
-#' @param monthly_dV a data frame as output by
-#'                         \code{\link{get_monthly_dV}}
-#' @param month_info a list with with the start date, end date, and number of
-#'                   months in the common timeseries of input data, as output by
-#'                   \code{\link{get_overlap_months}}
+#' @param lake lake of interest (e.g., "Pleasant", "Long", or "Plainfield")
+#' @param weather a data frame with sub-monthly weather including date, atmp (air
+#'                temperature, deg C), RH (relative humidity, percent), P
+#'                (precipitation, mm), Rs (incoming solar radiation, MJ/m^2),
+#'                and wind (wind speed, m/s) as formatted in the
+#'                \code{\link{weather}} dataset
+#' @param lst a data frame with sub-monthly lake surface temperature
+#'            measurements as formatted in the \code{\link{lst}} dataset.
+#' @param isotopes a data frame with isotopes measurements as formatted in the
+#'                 \code{\link{isotopes}} dataset.
+#' @param water_levels a data frame with daily water level measurements as
+#'                    formatted in the \code{\link{water_levels}} dataset.
+#' @param stage_vol a data frame with the lake, stage_m, surf_area_m2, and
+#'                  volume_m3 as in the \code{\link{stage_vol}} dataset.
+#' @param site_dictionary a data frame with site id numbers and static isotope
+#'                        site classifications as formatted in the
+#'                        \code{\link{site_dictionary}} dataset.
+#' @param static_gw logical defaults to FALSE to use lake_levels and gw_levels
+#'                  to define upgradient/downgradient wells at each measurement
+#'                  date. If TRUE, uses static definitions of
+#'                  upgradient/downgradient wells in site dictionary.
+#' @param median_threshold minimum median difference between lake levels and
+#'                         groundwater levels during the month of measurement in
+#'                         order to classify groundwater measurement.
+#' @param static_lake logical defaults to FALSE to use actual measurement for
+#'                    each month. If TRUE, uses mean of fall (Sept-Nov) isotope
+#'                    samples for the lake.
+#' @param use_kniffin_pcpn logical defaults to TRUE to average in precipitation
+#'                         measurements by Maribeth Kniffin for each month.
+#' @param pcpnfile name of file with dates of precipitation collector deployment.
+#'                 Defaults to "csls_isotope_precipitation_deployment.csv"
+#' @param pcpndir name of directory with file with dates of precipitation
+#'                collector deployment. Defaults to "system.file" to indicate is
+#'                stored within inst/extdata within the installed isoH2Obudget
+#'                package files.
 #'
 #' @return monthly_h2o_bal, a data frame with the following columns:
 #' \describe{
@@ -33,10 +59,12 @@
 #'
 #' @export
 
-calculate_h2o_bal <- function(lake, weather, lst, isotopes, water_levels,
+summarise_h2o_bal <- function(lake, weather, lst, isotopes, water_levels,
                               site_dictionary, stage_vol, static_gw = FALSE,
                               median_threshold = 0.01, static_lake = FALSE,
-                              use_kniffin_pcpn = TRUE) {
+                              use_kniffin_pcpn = TRUE,
+                              pcpnfile = 'csls_isotope_precipitation_deployment.csv',
+                              pcpndir = "system.file") {
   # Subset for lake
   lst             <- subset_lst(lake, lst, site_dictionary)
   isotopes        <- subset_isotopes(lake, isotopes)
@@ -49,7 +77,7 @@ calculate_h2o_bal <- function(lake, weather, lst, isotopes, water_levels,
   h2o_bal_inputs  <- summarise_inputs(weather, lst, isotopes, lake_levels,
                                       gw_levels, stage_vol, site_dictionary,
                                       static_gw, median_threshold, static_lake,
-                                      use_kniffin_pcpn)
+                                      use_kniffin_pcpn, pcpnfile, pcpndir)
 
   # Calculate remaining water balance terms
   monthly_h2o_bal <- calculate_h2o_bal(h2o_bal_inputs)
