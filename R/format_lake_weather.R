@@ -5,7 +5,7 @@
 #'
 #' @param weather hourly weather data with air temperature (atmp), relative
 #'                humidity (RH), precipitation (P), solar radiaiton (Rs), and
-#'                wind speed (wind) as formatted in the \code{\link{weather}}
+#'                wind speed (wind) as formatted in the weather
 #'                dataset.
 #' @param day_one first day of weather info to retain
 #' @param wind_elev height of wind measurements (m). At Hancock, 3m.
@@ -37,9 +37,6 @@
 #' @importFrom dplyr group_by summarise
 #' @importFrom rlang .data
 #' @importFrom NISTunits NISTdegTOradian
-#'
-#' @seealso \code{\link{retrieve_csls_weather}},
-#'          \code{\link{weather}}
 #'
 #' @export
 format_lake_weather <- function(weather, day_one, wind_elev, z0) {

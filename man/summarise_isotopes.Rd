@@ -13,11 +13,11 @@ summarise_isotopes(isotopes, site_dictionary, timeseries,
 }
 \arguments{
 \item{isotopes}{a data frame with isotopes measurements as formatted in the
-\code{\link{isotopes}} dataset, subset for a single lake.}
+isotopes dataset, subset for a single lake.}
 
 \item{site_dictionary}{a data frame with site id numbers and static isotope
 site classifications as formatted in the
-\code{\link{site_dictionary}} dataset, subset to
+site_dictionary dataset, subset to
 records for the lake of interest.}
 
 \item{timeseries}{a vector of all months in the common timeseries among input
@@ -29,11 +29,11 @@ date. If TRUE, uses static definitions of
 upgradient/downgradient wells in site dictionary.}
 
 \item{lake_levels}{a data frame with daily water level measurements as
-formatted in the \code{\link{water_levels}} dataset,
+formatted in the water_levels dataset,
 subset to lake level records for the lake of interest.}
 
 \item{gw_levels}{a data frame with daily water level measurements as
-formatted in the \code{\link{water_levels}} dataset,
+formatted in the water_levels dataset,
 subset to groundwater level records at the lake of
 interest.}
 
@@ -72,11 +72,4 @@ monthly_isotopes, a data frame with the following columns:
 }
 \description{
 Summarizes isotope measurements at a monthly timestep for a single lake
-}
-\seealso{
-\code{\link{retrieve_csls_isotopes}}, \code{\link{isotopes}},
-         \code{\link{retrieve_csls_water_levels}},
-         \code{\link{water_levels}},
-         \code{\link{retrieve_csls_site_dictionary}},
-         \code{\link{site_dictionary}}
 }

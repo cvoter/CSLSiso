@@ -9,7 +9,7 @@ format_lake_loc(site_dictionary, Lz = 90)
 \arguments{
 \item{site_dictionary}{a data frame with the elev_m, lat_deg, and long_deg of
 measurement sites, as in the
-\code{\link{site_dictionary}} dataset, subset for a
+site_dictionary dataset, subset for a
 single lake.}
 
 \item{Lz}{the longitude of the local timezone (degrees west of Greenwich,
@@ -29,8 +29,4 @@ loc, a list with the following location-specific parameters:
 \description{
 Extracts location information for the lake from the site dictionary and
 reformats for input into lake evaporation functions.
-}
-\seealso{
-\code{\link{retrieve_csls_site_dictionary}},
-         \code{\link{site_dictionary}}
 }

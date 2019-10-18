@@ -4,11 +4,15 @@
 \alias{format_lake_info}
 \title{Format Lake Size & Depth Info for Lake Evaporation}
 \usage{
-format_lake_info(stage_vol)
+format_lake_info(stage_vol, lst)
 }
 \arguments{
 \item{stage_vol}{a data frame with the lake, stage_m, surf_area_m2, and
-volume_m3 as in the \code{\link{stage_vol}} dataset, subset
+volume_m3 as in the stage_vol dataset, subset
+for a single lake.}
+
+\item{lst}{a data frame with sub-monthly lake surface temperature
+measurements as formatted in the stage_vol dataset, subset
 for a single lake.}
 }
 \value{
@@ -21,8 +25,4 @@ lake, a list with lake data that includes:
 \description{
 Extracts surface area and depth of lake and re-formats for input to lake
 evaporation functions.
-}
-\seealso{
-\code{\link{retrieve_csls_stage_volume}},
-         \code{\link{stage_vol}}
 }

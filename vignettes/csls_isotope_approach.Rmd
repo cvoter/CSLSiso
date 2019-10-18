@@ -21,7 +21,7 @@ library(NISTunits) # for unit conversions
 ```
 
 ```{r d18O, eval=TRUE, echo=FALSE}
-data(isotopes)
+data("isotopes", package = "cslsdata")
 
 # Months with data
 d18O_G <- isotopes %>%
@@ -94,11 +94,10 @@ d18O_P_ext    <- as.data.frame(rbind(d18O_P, september, april))
 d18O_P_ext    <- d18O_P[order(d18O_P$date), ]
 
 # Precipitation - Kniffin
-kniffin_isotopes <- load_pkg_csv(filename = "kniffin_isotope_samples.csv", 
-                                 filedir = "system.file")
+data("kniffin_isotopes", package = "cslsdata")
 kniffin_isotopes <- kniffin_isotopes %>%
-                    filter(.data$site_id == "PRECIP") %>%
-                    select(.data$date, .data$d18O, .data$d2H)
+                    select(.data$date, .data$d18O_pcpn, .data$d2H_pcpn)
+colnames(kniffin_isotopes) <- c("date", "d18O", "d2H")
 kniffin_isotopes$date <- mdy(kniffin_isotopes$date)
 
 month_abbr <- c("Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sept", 
@@ -270,20 +269,29 @@ appropriate for both shallow and deep lakes. CSLS lake depths range from about
 ```{r ET, eval=TRUE, echo=FALSE, fig.height=4, fig.width=7, fig.align='center'}
 get_lake_ET <- function(lake){
 # Data
-data(weather)
-data(lst)
-data(isotopes)
-data(water_levels)
-data(site_dictionary)
-data(stage_vol)
-
-# Subset for lake
-lst             <- subset_lst(lake, lst, site_dictionary)
-isotopes        <- subset_isotopes(lake, isotopes)
-lake_levels     <- subset_lake_levels(lake, water_levels, site_dictionary)
-gw_levels       <- subset_gw_levels(lake, water_levels, site_dictionary)
-stage_vol       <- subset_stage_vol(lake, stage_vol)
-site_dictionary <- subset_site_dictionary(lake, site_dictionary)
+  data("weather", package = "cslsdata")
+  if (lake == "Pleasant") {
+    data("psnt_lst", package = "cslsdata"); lst <- psnt_lst
+    data("psnt_isotopes", package = "cslsdata"); isotopes <- psnt_isotopes
+    data("psnt_lake_levels", package = "cslsdata"); lake_levels <- psnt_lake_levels
+    data("psnt_gw_levels", package = "cslsdata"); gw_levels <- psnt_gw_levels
+    data("psnt_stage_vol", package = "cslsdata"); stage_vol <- psnt_stage_vol
+    data("psnt_dictionary", package = "cslsdata"); site_dictionary <- psnt_dictionary
+  } else if (lake == "Long") {
+    data("long_lst", package = "cslsdata"); lst <- long_lst
+    data("long_isotopes", package = "cslsdata"); isotopes <- long_isotopes
+    data("long_lake_levels", package = "cslsdata"); lake_levels <- long_lake_levels
+    data("long_gw_levels", package = "cslsdata"); gw_levels <- long_gw_levels
+    data("long_stage_vol", package = "cslsdata"); stage_vol <- long_stage_vol
+    data("long_dictionary", package = "cslsdata"); site_dictionary <- long_dictionary
+  } else if (lake == "Plainfield") {
+    data("pfl_lst", package = "cslsdata"); lst <- pfl_lst
+    data("pfl_isotopes", package = "cslsdata"); isotopes <- pfl_isotopes
+    data("pfl_lake_levels", package = "cslsdata"); lake_levels <- pfl_lake_levels
+    data("pfl_gw_levels", package = "cslsdata"); gw_levels <- pfl_gw_levels
+    data("pfl_stage_vol", package = "cslsdata"); stage_vol <- pfl_stage_vol
+    data("pfl_dictionary", package = "cslsdata"); site_dictionary <- pfl_dictionary
+  }
 
 # Monthly summary
 timeseries      <- find_overlap_timeseries(weather, lst, isotopes, lake_levels,
@@ -554,17 +562,15 @@ calculating groundwater inflow, but of course we do need to account for change
 in volume when calculating groundwtater outflow.
 
 ```{r lake_levels, eval=TRUE, echo=FALSE, fig.width = 7, fig.height = 5}
-data("water_levels")
-data("site_dictionary")
-psnt <- subset_lake_levels("Pleasant", water_levels, site_dictionary)
-pfl  <- subset_lake_levels("Plainfield", water_levels, site_dictionary)
-long <- subset_lake_levels("Long", water_levels, site_dictionary)
+data("psnt_lake_levels", package = "cslsdata")
+data("long_lake_levels", package = "cslsdata")
+data("pfl_lake_levels", package = "cslsdata")
 
-psnt$lake <- "Pleasant"
-pfl$lake  <- "Plainfield"
-long$lake <- "Long"
+psnt_lake_levels$lake <- "Pleasant"
+pfl_lake_levels$lake  <- "Plainfield"
+long_lake_levels$lake <- "Long"
 
-lake_levels <- as.data.frame(rbind(psnt, long, pfl))
+lake_levels <- as.data.frame(rbind(psnt_lake_levels, long_lake_levels, pfl_lake_levels))
 
 ggplot(data = lake_levels, 
        aes(x = as.Date(date), y = level_m)) +
@@ -610,63 +616,19 @@ been downgradient become upgradient of the lake).
 <br>
 
 ```{r psnt, eval=TRUE, echo=FALSE, fig.width = 7, fig.height = 5}
-# Data
-data(weather)
-data(lst)
-data(isotopes)
-data(water_levels)
-data(site_dictionary)
-data(stage_vol)
-
 lake = "Pleasant"
-
-monthly_h2o_bal <- summarise_h2o_bal(lake, weather, lst, isotopes, water_levels,
-                                     site_dictionary, stage_vol, 
-                                     static_gw = FALSE, median_threshold = 0.01, 
-                                     static_lake = FALSE, 
-                                     use_kniffin_pcpn = TRUE)
-
+monthly_h2o_bal <- runall_isoH2Obudget(lake)
 plot_balance(lake, monthly_h2o_bal)
-
 ```
 
 ```{r long, eval=TRUE, echo=FALSE, fig.width = 7, fig.height = 5}
-# Data
-data(weather)
-data(lst)
-data(isotopes)
-data(water_levels)
-data(site_dictionary)
-data(stage_vol)
-
 lake = "Long"
-
-monthly_h2o_bal <- summarise_h2o_bal(lake, weather, lst, isotopes, water_levels,
-                                     site_dictionary, stage_vol, 
-                                     static_gw = FALSE, median_threshold = 0.01, 
-                                     static_lake = FALSE, 
-                                     use_kniffin_pcpn = TRUE)
-
+monthly_h2o_bal <- runall_isoH2Obudget(lake)
 plot_balance(lake, monthly_h2o_bal)
 ```
 
 ```{r pfl, eval=TRUE, echo=FALSE, fig.width = 7, fig.height = 5}
-# Data
-data(weather)
-data(lst)
-data(isotopes)
-data(water_levels)
-data(site_dictionary)
-data(stage_vol)
-
 lake = "Plainfield"
-
-monthly_h2o_bal <- summarise_h2o_bal(lake, weather, lst, isotopes, water_levels,
-                                     site_dictionary, stage_vol, 
-                                     static_gw = FALSE, median_threshold = 0.01, 
-                                     static_lake = FALSE, 
-                                     use_kniffin_pcpn = TRUE)
-
+monthly_h2o_bal <- runall_isoH2Obudget(lake)
 plot_balance(lake, monthly_h2o_bal)
-
 ```

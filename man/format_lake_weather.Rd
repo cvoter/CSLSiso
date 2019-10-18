@@ -9,7 +9,7 @@ format_lake_weather(weather, day_one, wind_elev, z0)
 \arguments{
 \item{weather}{hourly weather data with air temperature (atmp), relative
 humidity (RH), precipitation (P), solar radiaiton (Rs), and
-wind speed (wind) as formatted in the \code{\link{weather}}
+wind speed (wind) as formatted in the weather
 dataset.}
 
 \item{day_one}{first day of weather info to retain}
@@ -44,8 +44,4 @@ weather, a list with daily weather data that includes:
 \description{
 Takes hourly weather data, summarizes as daily weather data, and re-formats
 for input to lake evaporation functions
-}
-\seealso{
-\code{\link{retrieve_csls_weather}},
-         \code{\link{weather}}
 }

@@ -4,7 +4,7 @@
 #' single lake
 #'
 #' @param lst a data frame with sub-monthly lake surface temperature
-#'            measurements as formatted in the \code{\link{lst}} dataset, subset
+#'            measurements as formatted in the lst dataset, subset
 #'            for a single lake.
 #' @param timeseries a vector of all months in the common timeseries among input
 #'                   datasets
@@ -20,8 +20,6 @@
 #' @importFrom rlang .data
 #' @importFrom lubridate floor_date
 #' @importFrom NISTunits NISTdegCtOk
-#'
-#' @seealso \code{\link{retrieve_csls_lst}}, \code{\link{lst}}
 #'
 #' @export
 summarise_lst <- function(lst, timeseries){

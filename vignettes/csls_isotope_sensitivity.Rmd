@@ -12,6 +12,7 @@ vignette: >
 ```{r setup, echo=FALSE, warning=FALSE, message=FALSE}
 library(devtools)
 library(isoH2Obudget)
+library(cslsdata)
 library(reshape2) #for melting
 library(ggplot2) #for plotting
 library(extrafont) #for fonts
@@ -20,29 +21,46 @@ library(dplyr) #for %>% pipes
 
 ```{r fcns, eval=TRUE, echo=FALSE, fig.width = 7, fig.height = 3}
 lake_sensitivity <- function(lake){
-  data(weather)
-  data(lst)
-  data(isotopes)
-  data(water_levels)
-  data(site_dictionary)
-  data(stage_vol)
+  data("weather", package = "cslsdata")
+    if (lake == "Pleasant") {
+      data("psnt_lst", package = "cslsdata"); lst <- psnt_lst
+      data("psnt_isotopes", package = "cslsdata"); isotopes <- psnt_isotopes
+      data("psnt_lake_levels", package = "cslsdata"); lake_levels <- psnt_lake_levels
+      data("psnt_gw_levels", package = "cslsdata"); gw_levels <- psnt_gw_levels
+      data("psnt_stage_vol", package = "cslsdata"); stage_vol <- psnt_stage_vol
+      data("psnt_dictionary", package = "cslsdata"); site_dictionary <- psnt_dictionary
+    } else if (lake == "Long") {
+      data("long_lst", package = "cslsdata"); lst <- long_lst
+      data("long_isotopes", package = "cslsdata"); isotopes <- long_isotopes
+      data("long_lake_levels", package = "cslsdata"); lake_levels <- long_lake_levels
+      data("long_gw_levels", package = "cslsdata"); gw_levels <- long_gw_levels
+      data("long_stage_vol", package = "cslsdata"); stage_vol <- long_stage_vol
+      data("long_dictionary", package = "cslsdata"); site_dictionary <- long_dictionary
+    } else if (lake == "Plainfield") {
+      data("pfl_lst", package = "cslsdata"); lst <- pfl_lst
+      data("pfl_isotopes", package = "cslsdata"); isotopes <- pfl_isotopes
+      data("pfl_lake_levels", package = "cslsdata"); lake_levels <- pfl_lake_levels
+      data("pfl_gw_levels", package = "cslsdata"); gw_levels <- pfl_gw_levels
+      data("pfl_stage_vol", package = "cslsdata"); stage_vol <- pfl_stage_vol
+      data("pfl_dictionary", package = "cslsdata"); site_dictionary <- pfl_dictionary
+    }
   
-  h2o_bal_default <- summarise_h2o_bal(lake, weather, lst, isotopes, water_levels,
+  h2o_bal_default <- summarise_h2o_bal(lake, weather, lst, isotopes, lake_levels, gw_levels,
                                        site_dictionary, stage_vol, 
                                        static_gw = FALSE, median_threshold = 0.01, 
                                        static_lake = FALSE, 
                                        use_kniffin_pcpn = TRUE)
-  h2o_bal_gw <- summarise_h2o_bal(lake, weather, lst, isotopes, water_levels,
+  h2o_bal_gw <- summarise_h2o_bal(lake, weather, lst, isotopes, lake_levels, gw_levels,
                                        site_dictionary, stage_vol, 
                                        static_gw = TRUE, median_threshold = 0.01, 
                                        static_lake = FALSE, 
                                        use_kniffin_pcpn = TRUE)
-  h2o_bal_lake <- summarise_h2o_bal(lake, weather, lst, isotopes, water_levels,
+  h2o_bal_lake <- summarise_h2o_bal(lake, weather, lst, isotopes, lake_levels, gw_levels,
                                        site_dictionary, stage_vol, 
                                        static_gw = FALSE, median_threshold = 0.01, 
                                        static_lake = TRUE, 
                                        use_kniffin_pcpn = TRUE)
-  h2o_bal_both <- summarise_h2o_bal(lake, weather, lst, isotopes, water_levels,
+  h2o_bal_both <- summarise_h2o_bal(lake, weather, lst, isotopes, lake_levels, gw_levels,
                                        site_dictionary, stage_vol, 
                                        static_gw = TRUE, median_threshold = 0.01, 
                                        static_lake = TRUE, 
@@ -110,8 +128,9 @@ Using fall (Oct 2018) lake measurements in the spring (April 2019) reduces GWin
 by 66%.
 
 ```{r psnt, eval=TRUE, echo=FALSE, fig.width = 7, fig.height = 3}
-h2o_bal_combo <- lake_sensitivity("Pleasant")
-plot_sensitivity("Pleasant", h2o_bal_combo)
+lake <- "Pleasant"
+h2o_bal_combo <- lake_sensitivity(lake)
+plot_sensitivity(lake, h2o_bal_combo)
 ```
 
 ### Long Lake 
@@ -123,8 +142,9 @@ Using fall (Oct 2018) lake measurements in the spring (April 2019) reduces GWin
 by 63%.
 
 ```{r long, eval=TRUE, echo=FALSE, fig.width = 7, fig.height = 3}
-h2o_bal_combo <- lake_sensitivity("Long")
-plot_sensitivity("Long", h2o_bal_combo)
+lake <- "Long"
+h2o_bal_combo <- lake_sensitivity(lake)
+plot_sensitivity(lake, h2o_bal_combo)
 ```
 
 ### Plainfield Lake
@@ -135,6 +155,7 @@ Using fall (Oct 2018) lake measurements in the spring (April 2019) reduces GWin
 by 64%.
 
 ```{r pfl, eval=TRUE, echo=FALSE, fig.width = 7, fig.height = 3}
-h2o_bal_combo <- lake_sensitivity("Plainfield")
-plot_sensitivity("Plainfield", h2o_bal_combo)
+lake <- "Plainfield"
+h2o_bal_combo <- lake_sensitivity(lake)
+plot_sensitivity(lake, h2o_bal_combo)
 ```

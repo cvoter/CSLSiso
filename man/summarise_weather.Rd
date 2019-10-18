@@ -12,20 +12,20 @@ summarise_weather(weather, lst, stage_vol, site_dictionary, timeseries,
 temperature, deg C), RH (relative humidity, percent), P
 (precipitation, mm), Rs (incoming solar radiation, MJ/m^2),
 and wind (wind speed, m/s) as formatted in the
-\code{\link{weather}} dataset.}
+weather dataset.}
 
 \item{lst}{a data frame with sub-monthly lake surface temperature
-measurements as formatted in the \code{\link{lst}} dataset, subset
+measurements as formatted in the lst dataset, subset
 for a single lake.}
 
 \item{stage_vol}{a data frame with the lake, stage_m, surf_area_m2, and
-volume_m3 as in the \code{\link{stage_vol}} dataset, subset
+volume_m3 as in the stage_vol dataset, subset
 for a single lake.}
 
 \item{site_dictionary}{a data frame with the lake, obs_type, site_id,
 SWIMS_station, USGS_id, WBIC, and static_iso_type of
 measurement sites, as in the
-\code{\link{site_dictionary}} dataset, subset for a
+site_dictionary dataset, subset for a
 single lake.}
 
 \item{timeseries}{a vector of all months in the common timeseries among input
@@ -54,7 +54,4 @@ monthly_weather, a data frame with the following columns:
 }
 \description{
 Summarizes sub-monthly weather at a monthly timestep
-}
-\seealso{
-\code{\link{retrieve_csls_weather}}, \code{\link{weather}}
 }

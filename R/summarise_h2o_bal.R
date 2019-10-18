@@ -19,7 +19,9 @@
 #'            measurements as formatted in the \code{\link{lst}} dataset.
 #' @param isotopes a data frame with isotopes measurements as formatted in the
 #'                 \code{\link{isotopes}} dataset.
-#' @param water_levels a data frame with daily water level measurements as
+#' @param lake_levels a data frame with daily lake level measurements as
+#'                    formatted in the \code{\link{water_levels}} dataset.
+#' @param gw_levels a data frame with daily groundwater level measurements as
 #'                    formatted in the \code{\link{water_levels}} dataset.
 #' @param stage_vol a data frame with the lake, stage_m, surf_area_m2, and
 #'                  volume_m3 as in the \code{\link{stage_vol}} dataset.
@@ -59,20 +61,12 @@
 #'
 #' @export
 
-summarise_h2o_bal <- function(lake, weather, lst, isotopes, water_levels,
-                              site_dictionary, stage_vol, static_gw = FALSE,
-                              median_threshold = 0.01, static_lake = FALSE,
-                              use_kniffin_pcpn = TRUE,
+summarise_h2o_bal <- function(lake, weather, lst, isotopes, lake_levels,
+                              gw_levels, site_dictionary, stage_vol,
+                              static_gw = FALSE, median_threshold = 0.01,
+                              static_lake = FALSE, use_kniffin_pcpn = TRUE,
                               pcpnfile = 'csls_isotope_precipitation_deployment.csv',
                               pcpndir = "system.file") {
-  # Subset for lake
-  lst             <- subset_lst(lake, lst, site_dictionary)
-  isotopes        <- subset_isotopes(lake, isotopes)
-  lake_levels     <- subset_lake_levels(lake, water_levels, site_dictionary)
-  gw_levels       <- subset_gw_levels(lake, water_levels, site_dictionary)
-  stage_vol       <- subset_stage_vol(lake, stage_vol)
-  site_dictionary <- subset_site_dictionary(lake, site_dictionary)
-
   # Summarise inputs over same monthly timeseries
   h2o_bal_inputs  <- summarise_inputs(weather, lst, isotopes, lake_levels,
                                       gw_levels, stage_vol, site_dictionary,

@@ -12,6 +12,7 @@ vignette: >
 ```{r setup, echo=FALSE, warning=FALSE, message=FALSE}
 library(devtools)
 library(isoH2Obudget)
+library(cslsdata)
 library(reshape2) #for melting
 library(ggplot2) #for plotting
 library(extrafont) #for fonts
@@ -172,10 +173,8 @@ humidity, precipitation, and reference potential evapotranspiration are
 downloaded from the [Hancock Agricultural Research Station
 website](https://enviroweather.msu.edu/weather.php?stn=hck). 
 
-See also: "?retrieve_csls_weather" and "?weather"
-
 ```{r weather, eval=TRUE, echo=FALSE}
-data(weather)
+data("weather", package = "cslsdata")
 head(weather)
 ```
 
@@ -183,11 +182,9 @@ head(weather)
 Lake surface temperatures (at 0 meters) are extracted from every-other-week
 measurements of vertical lake temperature profiles taken at the CSLS Lakes. 
 
-See also: "?retrieve_csls_lst" and "?lst"
-
 ```{r lst, eval=TRUE, echo=FALSE}
-data(lst)
-head(lst)
+data("psnt_lst", package = "cslsdata")
+head(psnt_lst)
 ```
 
 ### 3. Stable Isotope Measurements
@@ -195,22 +192,21 @@ Measurements of $\delta^{18}O_{L}$ and $\delta^{18}O_{GW_{in}}$ are collected on
 site for each lake while $\delta^{18}O_{P}$ is measured using samples collected
 at the Hancock Research Station. 
 
-See also: "?retrieve_csls_isotopes" and "?isotopes"
-
 ```{r isotopes, eval=TRUE, echo=FALSE}
-data(isotopes)
-head(isotopes)
+data("psnt_isotopes", package = "cslsdata")
+head(psnt_isotopes)
 ```
 
 ### 4. Lake and Groundwater Levels
 Daily lake levels and groundwater levels are retrieved from the DNR Water Use
 section ArcGIS feature services. 
 
-See also: "?retrieve_csls_water_levels" and "?water_levels"
-
 ```{r water_levels, eval=TRUE, echo=FALSE}
-data(water_levels)
-head(water_levels)
+data("psnt_lake_levels", package = "cslsdata")
+head(psnt_lake_levels)
+
+data("psnt_gw_levels", package = "cslsdata")
+head(psnt_gw_levels)
 ```
 
 ### 5. Bathymetry Information
@@ -220,22 +216,18 @@ lake surface area. **Note:** The stage-volume relationship in the current csv
 export from ArcGIS does not look right, so this is not currently being used
 (only lake levels are used to get change in lake volume as a depth).
 
-See also: "?retrieve_csls_stage_vol" and "?stage_vol"
-
 ```{r stage_vol, eval=TRUE, echo=FALSE}
-data(stage_vol)
-head(stage_vol)
+data("psnt_stage_vol", package = "cslsdata")
+head(psnt_stage_vol)
 ```
 
 ### 6. Site Dictionary
 Lastly, we also need a site dictionary which maps various ID codes for each
 measurement site to one another.
 
-See also: "?retrieve_csls_site_dictionary" and "the dataset "?site_dictionary"
-
 ```{r site_dict, eval=TRUE, echo=FALSE}
-data(site_dictionary)
-head(site_dictionary)
+data("psnt_dictionary", package = "cslsdata")
+head(psnt_dictionary)
 ```
 
 ## Analysis
@@ -247,16 +239,9 @@ In this example, we're using Pleasant Lake.
 # Subset for lake
 lake = "Pleasant"
 
-lst             <- subset_lst(lake, lst, site_dictionary)
-isotopes        <- subset_isotopes(lake, isotopes)
-lake_levels     <- subset_lake_levels(lake, water_levels, site_dictionary)
-gw_levels       <- subset_gw_levels(lake, water_levels, site_dictionary)
-stage_vol       <- subset_stage_vol(lake, stage_vol)
-site_dictionary <- subset_site_dictionary(lake, site_dictionary)
-
 # Identify monthly timeseries with complete coverage of input data
-timeseries <- find_overlap_timeseries(weather, lst, isotopes, lake_levels,
-                                        gw_levels)
+timeseries <- find_overlap_timeseries(weather, psnt_lst, psnt_isotopes, 
+                                      psnt_lake_levels, psnt_gw_levels)
 timeseries <- as_datetime(timeseries)
 ```
 
@@ -264,15 +249,15 @@ timeseries <- as_datetime(timeseries)
 Next, summarize records at a monthly time step. Here, we have **monthly weather**...
 
 ```{r monthly_weather, eval=TRUE, echo=FALSE}
-monthly_weather   <- summarise_weather(weather, lst, stage_vol, site_dictionary,
-                                       timeseries)
+monthly_weather   <- summarise_weather(weather, psnt_lst, psnt_stage_vol, 
+                                       psnt_dictionary, timeseries)
 head(monthly_weather)
 ```
 
 ...**monthly lake surface temperature**...
 
 ```{r monthly_lst, eval=TRUE, echo=FALSE}
-monthly_lst       <- summarise_lst(lst, timeseries)
+monthly_lst       <- summarise_lst(psnt_lst, timeseries)
 head(monthly_lst)
 ```
 
@@ -280,9 +265,9 @@ head(monthly_lst)
 $\delta^{18}O_{E}$...
 
 ```{r monthly_isotopes, eval=TRUE, echo=FALSE}
-monthly_isotopes  <- summarise_isotopes(isotopes, site_dictionary, timeseries,
-                                        static_gw = FALSE, lake_levels,
-                                        gw_levels, 
+monthly_isotopes  <- summarise_isotopes(psnt_isotopes, psnt_dictionary, timeseries,
+                                        static_gw = FALSE, psnt_lake_levels,
+                                        psnt_gw_levels, 
                                         median_threshold = 0.01,
                                         static_lake= FALSE, 
                                         use_kniffin_pcpn = TRUE)
@@ -294,7 +279,7 @@ monthly_isotopes
 ...**monthly change in lake volume** as a depth (mm)...
 
 ```{r monthly_dV, eval=TRUE, echo=FALSE}
-monthly_dV        <- summarise_dV(lake_levels, timeseries)
+monthly_dV        <- summarise_dV(psnt_lake_levels, timeseries)
 head(monthly_dV)
 ```
 
@@ -343,22 +328,8 @@ plot_balance(lake, monthly_h2o_bal)
 
 
 ```{r long, eval=TRUE, echo=FALSE, fig.width = 7, fig.height = 5}
-# Data
-data(weather)
-data(lst)
-data(isotopes)
-data(water_levels)
-data(site_dictionary)
-data(stage_vol)
-
 lake = "Long"
-
-monthly_h2o_bal <- summarise_h2o_bal(lake, weather, lst, isotopes, water_levels,
-                                     site_dictionary, stage_vol, 
-                                     static_gw = FALSE, median_threshold = 0.01, 
-                                     static_lake = FALSE, 
-                                     use_kniffin_pcpn = TRUE)
-
+monthly_h2o_bal <- runall_isoH2Obudget(lake)
 plot_balance(lake, monthly_h2o_bal)
 ```
 
@@ -366,13 +337,7 @@ plot_balance(lake, monthly_h2o_bal)
 
 ```{r pfl, eval=TRUE, echo=FALSE, fig.width = 7, fig.height = 5}
 lake = "Plainfield"
-
-monthly_h2o_bal <- summarise_h2o_bal(lake, weather, lst, isotopes, water_levels,
-                                     site_dictionary, stage_vol, 
-                                     static_gw = FALSE, median_threshold = 0.01, 
-                                     static_lake = FALSE, 
-                                     use_kniffin_pcpn = TRUE)
-
+monthly_h2o_bal <- runall_isoH2Obudget(lake)
 plot_balance(lake, monthly_h2o_bal)
 ```
 

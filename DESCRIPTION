@@ -6,6 +6,8 @@ Author: Carolyn Voter <cvoter@wisc.edu>
 Maintainer: Carolyn Voter <cvoter@wisc.edu>
 Description: Calculates the water budget for a lake.
     Uses stable isotopes to calculate groundwater flow to and from the lake.
+Depends:
+    R (>= 2.10)
 Imports:
     lubridate,
     ggplot2,
@@ -21,7 +23,8 @@ Imports:
     zoo,
     reshape2,
     faoET,
-    usethis
+    usethis,
+    cslsdata
 Suggests:
     devtools,
     rmarkdown,

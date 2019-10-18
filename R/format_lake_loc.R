@@ -5,7 +5,7 @@
 #'
 #' @param site_dictionary a data frame with the elev_m, lat_deg, and long_deg of
 #'                        measurement sites, as in the
-#'                        \code{\link{site_dictionary}} dataset, subset for a
+#'                        site_dictionary dataset, subset for a
 #'                        single lake.
 #' @param Lz the longitude of the local timezone (degrees west of Greenwich,
 #'           ranges from 0 to 360 degrees). Defaults to 90 for Central Time
@@ -24,9 +24,6 @@
 #' @importFrom dplyr group_by summarise
 #' @importFrom rlang .data
 #' @importFrom NISTunits NISTdegTOradian
-#'
-#' @seealso \code{\link{retrieve_csls_site_dictionary}},
-#'          \code{\link{site_dictionary}}
 #'
 #' @export
 format_lake_loc <- function(site_dictionary, Lz = 90) {

@@ -12,6 +12,7 @@ vignette: >
 ```{r setup, echo=FALSE, warning=FALSE, message=FALSE}
 library(devtools)
 library(isoH2Obudget)
+library(cslsdata)
 library(dplyr) #for pipes, filtering, and selecting
 library(stringr) #for str_c
 library(reshape2) #for melting
@@ -23,13 +24,6 @@ library(knitr)
 
 
 ```{r data, eval=TRUE, echo=FALSE}
-data("lst")
-data("isotopes")
-data("water_levels")
-data("site_dictionary")
-data("stage_vol")
-data("weather")
-
 calculate_line_intersect <- function(line1, line2){
   x <- (line1$coefficients[1] - line2$coefficients[1])/
        (line2$coefficients[2] - line1$coefficients[2])
@@ -43,19 +37,35 @@ dist_to_point <- function(x1, y1, x2, y2){
   return(dist)
 }
 
-get_inputs <- function(lake, weather, lst, isotopes, water_levels,
-                       site_dictionary, stage_vol, static_gw = FALSE,
+get_inputs <- function(lake, static_gw = FALSE,
                        median_threshold = 0.01, static_lake = FALSE,
                        use_kniffin_pcpn = TRUE,
                        pcpnfile = 'csls_isotope_precipitation_deployment.csv',
                        pcpndir = "system.file") {
-  # Subset for lake
-  lst             <- subset_lst(lake, lst, site_dictionary)
-  isotopes        <- subset_isotopes(lake, isotopes)
-  lake_levels     <- subset_lake_levels(lake, water_levels, site_dictionary)
-  gw_levels       <- subset_gw_levels(lake, water_levels, site_dictionary)
-  stage_vol       <- subset_stage_vol(lake, stage_vol)
-  site_dictionary <- subset_site_dictionary(lake, site_dictionary)
+  
+  data("weather", package = "cslsdata")
+    if (lake == "Pleasant") {
+      data("psnt_lst", package = "cslsdata"); lst <- psnt_lst
+      data("psnt_isotopes", package = "cslsdata"); isotopes <- psnt_isotopes
+      data("psnt_lake_levels", package = "cslsdata"); lake_levels <- psnt_lake_levels
+      data("psnt_gw_levels", package = "cslsdata"); gw_levels <- psnt_gw_levels
+      data("psnt_stage_vol", package = "cslsdata"); stage_vol <- psnt_stage_vol
+      data("psnt_dictionary", package = "cslsdata"); site_dictionary <- psnt_dictionary
+    } else if (lake == "Long") {
+      data("long_lst", package = "cslsdata"); lst <- long_lst
+      data("long_isotopes", package = "cslsdata"); isotopes <- long_isotopes
+      data("long_lake_levels", package = "cslsdata"); lake_levels <- long_lake_levels
+      data("long_gw_levels", package = "cslsdata"); gw_levels <- long_gw_levels
+      data("long_stage_vol", package = "cslsdata"); stage_vol <- long_stage_vol
+      data("long_dictionary", package = "cslsdata"); site_dictionary <- long_dictionary
+    } else if (lake == "Plainfield") {
+      data("pfl_lst", package = "cslsdata"); lst <- pfl_lst
+      data("pfl_isotopes", package = "cslsdata"); isotopes <- pfl_isotopes
+      data("pfl_lake_levels", package = "cslsdata"); lake_levels <- pfl_lake_levels
+      data("pfl_gw_levels", package = "cslsdata"); gw_levels <- pfl_gw_levels
+      data("pfl_stage_vol", package = "cslsdata"); stage_vol <- pfl_stage_vol
+      data("pfl_dictionary", package = "cslsdata"); site_dictionary <- pfl_dictionary
+    }
 
   # Summarise inputs over same monthly timeseries
   h2o_bal_inputs  <- summarise_inputs(weather, lst, isotopes, lake_levels,
@@ -104,6 +114,7 @@ include_graphics(system.file("images",
 
 ### Pleasant Lake
 ```{r psnt, eval=TRUE, echo=FALSE}
+data("site_dictionary", package = "cslsdata")
 lake_ids      <- site_dictionary %>%
                  filter(.data$obs_type == "LK") %>%
                  select(.data$site_id) %>%
@@ -121,22 +132,19 @@ lake_isotopes$dist <- dist_to_point(line_intersect$x, line_intersect$y,
 lake_isotopes$date <- floor_date(lake_isotopes$date, unit = "month")
 
 lake <- "Pleasant"
-psnt_inputs      <- get_inputs(lake, weather, lst, isotopes, water_levels, 
-                               site_dictionary, stage_vol)
+psnt_inputs      <- get_inputs(lake)
 psnt_inputs$lake <- lake
 psnt_h2o         <- calculate_h2o_bal(psnt_inputs)
 psnt_h2o$lake    <- lake
 
 lake <- "Long"
-long_inputs      <- get_inputs(lake, weather, lst, isotopes, water_levels, 
-                               site_dictionary, stage_vol)
+long_inputs      <- get_inputs(lake)
 long_inputs$lake <- lake
 long_h2o         <- calculate_h2o_bal(long_inputs)
 long_h2o$lake    <- lake
 
 lake <- "Plainfield"
-pfl_inputs      <- get_inputs(lake, weather, lst, isotopes, water_levels, 
-                               site_dictionary, stage_vol)
+pfl_inputs      <- get_inputs(lake)
 pfl_inputs$lake <- lake
 pfl_h2o         <- calculate_h2o_bal(pfl_inputs)
 pfl_h2o$lake    <- lake

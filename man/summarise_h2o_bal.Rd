@@ -4,7 +4,7 @@
 \alias{summarise_h2o_bal}
 \title{Monthly Water Balance}
 \usage{
-summarise_h2o_bal(lake, weather, lst, isotopes, water_levels,
+summarise_h2o_bal(lake, weather, lst, isotopes, lake_levels, gw_levels,
   site_dictionary, stage_vol, static_gw = FALSE,
   median_threshold = 0.01, static_lake = FALSE,
   use_kniffin_pcpn = TRUE,
@@ -26,7 +26,10 @@ measurements as formatted in the \code{\link{lst}} dataset.}
 \item{isotopes}{a data frame with isotopes measurements as formatted in the
 \code{\link{isotopes}} dataset.}
 
-\item{water_levels}{a data frame with daily water level measurements as
+\item{lake_levels}{a data frame with daily lake level measurements as
+formatted in the \code{\link{water_levels}} dataset.}
+
+\item{gw_levels}{a data frame with daily groundwater level measurements as
 formatted in the \code{\link{water_levels}} dataset.}
 
 \item{site_dictionary}{a data frame with site id numbers and static isotope

@@ -6,19 +6,19 @@
 #'                temperature, deg C), RH (relative humidity, percent), P
 #'                (precipitation, mm), Rs (incoming solar radiation, MJ/m^2),
 #'                and wind (wind speed, m/s) as formatted in the
-#'                \code{\link{weather}} dataset.
+#'                weather dataset.
 #' @param lst a data frame with sub-monthly lake surface temperature
-#'            measurements as formatted in the \code{\link{lst}} dataset, subset
+#'            measurements as formatted in the lst dataset, subset
 #'            for a single lake.
 #' @param site_dictionary a data frame with the lake, obs_type, site_id,
 #'                        SWIMS_station, USGS_id, WBIC, and static_iso_type of
 #'                        measurement sites, as in the
-#'                        \code{\link{site_dictionary}} dataset, subset for a
+#'                        site_dictionary dataset, subset for a
 #'                        single lake.
 #' @param timeseries a vector of all months in the common timeseries among input
 #'                   datasets
 #' @param stage_vol a data frame with the lake, stage_m, surf_area_m2, and
-#'                  volume_m3 as in the \code{\link{stage_vol}} dataset, subset
+#'                  volume_m3 as in the stage_vol dataset, subset
 #'                  for a single lake.
 #' @param wind_elev height of wind measurement, defaults to 3m for Hancock station.
 #' @param z0 aeorodynamic roughness of landcover at site of weather measurements
@@ -42,8 +42,6 @@
 #' @importFrom rlang .data
 #' @importFrom lubridate floor_date
 #' @importFrom NISTunits NISTdegCtOk NISTdegTOradian
-#'
-#' @seealso \code{\link{retrieve_csls_weather}}, \code{\link{weather}}
 #'
 #' @export
 summarise_weather <- function(weather, lst, stage_vol, site_dictionary,

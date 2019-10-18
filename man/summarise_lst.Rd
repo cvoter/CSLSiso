@@ -8,7 +8,7 @@ summarise_lst(lst, timeseries)
 }
 \arguments{
 \item{lst}{a data frame with sub-monthly lake surface temperature
-measurements as formatted in the \code{\link{lst}} dataset, subset
+measurements as formatted in the lst dataset, subset
 for a single lake.}
 
 \item{timeseries}{a vector of all months in the common timeseries among input
@@ -24,7 +24,4 @@ monthly_lst, a data frame with the following columns:
 \description{
 Summarizes sub-monthly lake surface temperature at a monthly timestep for a
 single lake
-}
-\seealso{
-\code{\link{retrieve_csls_lst}}, \code{\link{lst}}
 }
