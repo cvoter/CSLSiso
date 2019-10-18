@@ -1,0 +1,180 @@
+---
+title: "Isotope Evaporation Line"
+output: 
+  rmarkdown::html_vignette:
+    toc: true
+vignette: >
+  %\VignetteIndexEntry{Put the title of your vignette here}
+  %\VignetteEngine{knitr::rmarkdown}
+  \usepackage[utf8]{inputenc}
+---
+
+```{r setup, echo=FALSE, warning=FALSE, message=FALSE}
+library(devtools)
+library(isoH2Obudget)
+library(dplyr) #for pipes, filtering, and selecting
+library(stringr) #for str_c
+library(reshape2) #for melting
+library(ggplot2) #for plotting
+library(extrafont) #for fonts
+library(lubridate)
+library(knitr)
+```
+
+
+```{r data, eval=TRUE, echo=FALSE}
+data("lst")
+data("isotopes")
+data("water_levels")
+data("site_dictionary")
+data("stage_vol")
+data("weather")
+
+calculate_line_intersect <- function(line1, line2){
+  x <- (line1$coefficients[1] - line2$coefficients[1])/
+       (line2$coefficients[2] - line1$coefficients[2])
+  y <- line1$coefficients[2]*x + line1$coefficients[1]
+  line_intersect <- data.frame(x = x, y = y)
+  return(line_intersect)
+}
+
+dist_to_point <- function(x1, y1, x2, y2){
+  dist <- sqrt((x2 - x1)^2 - (y2 - y1))
+  return(dist)
+}
+
+get_inputs <- function(lake, weather, lst, isotopes, water_levels,
+                       site_dictionary, stage_vol, static_gw = FALSE,
+                       median_threshold = 0.01, static_lake = FALSE,
+                       use_kniffin_pcpn = TRUE,
+                       pcpnfile = 'csls_isotope_precipitation_deployment.csv',
+                       pcpndir = "system.file") {
+  # Subset for lake
+  lst             <- subset_lst(lake, lst, site_dictionary)
+  isotopes        <- subset_isotopes(lake, isotopes)
+  lake_levels     <- subset_lake_levels(lake, water_levels, site_dictionary)
+  gw_levels       <- subset_gw_levels(lake, water_levels, site_dictionary)
+  stage_vol       <- subset_stage_vol(lake, stage_vol)
+  site_dictionary <- subset_site_dictionary(lake, site_dictionary)
+
+  # Summarise inputs over same monthly timeseries
+  h2o_bal_inputs  <- summarise_inputs(weather, lst, isotopes, lake_levels,
+                                      gw_levels, stage_vol, site_dictionary,
+                                      static_gw, median_threshold, static_lake,
+                                      use_kniffin_pcpn, pcpnfile, pcpndir)
+  return(h2o_bal_inputs)
+}
+
+get_del_evap <- function(h2o_bal_inputs) {
+  d18O_evap_in <- merge(monthly_weather, monthly_lst)
+  d18O_evap_in <- merge(d18O_evap_in, monthly_isotopes)
+  d18O_evap_in <- d18O_evap_in %>%
+                  mutate(d18O_evap = calculate_d18O_evap(.data$atmp_K,
+                                                         .data$ltmp_K,
+                                                         .data$RH_pct,
+                                                         .data$d18O_pcpn,
+                                                         .data$d18O_lake)) %>%
+                  select(.data$date, .data$d18O_evap)
+  monthly_isotopes <- merge(monthly_isotopes, d18O_evap_in)
+}
+
+get_del_atm <- function(ltmp, del_pcpn) {
+    alpha    <- d18O_evap_isotope_frac(ltmp)
+    del_atm <- d18O_evap_d18O_atm(del_pcpn, alpha)
+    return(del_atm)
+}
+```
+
+## Overview
+
+When looking at the **Local Meteoric Water Line** plots, keep in mind that
+measurements closest to the meteoric water line are most likely inflowing
+groundwater wells while measurements drifting off to the right are likely
+outflowing groundwater wells (or the lake itself), which are influenced by
+evaporation.
+
+```{r schematic2, out.width = "75%", eval=TRUE, echo=FALSE, fig.align="center"}
+include_graphics(system.file("images", 
+                             "isotope_signatures.png", 
+                             package = "isoH2Obudget", 
+                             mustWork = TRUE))
+```
+
+## Lakes
+
+### Pleasant Lake
+```{r psnt, eval=TRUE, echo=FALSE}
+lake_ids      <- site_dictionary %>%
+                 filter(.data$obs_type == "LK") %>%
+                 select(.data$site_id) %>%
+                 unlist()
+lake_isotopes <- isotopes %>%
+                 filter(.data$site_id %in% lake_ids)
+pcpn_isotopes <- isotopes %>%
+                 filter(.data$site_id == "PRECIP")
+LMWL <- lm(d2H ~ d18O, pcpn_isotopes)
+LEWL <- lm(d2H ~ d18O, lake_isotopes)
+
+line_intersect     <- calculate_line_intersect(LMWL, LEWL)
+lake_isotopes$dist <- dist_to_point(line_intersect$x, line_intersect$y,
+                                    lake_isotopes$d18O, lake_isotopes$d2H)
+lake_isotopes$date <- floor_date(lake_isotopes$date, unit = "month")
+
+lake <- "Pleasant"
+psnt_inputs      <- get_inputs(lake, weather, lst, isotopes, water_levels, 
+                               site_dictionary, stage_vol)
+psnt_inputs$lake <- lake
+psnt_h2o         <- calculate_h2o_bal(psnt_inputs)
+psnt_h2o$lake    <- lake
+
+lake <- "Long"
+long_inputs      <- get_inputs(lake, weather, lst, isotopes, water_levels, 
+                               site_dictionary, stage_vol)
+long_inputs$lake <- lake
+long_h2o         <- calculate_h2o_bal(long_inputs)
+long_h2o$lake    <- lake
+
+lake <- "Plainfield"
+pfl_inputs      <- get_inputs(lake, weather, lst, isotopes, water_levels, 
+                               site_dictionary, stage_vol)
+pfl_inputs$lake <- lake
+pfl_h2o         <- calculate_h2o_bal(pfl_inputs)
+pfl_h2o$lake    <- lake
+
+h2o    <- rbind(pfl_h2o, psnt_h2o, long_h2o)
+inputs <- rbind(pfl_inputs, psnt_inputs, long_inputs)
+inputs$d18O_atm <- get_del_atm(inputs$ltmp_K, inputs$d18O_pcpn)
+inputs$d2H_atm <- get_del_atm(inputs$ltmp_K, inputs$d2H_pcpn)
+
+del_evap <- lm(d2H_evap ~ d18O_evap, inputs)
+
+
+lake_isotopes <- merge(lake_isotopes, h2o, by = c("date","lake"))
+lake_isotopes$inputs <- lake_isotopes$P_mm + lake_isotopes$GWin
+lake_isotopes$Eratio <- lake_isotopes$ET_mm/lake_isotopes$inputs
+
+
+ggplot(data = lake_isotopes) +
+  geom_point(aes(x = dist, y = Eratio, color = site_id))
+                
+
+ggplot() +
+  geom_smooth(data = pcpn_isotopes, aes(x = d18O, y = d2H), method = "lm") +
+  geom_smooth(data = lake_isotopes, aes(x = d18O, y = d2H), method = "lm") +
+  geom_smooth(data = inputs, aes(x = d18O_evap, y = d2H_evap), method = "lm") +
+  geom_smooth(data = inputs, aes(x = d18O_atm, y = d2H_atm), method = "lm") +
+  geom_point(data = line_intersect, aes(x = x, y = y)) +
+  geom_point(data = lake_isotopes, aes(x = d18O, y = d2H, color = lake)) +
+  geom_point(data = inputs, aes(x = d18O_atm, y = d2H_atm, color = lake)) +
+  geom_point(data = inputs, aes(x = d18O_evap, y = d2H_evap, color = lake))
+ 
+```
+
+## Session Info
+
+The version of R and the versions of packages in use when this R Markdown file
+was created are listed here:
+
+```{r session_info, include=TRUE, echo=TRUE, results='markup'}
+devtools::session_info()
+```

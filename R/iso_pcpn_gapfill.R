@@ -46,6 +46,7 @@ iso_pcpn_gapfill <- function(monthly_isotopes, use_kniffin_pcpn = TRUE,
     if ((is.na(monthly_isotopes$d18O_pcpn[i])) & (length(next_i) > 0) &
         any(monthly_isotopes$date[i] %within% intervals)) {
       monthly_isotopes$d18O_pcpn[i] <- monthly_isotopes$d18O_pcpn[next_i]
+      monthly_isotopes$d2H_pcpn[i] <- monthly_isotopes$d2H_pcpn[next_i]
     }
   }
 
@@ -60,6 +61,9 @@ iso_pcpn_gapfill <- function(monthly_isotopes, use_kniffin_pcpn = TRUE,
                       filter(month(.data$date) == month(this_month))
       monthly_isotopes$d18O_pcpn[i] <- mean(c(monthly_isotopes$d18O_pcpn[i],
                                               kniffin_pcpn$d18O_pcpn),
+                                            na.rm = TRUE)
+      monthly_isotopes$d2H_pcpn[i] <- mean(c(monthly_isotopes$d2H_pcpn[i],
+                                              kniffin_pcpn$d2H_pcpn),
                                             na.rm = TRUE)
     }
   }

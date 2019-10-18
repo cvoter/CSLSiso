@@ -6,6 +6,9 @@
 #' @param stage_vol a data frame with the lake, stage_m, surf_area_m2, and
 #'                  volume_m3 as in the \code{\link{stage_vol}} dataset, subset
 #'                  for a single lake.
+#' @param lst a data frame with sub-monthly lake surface temperature
+#'            measurements as formatted in the \code{\link{lst}} dataset, subset
+#'            for a single lake.
 #'
 #' @return lake, a list with lake data that includes:
 #' \describe{
@@ -17,8 +20,9 @@
 #'          \code{\link{stage_vol}}
 #'
 #' @export
-format_lake_info <- function(stage_vol) {
+format_lake_info <- function(stage_vol, lst) {
   lake <- list(A = 1e-6*max(stage_vol$surf_area_m2),
-               depth_m = max(stage_vol$depth_m))
+               depth_m = max(stage_vol$depth_m),
+               lst = lst)
   return(lake)
 }

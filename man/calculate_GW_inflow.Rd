@@ -4,7 +4,8 @@
 \alias{calculate_GW_inflow}
 \title{Groundwater Inflow}
 \usage{
-calculate_GW_inflow(P, E, d18O_pcpn, d18O_lake, d18O_GWin, d18O_evap)
+calculate_GW_inflow(P, E, d18O_pcpn, d18O_lake, d18O_GWin, d18O_evap,
+  V = 0, d18O_lake_dt = 0)
 }
 \arguments{
 \item{P}{precipitation (mm)}
@@ -18,6 +19,11 @@ calculate_GW_inflow(P, E, d18O_pcpn, d18O_lake, d18O_GWin, d18O_evap)
 \item{d18O_GWin}{d18O isotopic composition of groundwater inflow}
 
 \item{d18O_evap}{d18O isotopic composition of evaporation}
+
+\item{V}{volume of water in the lake}
+
+\item{d18O_lake_dt}{change in d18O_lake in over the timestep of interest
+(e.g., 1 month)}
 }
 \value{
 GWin - the groundwtaer inflow to the lake (mm)

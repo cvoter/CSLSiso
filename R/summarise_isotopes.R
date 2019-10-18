@@ -53,7 +53,7 @@
 #' @importFrom utils data
 #' @importFrom magrittr %>%
 #' @importFrom dplyr filter select group_by summarise ungroup
-#' @importFrom reshape2 dcast
+#' @importFrom reshape2 recast
 #' @importFrom rlang .data
 #' @import lubridate
 #' @importFrom stringr str_replace str_c
@@ -81,19 +81,26 @@ summarise_isotopes <- function(isotopes, site_dictionary, timeseries,
                       site_type = .data$site_type) %>%
              filter(is.na(.data$site_type) == FALSE &
                       .data$site_type != "") %>%
-             summarise(mean_d18O = mean(.data$d18O))
+             summarise(mean_d18O = mean(.data$d18O),
+                       mean_d2H = mean(.data$d2H))
+
 
   # Reshape and rename columns
-  monthly_isotopes           <- dcast(isomelt,
-                                      date ~ site_type,
-                                      value.var = "mean_d18O")
+  monthly_isotopes           <- recast(isomelt,
+                                       date ~ site_type + variable,
+                                       id.var = c("date", "site_type"))
   colnames(monthly_isotopes) <- colnames(monthly_isotopes) %>%
-                                str_replace("downgradient","d18O_GWout") %>%
-                                str_replace("upgradient","d18O_GWin") %>%
-                                str_replace("precipitation","d18O_pcpn") %>%
-                                str_replace("lake","d18O_lake")
-  if (!"d18O_GWout" %in% colnames(monthly_isotopes)) {
+                                str_replace("downgradient_mean_d18O","d18O_GWout") %>%
+                                str_replace("upgradient_mean_d18O","d18O_GWin") %>%
+                                str_replace("precipitation_mean_d18O","d18O_pcpn") %>%
+                                str_replace("lake_mean_d18O","d18O_lake") %>%
+                                str_replace("downgradient_mean_d2H","d2H_GWout") %>%
+                                str_replace("upgradient_mean_d2H","d2H_GWin") %>%
+                                str_replace("precipitation_mean_d2H","d2H_pcpn") %>%
+                                str_replace("lake_mean_d2H","d2H_lake")
+  if (!"d2H_GWout" %in% colnames(monthly_isotopes)) {
     monthly_isotopes$d18O_GWout <- NA
+    monthly_isotopes$d2H_GWout  <- NA
   }
 
   # Fill gaps in timeseries, values, and add notes on which gw well used

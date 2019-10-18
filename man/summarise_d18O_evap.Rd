@@ -19,7 +19,7 @@ percent), P_mm (precipitation, mm), and ET_mm
 \code{\link{summarise_isotopes}}}
 }
 \value{
-monthly_isotopes with d18O_evap column added
+monthly_isotopes with d18O_evap and d2H_evap columns added
 }
 \description{
 Calculates Evaporation d18O based on monthly weather, lake surface

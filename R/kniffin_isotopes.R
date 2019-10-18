@@ -16,6 +16,11 @@
 #'   \item{d18O_GWin}{d18O isotopic composition, inflowing groundwater (per mil)}
 #'   \item{d18O_GWout}{d18O isotopic composition, inflowing groundwater (per
 #'                     mil), not measured by Kniffin}
+#'   \item{d2H_lake}{d2H isotopic composition, lake (per mil)}
+#'   \item{d2H_pcpn}{d2H isotopic composition, precipitation (per mil)}
+#'   \item{d2H_GWin}{d2H isotopic composition, inflowing groundwater (per mil)}
+#'   \item{d2H_GWout}{d2H isotopic composition, inflowing groundwater (per
+#'                     mil), not measured by Kniffin}
 #'   \item{GWin_sites}{sites used for GWin measurement}
 #'   \item{GWout_sites}{sites used for GWout measurement}
 #' }

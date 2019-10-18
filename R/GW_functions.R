@@ -20,13 +20,17 @@
 #' @param d18O_lake d18O isotopic composition of the lake
 #' @param d18O_GWin d18O isotopic composition of groundwater inflow
 #' @param d18O_evap d18O isotopic composition of evaporation
+#' @param V volume of water in the lake
+#' @param d18O_lake_dt change in d18O_lake in over the timestep of interest
+#'                     (e.g., 1 month)
 #'
 #' @return GWin - the groundwtaer inflow to the lake (mm)
 #'
 #' @export
 
-calculate_GW_inflow <- function(P, E, d18O_pcpn, d18O_lake, d18O_GWin, d18O_evap) {
-  GWin <- (P*(d18O_lake - d18O_pcpn) + E*(d18O_evap - d18O_lake))/
+calculate_GW_inflow <- function(P, E, d18O_pcpn, d18O_lake, d18O_GWin, d18O_evap,
+                                V = 0, d18O_lake_dt = 0) {
+  GWin <- (P*(d18O_lake - d18O_pcpn) + E*(d18O_evap - d18O_lake) + V*d18O_lake_dt)/
           (d18O_GWin - d18O_lake)
 
   if (length(GWin) == 0) {GWin <- NA}

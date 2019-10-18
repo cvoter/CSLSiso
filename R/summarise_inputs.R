@@ -110,7 +110,9 @@ summarise_inputs <- function(weather, lst, isotopes, lake_levels, gw_levels,
                            .data$P_mm, .data$ET_mm, .data$atmp_K, .data$ltmp_K,
                            .data$dV, .data$d18O_lake, .data$d18O_pcpn,
                            .data$d18O_GWin, .data$d18O_GWout, .data$d18O_evap,
-                           .data$GWin_sites, .data$GWout_sites)
+                           .data$d2H_lake, .data$d2H_pcpn, .data$d2H_GWin,
+                           .data$d2H_GWout, .data$d2H_evap, .data$GWin_sites,
+                           .data$GWout_sites)
 
   return(h2o_bal_inputs)
 }

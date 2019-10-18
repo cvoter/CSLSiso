@@ -49,7 +49,7 @@ calculate_lake_evap <- function(weather, lst, stage_vol, site_dictionary,
   loc <- format_lake_loc(site_dictionary, Lz)
 
   # Lake info for lake evaporation
-  lake <- format_lake_info(stage_vol)
+  lake <- format_lake_info(stage_vol, lst)
 
   # Determine first day with both lst and weather data
   lst_day_one     <- floor_date(lst$date[which.min(lst$date)], unit = "day")

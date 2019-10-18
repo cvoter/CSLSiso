@@ -12,22 +12,27 @@
 #' @param monthly_isotopes a data frame as output by
 #'                         \code{\link{summarise_isotopes}}
 #'
-#' @return monthly_isotopes with d18O_evap column added
+#' @return monthly_isotopes with d18O_evap and d2H_evap columns added
 #'
 #' @export
 
 summarise_d18O_evap <- function(monthly_weather, monthly_lst,
                                 monthly_isotopes) {
-  d18O_evap_in <- merge(monthly_weather, monthly_lst)
-  d18O_evap_in <- merge(d18O_evap_in, monthly_isotopes)
-  d18O_evap_in <- d18O_evap_in %>%
+  del_evap <- merge(monthly_weather, monthly_lst)
+  del_evap <- merge(del_evap, monthly_isotopes)
+  del_evap <- del_evap %>%
                   mutate(d18O_evap = calculate_d18O_evap(.data$atmp_K,
                                                          .data$ltmp_K,
                                                          .data$RH_pct,
                                                          .data$d18O_pcpn,
-                                                         .data$d18O_lake)) %>%
-                  select(.data$date, .data$d18O_evap)
-  monthly_isotopes <- merge(monthly_isotopes, d18O_evap_in)
+                                                         .data$d18O_lake),
+                         d2H_evap = calculate_d18O_evap(.data$atmp_K,
+                                                        .data$ltmp_K,
+                                                        .data$RH_pct,
+                                                        .data$d2H_pcpn,
+                                                        .data$d2H_lake)) %>%
+                  select(.data$date, .data$d18O_evap, .data$d2H_evap)
+  monthly_isotopes <- merge(monthly_isotopes, del_evap)
 
   return(monthly_isotopes)
 }
