@@ -23,7 +23,7 @@ library(knitr)
 ```
 
 
-```{r data, eval=TRUE, echo=FALSE}
+```{r data, eval=TRUE, echo=FALSE, warning=FALSE, message=FALSE}
 calculate_line_intersect <- function(line1, line2){
   x <- (line1$coefficients[1] - line2$coefficients[1])/
        (line2$coefficients[2] - line1$coefficients[2])
@@ -35,57 +35,6 @@ calculate_line_intersect <- function(line1, line2){
 dist_to_point <- function(x1, y1, x2, y2){
   dist <- sqrt((x2 - x1)^2 - (y2 - y1))
   return(dist)
-}
-
-get_inputs <- function(lake, static_gw = FALSE,
-                       median_threshold = 0.01, static_lake = FALSE,
-                       use_kniffin_pcpn = TRUE,
-                       pcpnfile = 'csls_isotope_precipitation_deployment.csv',
-                       pcpndir = "system.file") {
-  
-  data("weather", package = "cslsdata")
-    if (lake == "Pleasant") {
-      data("psnt_lst", package = "cslsdata"); lst <- psnt_lst
-      data("psnt_isotopes", package = "cslsdata"); isotopes <- psnt_isotopes
-      data("psnt_lake_levels", package = "cslsdata"); lake_levels <- psnt_lake_levels
-      data("psnt_gw_levels", package = "cslsdata"); gw_levels <- psnt_gw_levels
-      data("psnt_stage_vol", package = "cslsdata"); stage_vol <- psnt_stage_vol
-      data("psnt_dictionary", package = "cslsdata"); site_dictionary <- psnt_dictionary
-    } else if (lake == "Long") {
-      data("long_lst", package = "cslsdata"); lst <- long_lst
-      data("long_isotopes", package = "cslsdata"); isotopes <- long_isotopes
-      data("long_lake_levels", package = "cslsdata"); lake_levels <- long_lake_levels
-      data("long_gw_levels", package = "cslsdata"); gw_levels <- long_gw_levels
-      data("long_stage_vol", package = "cslsdata"); stage_vol <- long_stage_vol
-      data("long_dictionary", package = "cslsdata"); site_dictionary <- long_dictionary
-    } else if (lake == "Plainfield") {
-      data("pfl_lst", package = "cslsdata"); lst <- pfl_lst
-      data("pfl_isotopes", package = "cslsdata"); isotopes <- pfl_isotopes
-      data("pfl_lake_levels", package = "cslsdata"); lake_levels <- pfl_lake_levels
-      data("pfl_gw_levels", package = "cslsdata"); gw_levels <- pfl_gw_levels
-      data("pfl_stage_vol", package = "cslsdata"); stage_vol <- pfl_stage_vol
-      data("pfl_dictionary", package = "cslsdata"); site_dictionary <- pfl_dictionary
-    }
-
-  # Summarise inputs over same monthly timeseries
-  h2o_bal_inputs  <- summarise_inputs(weather, lst, isotopes, lake_levels,
-                                      gw_levels, stage_vol, site_dictionary,
-                                      static_gw, median_threshold, static_lake,
-                                      use_kniffin_pcpn, pcpnfile, pcpndir)
-  return(h2o_bal_inputs)
-}
-
-get_del_evap <- function(h2o_bal_inputs) {
-  d18O_evap_in <- merge(monthly_weather, monthly_lst)
-  d18O_evap_in <- merge(d18O_evap_in, monthly_isotopes)
-  d18O_evap_in <- d18O_evap_in %>%
-                  mutate(d18O_evap = calculate_d18O_evap(.data$atmp_K,
-                                                         .data$ltmp_K,
-                                                         .data$RH_pct,
-                                                         .data$d18O_pcpn,
-                                                         .data$d18O_lake)) %>%
-                  select(.data$date, .data$d18O_evap)
-  monthly_isotopes <- merge(monthly_isotopes, d18O_evap_in)
 }
 
 get_del_atm <- function(ltmp, del_pcpn) {
@@ -110,17 +59,24 @@ include_graphics(system.file("images",
                              mustWork = TRUE))
 ```
 
-## Lakes
+## Local Evaporation Line
 
-### Pleasant Lake
-```{r psnt, eval=TRUE, echo=FALSE}
-data("site_dictionary", package = "cslsdata")
-lake_ids      <- site_dictionary %>%
+This looks great, just as expected. All lakes fall along the same local
+evaporation line.
+
+```{r LEWL, eval=TRUE, echo=FALSE, warning=FALSE, message=FALSE, fig.width=7, fig.height=5, fig.align="center"}
+dictionary <- rbind(cslsdata::dictionary[["Pleasant"]],
+                    cslsdata::dictionary[["Plainfield"]],
+                    cslsdata::dictionary[["Long"]])
+isotopes   <- rbind(cslsdata::isotopes[["Pleasant"]],
+                    cslsdata::isotopes[["Plainfield"]],
+                    cslsdata::isotopes[["Long"]])
+lake_ids      <- dictionary %>%
                  filter(.data$obs_type == "LK") %>%
-                 select(.data$site_id) %>%
-                 unlist()
+                 select(.data$site_id)
 lake_isotopes <- isotopes %>%
-                 filter(.data$site_id %in% lake_ids)
+                 filter(as.character(.data$site_id) %in% 
+                          as.character(lake_ids$site_id))
 pcpn_isotopes <- isotopes %>%
                  filter(.data$site_id == "PRECIP")
 LMWL <- lm(d2H ~ d18O, pcpn_isotopes)
@@ -131,51 +87,141 @@ lake_isotopes$dist <- dist_to_point(line_intersect$x, line_intersect$y,
                                     lake_isotopes$d18O, lake_isotopes$d2H)
 lake_isotopes$date <- floor_date(lake_isotopes$date, unit = "month")
 
+# Local Evaporation Line
+ggplot() +
+  geom_smooth(data = pcpn_isotopes, 
+              aes(x = d18O, y = d2H), 
+              method = "lm") +
+  geom_smooth(data = lake_isotopes, 
+              aes(x = d18O, y = d2H), 
+              method = "lm") +
+  geom_point(data = line_intersect, 
+             aes(x = x, y = y), 
+             size = 3) +
+  geom_point(data = lake_isotopes, 
+             aes(x = d18O, y = d2H, color = lake), 
+             size = 3) +
+  labs(title = "Local Evaporation Line") +
+  theme_bw() +
+  theme(text = element_text(family = "Segoe UI Semilight"))
+
+```
+
+```{r inputs, eval=TRUE, echo=FALSE, warning=FALSE, message=FALSE, fig.width=7, fig.height=5, fig.align="center"}
+# Get Lake Inputs and Water Balance
 lake <- "Pleasant"
-psnt_inputs      <- get_inputs(lake)
+psnt_inputs      <- runall_csls_inputs(lake)
 psnt_inputs$lake <- lake
 psnt_h2o         <- calculate_h2o_bal(psnt_inputs)
 psnt_h2o$lake    <- lake
 
 lake <- "Long"
-long_inputs      <- get_inputs(lake)
+long_inputs      <- runall_csls_inputs(lake)
 long_inputs$lake <- lake
 long_h2o         <- calculate_h2o_bal(long_inputs)
 long_h2o$lake    <- lake
 
 lake <- "Plainfield"
-pfl_inputs      <- get_inputs(lake)
+pfl_inputs      <- runall_csls_inputs(lake)
 pfl_inputs$lake <- lake
 pfl_h2o         <- calculate_h2o_bal(pfl_inputs)
 pfl_h2o$lake    <- lake
 
 h2o    <- rbind(pfl_h2o, psnt_h2o, long_h2o)
 inputs <- rbind(pfl_inputs, psnt_inputs, long_inputs)
+
+# Add in del_atm
 inputs$d18O_atm <- get_del_atm(inputs$ltmp_K, inputs$d18O_pcpn)
-inputs$d2H_atm <- get_del_atm(inputs$ltmp_K, inputs$d2H_pcpn)
+inputs$d2H_atm  <- get_del_atm(inputs$ltmp_K, inputs$d2H_pcpn)
 
+# Fit line to del_evap and del_atm
 del_evap <- lm(d2H_evap ~ d18O_evap, inputs)
+del_atm  <- lm(d2H_atm ~ d18O_atm, inputs)
+```
 
+## Position on Local Evaporation Line vs. GWin
 
+I think the position (i.e., distance) on the LEL should be proportional to the
+ratio of evaporation to total inflow (P + GWin), or EtoIn.
+
+$$ EtoIn = \frac{E}{P + GW_{in}}$$
+
+But can we estimate GWin just by knowing P, Evap, and del_lake? Maybe there's
+not a direct relationship here.
+
+```{r plot, eval=TRUE, echo=FALSE, warning=FALSE, message=FALSE, fig.width=7, fig.height=5, fig.align="center"}
+# Calculate Relationship Between 
+h2o$date <- floor_date(h2o$date, unit = "month")
 lake_isotopes <- merge(lake_isotopes, h2o, by = c("date","lake"))
-lake_isotopes$inputs <- lake_isotopes$P_mm + lake_isotopes$GWin
-lake_isotopes$Eratio <- lake_isotopes$ET_mm/lake_isotopes$inputs
+lake_isotopes$EtoIn_m3 <- lake_isotopes$E_m3/(lake_isotopes$P_m3 + lake_isotopes$GWin_m3)
 
+# # Water Balance
+# kable(subset(h2o, is.na(GWin) == FALSE), caption = "Complete water budgets")
+sorted_isotopes <- lake_isotopes %>%
+                   filter(is.na(GWin_m3) == FALSE) %>%
+                   select(date, lake, P_m3, E_m3, GWin_m3, dist, EtoIn_m3) %>%
+                   arrange(.data$dist)
 
-ggplot(data = lake_isotopes) +
-  geom_point(aes(x = dist, y = Eratio, color = site_id))
-                
+kable(sorted_isotopes)
 
+# Relationship between isotopes and evap/inputs?
+ggplot(data = lake_isotopes, aes(x = dist, y = EtoIn_m3, color = site_id)) +
+  geom_point(size = 3) +
+  geom_text(aes(label = date), hjust=-0.1, vjust=0) +
+  labs(x = "Distance to Intersect", y = "E / (P + GWin)",
+       title = "Relationship between relative isotope compostion and evap/inputs") +
+  theme_bw() +
+  theme(text = element_text(family = "Segoe UI Semilight"))
+
+```
+
+## Calculated Atm and Evap Isotopic Composition
+
+Also plotted del_atm and del_evap to compare to Figure 3b in Gibson et al.,
+2016. This is not quite right. Would expect del_evap (topmost line) to simply
+extend the local evaporation line, and would expect del_atm to be pretty similar
+(but with a slightly shallower slope) than the del_precip line. 
+
+The slopes on these lines seem right.
+
+But the lines are shifted higher than expected. My first thought was that I had
+accidentally used d18O values instead of d2H values for precipitation and the
+lake in the d2H evap calculations, but I've double checked this and that's not
+happening.
+
+Not sure how much to worry about this, probably just need to move on.
+
+```{r del_evap, eval=TRUE, echo=FALSE, warning=FALSE, message=FALSE, fig.width=7, fig.height=5, fig.align="center"}
+# del_evap and del_atm
 ggplot() +
-  geom_smooth(data = pcpn_isotopes, aes(x = d18O, y = d2H), method = "lm") +
-  geom_smooth(data = lake_isotopes, aes(x = d18O, y = d2H), method = "lm") +
-  geom_smooth(data = inputs, aes(x = d18O_evap, y = d2H_evap), method = "lm") +
-  geom_smooth(data = inputs, aes(x = d18O_atm, y = d2H_atm), method = "lm") +
-  geom_point(data = line_intersect, aes(x = x, y = y)) +
-  geom_point(data = lake_isotopes, aes(x = d18O, y = d2H, color = lake)) +
-  geom_point(data = inputs, aes(x = d18O_atm, y = d2H_atm, color = lake)) +
-  geom_point(data = inputs, aes(x = d18O_evap, y = d2H_evap, color = lake))
- 
+  geom_smooth(data = pcpn_isotopes, 
+              aes(x = d18O, y = d2H), 
+              method = "lm") +
+  geom_smooth(data = lake_isotopes, 
+              aes(x = d18O, y = d2H), 
+              method = "lm") +
+  geom_smooth(data = inputs, 
+              aes(x = d18O_evap, y = d2H_evap), 
+              method = "lm") +
+  geom_smooth(data = inputs, 
+              aes(x = d18O_atm, y = d2H_atm), 
+              method = "lm") +
+  geom_point(data = line_intersect, 
+             aes(x = x, y = y), 
+             size = 3) +
+  geom_point(data = inputs, 
+             aes(x = d18O_atm, y = d2H_atm, color = lake),
+             size = 3) +
+  geom_point(data = inputs, 
+             aes(x = d18O_evap, y = d2H_evap, color = lake),
+             size = 3) +
+  geom_point(data = lake_isotopes, 
+             aes(x = d18O, y = d2H, color = lake), 
+             size = 3) +
+  labs(title = "Add in del_evap and del_atm") +
+  theme_bw() +
+  theme(text = element_text(family = "Segoe UI Semilight"))
+
 ```
 
 ## Session Info

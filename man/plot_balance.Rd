@@ -4,13 +4,16 @@
 \alias{plot_balance}
 \title{Plot d18O}
 \usage{
-plot_balance(lake, monthly_h2o_bal)
+plot_balance(lake, monthly_h2o_bal, as_vol = TRUE)
 }
 \arguments{
 \item{lake}{lake of interest (e.g., "Pleasant", "Long", or "Plainfield")}
 
 \item{monthly_h2o_bal}{a data frame with the date and all fluxes into and out
 of the lake.}
+
+\item{as_vol}{logical defaults to TRUE to plot water balance as a volume
+(m^3). If FALSE, plots as depths.}
 }
 \value{
 plot_obj - a plot object with aesthetics added

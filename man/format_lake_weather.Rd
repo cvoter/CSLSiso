@@ -4,20 +4,21 @@
 \alias{format_lake_weather}
 \title{Format Lake Weather Info for Lake Evaporation}
 \usage{
-format_lake_weather(weather, day_one, wind_elev, z0)
+format_lake_weather(weather, day_zero, wind_elev = 3, z0 = 0.02)
 }
 \arguments{
-\item{weather}{hourly weather data with air temperature (atmp), relative
-humidity (RH), precipitation (P), solar radiaiton (Rs), and
-wind speed (wind) as formatted in the weather
-dataset.}
+\item{weather}{a data frame with sub-monthly weather including including date
+(POSIXct), atmp (air temperature, deg C), P (precipitation, mm), RH
+(relative humidity, percent), Rs (solar radiation, MJ), and wind (wind
+speed, m/s)}
 
-\item{day_one}{first day of weather info to retain}
+\item{day_zero}{day before the first day of weather info to retain}
 
-\item{wind_elev}{height of wind measurements (m). At Hancock, 3m.}
+\item{wind_elev}{height of wind measurement, defaults to 3m for Hancock
+station.}
 
 \item{z0}{aeorodynamic roughness of landcover at site of weather measurements
-(m). For a grass, 0.02m.}
+(m), defaults to 0.02 for a grass.}
 }
 \value{
 weather, a list with daily weather data that includes:

@@ -7,9 +7,7 @@
 #' @param monthly_isotopes a data frame with monthly isotope measurements for
 #'                         all dates of desired timeseries (with NAs for months
 #'                         with no measurements)
-#' @param isotopes a data frame with isotope measurements as formatted in the
-#'                \code{\link{isotopes}} dataset, subset to records for the lake
-#'                of interest.
+#' @inheritParams summarise_isotopes
 #'
 #' @return monthly_isotopes - same data frame with GWin_sites and GWout_sites
 #'                            added as columns
@@ -29,7 +27,7 @@ iso_gw_site_names <- function(monthly_isotopes, isotopes) {
     if (is.na(monthly_isotopes$d18O_GWin[i]) == FALSE) {
       tmp           <- isotopes %>%
                        filter(floor_date(.data$date, unit = "month") ==
-                                monthly_isotopes$date[i],
+                                floor_date(monthly_isotopes$date[i], unit = "month"),
                               .data$site_type == "upgradient") %>%
                        summarise(site_ids = str_c(unique(.data$site_id),
                                                   collapse = ", "))
@@ -40,7 +38,7 @@ iso_gw_site_names <- function(monthly_isotopes, isotopes) {
       if (is.na(monthly_isotopes$d18O_GWout[i]) == FALSE) {
         tmp            <- isotopes %>%
                           filter(floor_date(.data$date, unit = "month") ==
-                                   monthly_isotopes$date[i],
+                                   floor_date(monthly_isotopes$date[i], unit = "month"),
                                  .data$site_type == "downgradient") %>%
                           summarise(site_ids = str_c(unique(.data$site_id),
                                                      collapse = ", "))

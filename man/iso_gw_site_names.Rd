@@ -11,9 +11,8 @@ iso_gw_site_names(monthly_isotopes, isotopes)
 all dates of desired timeseries (with NAs for months
 with no measurements)}
 
-\item{isotopes}{a data frame with isotope measurements as formatted in the
-\code{\link{isotopes}} dataset, subset to records for the lake
-of interest.}
+\item{isotopes}{a data frame with isotopes measurements as formatted in the
+isotopes dataset, subset for a single lake.}
 }
 \value{
 monthly_isotopes - same data frame with GWin_sites and GWout_sites

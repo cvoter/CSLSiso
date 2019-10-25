@@ -3,14 +3,8 @@
 #' Takes hourly weather data, summarizes as daily weather data, and re-formats
 #' for input to lake evaporation functions
 #'
-#' @param weather hourly weather data with air temperature (atmp), relative
-#'                humidity (RH), precipitation (P), solar radiaiton (Rs), and
-#'                wind speed (wind) as formatted in the weather
-#'                dataset.
-#' @param day_one first day of weather info to retain
-#' @param wind_elev height of wind measurements (m). At Hancock, 3m.
-#' @param z0 aeorodynamic roughness of landcover at site of weather measurements
-#'          (m). For a grass, 0.02m.
+#' @inheritParams calculate_lake_evap
+#' @param day_zero day before the first day of weather info to retain
 #'
 #' @return weather, a list with daily weather data that includes:
 #' \describe{
@@ -39,7 +33,7 @@
 #' @importFrom NISTunits NISTdegTOradian
 #'
 #' @export
-format_lake_weather <- function(weather, day_one, wind_elev, z0) {
+format_lake_weather <- function(weather, day_zero, wind_elev = 3, z0 = 0.02) {
   # Summarize at daily weather
   daily_weather <- weather %>%
                    group_by(datetimes = floor_date(.data$date, unit = "day")) %>%
@@ -51,7 +45,7 @@ format_lake_weather <- function(weather, day_one, wind_elev, z0) {
                              Rs = sum(.data$Rs),
                              wind = mean(.data$wind))
   daily_weather <- daily_weather %>%
-                   filter(.data$datetimes > day_one)
+                   filter(.data$datetimes > day_zero)
 
   # Convert to list for input to lake evap function (minus lake temp info)
   weather           <- daily_weather %>%

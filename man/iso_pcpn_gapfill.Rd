@@ -4,25 +4,22 @@
 \alias{iso_pcpn_gapfill}
 \title{Fill Gaps in Precipitation Stable Isotope Measurements}
 \usage{
-iso_pcpn_gapfill(monthly_isotopes, use_kniffin_pcpn = TRUE,
-  file = "csls_isotope_precipitation_deployment.csv",
-  filedir = "system.file")
+iso_pcpn_gapfill(monthly_isotopes, extend_pcpn = TRUE,
+  use_kniffin_pcpn = TRUE)
 }
 \arguments{
 \item{monthly_isotopes}{a data frame with monthly isotope measurements for
 all dates of desired timeseries (with NAs for months
 with no measurements)}
 
+\item{extend_pcpn}{logical defaults to TRUE to backfill months with no
+precipitation}
+
 \item{use_kniffin_pcpn}{logical defaults to TRUE to average in precipitation
-measurements by Maribeth Kniffin for each month.}
-
-\item{file}{name of file with dates of precipitation collector deployment.
-Defaults to "csls_isotope_precipitation_deployment.csv"}
-
-\item{filedir}{name of directory with file with dates of precipitation
-collector deployment. Defaults to "system.file" to indicate is
-stored within inst/extdata within the installed isoH2Obudget
-package files.}
+isotope measurements by Maribeth Kniffin for each
+month. Kniffin measurements taken at Hancock
+Agricultural Research Station from May 2016 - Apr
+2015 for each month.}
 }
 \value{
 monthly_isotopes - the same data frame provided to the function, but

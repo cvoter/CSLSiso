@@ -7,9 +7,7 @@
 #' @param monthly_isotopes a data frame with monthly isotope measurements for
 #'                         all dates of desired timeseries (with NAs for months
 #'                         with no measurements)
-#' @param static_lake logical defaults to FALSE to use actual measurement for
-#'                    each month. If TRUE, uses mean of fall (Sept-Nov) isotope
-#'                    samples for the lake.
+#' @inheritParams summarise_isotopes
 #'
 #' @return monthly_isotopes - the same data frame provided to the function, but
 #'                            with d18O_lake values filled in for all months
@@ -46,7 +44,7 @@ iso_lake_gapfill <- function(monthly_isotopes, static_lake = FALSE) {
 
   # Interpolate NAs in lake isotopes
   zoo_iso                    <- read.zoo(monthly_isotopes, index.name = "date")
-  zoo_iso                    <- as.data.frame(na.approx(zoo_iso))
+  zoo_iso                    <- as.data.frame(na.approx(zoo_iso, rule = 2))
   monthly_isotopes$d18O_lake <- zoo_iso$d18O_lake
   monthly_isotopes$d2H_lake <- zoo_iso$d2H_lake
 

@@ -28,17 +28,37 @@
 
 calculate_h2o_bal <- function (h2o_bal_inputs){
   h2o_bal <- h2o_bal_inputs %>%
-              mutate(GWin = calculate_GW_inflow(.data$P_mm,
-                                                .data$ET_mm,
+              mutate(GWin_m3 = calculate_GW_inflow(.data$P_m3,
+                                                .data$E_m3,
                                                 .data$d18O_pcpn,
                                                 .data$d18O_lake,
                                                 .data$d18O_GWin,
-                                                .data$d18O_evap)) %>%
-             select(.data$date, .data$P_mm, .data$ET_mm, .data$dV, .data$GWin)
+                                                .data$d18O_evap,
+                                                .data$mean_vol_m3,
+                                                .data$delta_d18O_lake)) %>%
+              mutate(GWin_mm = calculate_GW_inflow(.data$P_mm,
+                                                   .data$E_mm,
+                                                   .data$d18O_pcpn,
+                                                   .data$d18O_lake,
+                                                   .data$d18O_GWin,
+                                                   .data$d18O_evap,
+                                                   .data$mean_vol_m3/.data$mean_area_m2,
+                                                   .data$delta_d18O_lake)) %>%
+             select(.data$date, .data$P_m3, .data$E_m3, .data$dV_m3,
+                    .data$GWin_m3, .data$P_mm, .data$E_mm, .data$dV_mm,
+                    .data$GWin_mm)
   h2o_bal <- h2o_bal %>%
-             mutate(GWout = calculate_GW_outflow(.data$P_mm,
-                                                 .data$ET_mm,
-                                                 .data$GWin,
-                                                 .data$dV))
+             mutate(GWout_m3 = calculate_GW_outflow(.data$P_m3,
+                                                    .data$E_m3,
+                                                    .data$GWin_m3,
+                                                    .data$dV_m3),
+                    GWout_mm = calculate_GW_outflow(.data$P_mm,
+                                                    .data$E_mm,
+                                                    .data$GWin_mm,
+                                                    .data$dV_mm)) %>%
+                    select(.data$date, .data$P_m3, .data$E_m3, .data$dV_m3,
+                           .data$GWin_m3, .data$GWout_m3, .data$P_mm,
+                           .data$E_mm, .data$dV_mm, .data$GWin_mm,
+                           .data$GWout_mm)
   return(h2o_bal)
 }

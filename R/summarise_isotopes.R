@@ -2,40 +2,10 @@
 #'
 #' Summarizes isotope measurements at a monthly timestep for a single lake
 #'
-#' @param isotopes a data frame with isotopes measurements as formatted in the
-#'                 isotopes dataset, subset for a single lake.
-#' @param site_dictionary a data frame with site id numbers and static isotope
-#'                        site classifications as formatted in the
-#'                        site_dictionary dataset, subset to
-#'                        records for the lake of interest.
-#' @param timeseries a vector of all months in the common timeseries among input
-#'                   datasets
-#' @param static_gw logical defaults to FALSE to use lake_levels and gw_levels
-#'                  to define upgradient/downgradient wells at each measurement
-#'                  date. If TRUE, uses static definitions of
-#'                  upgradient/downgradient wells in site dictionary.
-#' @param lake_levels a data frame with daily water level measurements as
-#'                    formatted in the water_levels dataset,
-#'                    subset to lake level records for the lake of interest.
-#' @param gw_levels a data frame with daily water level measurements as
-#'                  formatted in the water_levels dataset,
-#'                  subset to groundwater level records at the lake of
-#'                  interest.
-#' @param median_threshold minimum median difference between lake levels and
-#'                         groundwater levels during the month of measurement in
-#'                         order to classify groundwater measurement.
-#' @param static_lake logical defaults to FALSE to use actual measurement for
-#'                    each month. If TRUE, uses mean of fall (Sept-Nov) isotope
-#'                    samples for the lake.
-#' @param use_kniffin_pcpn logical defaults to TRUE to average in precipitation
-#'                         measurements by Maribeth Kniffin for each month.
-#' @param pcpnfile name of file with dates of precipitation collector deployment.
-#'                 Defaults to "csls_isotope_precipitation_deployment.csv"
-#' @param pcpndir name of directory with file with dates of precipitation
-#'                collector deployment. Defaults to "system.file" to indicate is
-#'                stored within inst/extdata within the installed isoH2Obudget
-#'                package files.
-#'
+#' @inheritParams summarise_inputs
+#' @param analysis a list with dates (POSIXct) to analyze, and intervals
+#'                 (lubridate interval) covering the month before each analysis
+#'                 date.
 #'
 #' @return monthly_isotopes, a data frame with the following columns:
 #' \describe{
@@ -59,25 +29,27 @@
 #' @importFrom stringr str_replace str_c
 #'
 #' @export
-summarise_isotopes <- function(isotopes, site_dictionary, timeseries,
+summarise_isotopes <- function(isotopes, dictionary, analysis,
                                static_gw = FALSE, lake_levels = NULL,
-                               gw_levels = NULL, median_threshold = 0.01,
+                               gw_levels = NULL, threshold = 0.01,
                                static_lake = FALSE, use_kniffin_pcpn = TRUE,
-                               pcpnfile = 'csls_isotope_precipitation_deployment.csv',
-                               pcpndir = "system.file") {
+                               extend_pcpn = TRUE) {
   # Assign site type to each measurement
-  isotopes <- iso_site_type(isotopes, site_dictionary, static_gw,
-                            lake_levels, gw_levels, median_threshold)
+  isotopes <- iso_site_type(isotopes, dictionary, static_gw,
+                            lake_levels, gw_levels, threshold)
 
   # Mean d180 by month and site type, drop values w/out site type
   isomelt <- isotopes %>%
-             group_by(date = floor_date(.data$date, unit = "month"),
+             group_by(floor_date(.data$date, unit = "month"),
                       site_type = .data$site_type) %>%
              filter(is.na(.data$site_type) == FALSE &
                       .data$site_type != "") %>%
-             summarise(mean_d18O = mean(.data$d18O),
-                       mean_d2H = mean(.data$d2H))
-
+             summarise(date = floor_date(mean(.data$date), unit = "day"),
+                       mean_d18O = mean(.data$d18O),
+                       mean_d2H = mean(.data$d2H)) %>%
+             ungroup() %>%
+             select(.data$date, .data$site_type,
+                    .data$mean_d18O, .data$mean_d2H)
 
   # Reshape and rename columns
   monthly_isotopes           <- recast(isomelt,
@@ -98,13 +70,23 @@ summarise_isotopes <- function(isotopes, site_dictionary, timeseries,
   }
 
   # Fill gaps in timeseries, values, and add notes on which gw well used
+  monthly_isotopes <- iso_lake_gapfill(monthly_isotopes, static_lake)
+  monthly_isotopes <- iso_pcpn_gapfill(monthly_isotopes, extend_pcpn,
+                                       use_kniffin_pcpn)
   monthly_isotopes <- monthly_isotopes %>%
-                      filter(.data$date %in% timeseries)
-  monthly_isotopes <- fill_timeseries_gaps(monthly_isotopes, timeseries)
-  monthly_isotopes <- iso_lake_gapfill(monthly_isotopes)
-  monthly_isotopes <- iso_pcpn_gapfill(monthly_isotopes, use_kniffin_pcpn,
-                                       pcpnfile, pcpndir)
+                      filter(!is.na(.data$d18O_GWin))
+  monthly_isotopes <- iso_lake_change(monthly_isotopes)
   monthly_isotopes <- iso_gw_site_names(monthly_isotopes, isotopes)
 
-  return(as.data.frame(monthly_isotopes))
+  # Fix dates if analyzing by calendar month
+  if (any(!monthly_isotopes$date %in% analysis$dates)) {
+    for (i in 1:nrow(monthly_isotopes)){
+      this_month <- floor_date(monthly_isotopes$date[i], unit = "month")
+      monthly_isotopes$date[i] <- analysis$dates[floor_date(analysis$dates,
+                                                            unit = "month") ==
+                                                   this_month]
+    }
+  }
+
+  return(monthly_isotopes)
 }

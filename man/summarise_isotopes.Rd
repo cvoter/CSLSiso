@@ -4,24 +4,22 @@
 \alias{summarise_isotopes}
 \title{Monthly Isotope Measurements}
 \usage{
-summarise_isotopes(isotopes, site_dictionary, timeseries,
-  static_gw = FALSE, lake_levels = NULL, gw_levels = NULL,
-  median_threshold = 0.01, static_lake = FALSE,
-  use_kniffin_pcpn = TRUE,
-  pcpnfile = "csls_isotope_precipitation_deployment.csv",
-  pcpndir = "system.file")
+summarise_isotopes(isotopes, dictionary, analysis, static_gw = FALSE,
+  lake_levels = NULL, gw_levels = NULL, threshold = 0.01,
+  static_lake = FALSE, use_kniffin_pcpn = TRUE, extend_pcpn = TRUE)
 }
 \arguments{
 \item{isotopes}{a data frame with isotopes measurements as formatted in the
 isotopes dataset, subset for a single lake.}
 
-\item{site_dictionary}{a data frame with site id numbers and static isotope
+\item{dictionary}{a data frame with site id numbers and static isotope
 site classifications as formatted in the
-site_dictionary dataset, subset to
+dictionary dataset, subset to
 records for the lake of interest.}
 
-\item{timeseries}{a vector of all months in the common timeseries among input
-datasets}
+\item{analysis}{a list with dates (POSIXct) to analyze, and intervals
+(lubridate interval) covering the month before each analysis
+date.}
 
 \item{static_gw}{logical defaults to FALSE to use lake_levels and gw_levels
 to define upgradient/downgradient wells at each measurement
@@ -29,32 +27,30 @@ date. If TRUE, uses static definitions of
 upgradient/downgradient wells in site dictionary.}
 
 \item{lake_levels}{a data frame with daily water level measurements as
-formatted in the water_levels dataset,
+formatted in the lake_levels dataset,
 subset to lake level records for the lake of interest.}
 
 \item{gw_levels}{a data frame with daily water level measurements as
-formatted in the water_levels dataset,
+formatted in the lake_levels dataset,
 subset to groundwater level records at the lake of
 interest.}
 
-\item{median_threshold}{minimum median difference between lake levels and
-groundwater levels during the month of measurement in
-order to classify groundwater measurement.}
+\item{threshold}{minimum median difference between lake levels and
+groundwater levels during the month of measurement in order
+to classify groundwater measurement.}
 
 \item{static_lake}{logical defaults to FALSE to use actual measurement for
 each month. If TRUE, uses mean of fall (Sept-Nov) isotope
 samples for the lake.}
 
 \item{use_kniffin_pcpn}{logical defaults to TRUE to average in precipitation
-measurements by Maribeth Kniffin for each month.}
+isotope measurements by Maribeth Kniffin for each
+month. Kniffin measurements taken at Hancock
+Agricultural Research Station from May 2016 - Apr
+2015 for each month.}
 
-\item{pcpnfile}{name of file with dates of precipitation collector deployment.
-Defaults to "csls_isotope_precipitation_deployment.csv"}
-
-\item{pcpndir}{name of directory with file with dates of precipitation
-collector deployment. Defaults to "system.file" to indicate is
-stored within inst/extdata within the installed isoH2Obudget
-package files.}
+\item{extend_pcpn}{logical defaults to TRUE to backfill months with no
+precipitation}
 }
 \value{
 monthly_isotopes, a data frame with the following columns:

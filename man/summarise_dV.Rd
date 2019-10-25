@@ -4,24 +4,27 @@
 \alias{summarise_dV}
 \title{Monthly Change in Lake Volume}
 \usage{
-summarise_dV(lake_levels, timeseries)
+summarise_dV(lake_levels, analysis)
 }
 \arguments{
 \item{lake_levels}{a data frame with daily water level measurements as
-formatted in the \code{\link{water_levels}} dataset,
+formatted in the lake_levels dataset,
 subset to lake level records for the lake of interest.}
 
-\item{timeseries}{a vector of all months in the common timeseries among input
-datasets}
+\item{analysis}{a list with dates (POSIXct) to analyze, and intervals
+(lubridate interval) covering the month before each analysis
+date.}
 }
 \value{
 monthly_dV, a data frame with the following columns:
 \describe{
 \item{date}{first of the month for each monthly observation}
-\item{dV}{change in lake volume during the month as a depth (mm)}
+\item{dV}{change in lake volume during the month (m^3)}
+\item{mean_vol_m3}{mean lake volume during the month (m^3)}
+\item{mean_area_m2}{mean lake surface area during the month (m^2)}
 }
 }
 \description{
-Calculates the monthly change in lake volume based on daily lake levels and a
-stage-volume relationship from bathymetry analysis. .
+Calculates the monthly change in lake volume based on daily lake levels and
+an elevation-volume relationship from bathymetry analysis.
 }

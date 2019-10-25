@@ -14,6 +14,8 @@
 #' @param lake lake of interest (e.g., "Pleasant", "Long", or "Plainfield")
 #' @param monthly_h2o_bal a data frame with the date and all fluxes into and out
 #'                        of the lake.
+#' @param as_vol logical defaults to TRUE to plot water balance as a volume
+#'               (m^3). If FALSE, plots as depths.
 #'
 #' @return plot_obj - a plot object with aesthetics added
 #'
@@ -25,9 +27,28 @@
 #'
 #' @export
 
-plot_balance <- function(lake, monthly_h2o_bal) {
+plot_balance <- function(lake, monthly_h2o_bal, as_vol = TRUE) {
   monthly_h2o_bal <- monthly_h2o_bal %>%
-                     filter (is.na(.data$GWout) == FALSE)
+                     filter(is.na(.data$GWout_m3) == FALSE)
+  if (as_vol){
+    monthly_h2o_bal <- monthly_h2o_bal %>%
+                       select(date = .data$date,
+                              P = .data$P_m3,
+                              E = .data$E_m3,
+                              GWin = .data$GWin_m3,
+                              GWout = .data$GWout_m3,
+                              dV = .data$dV_m3)
+    ylabel <- "Flux (m^3)"
+  } else {
+    monthly_h2o_bal <- monthly_h2o_bal %>%
+                       select(data = .data$date,
+                              P = .data$P_mm,
+                              E = .data$E_mm,
+                              GWin = .data$GWin_mm,
+                              GWout = .data$GWout_mm,
+                              dV = .data$dV_mm)
+    ylabel <- "Flux (mm)"
+  }
 
   melted_bal <- melt(monthly_h2o_bal, id.vars = "date")
 
@@ -39,6 +60,9 @@ plot_balance <- function(lake, monthly_h2o_bal) {
       melted_bal$in_or_out[i] <- "Out"
     }
   }
+
+  zero_line <- data.frame(date = monthly_h2o_bal$date,
+                             line = rep(0, nrow(monthly_h2o_bal)))
 
   plot_obj <- ggplot(data = melted_bal) +
               geom_col(aes(x = .data$in_or_out,
@@ -54,7 +78,7 @@ plot_balance <- function(lake, monthly_h2o_bal) {
                                            "Groundwater Inflow",
                                            "Groundwater Outflow",
                                            "Change in Lake Volume")) +
-             labs(x = "", y = "Flux (mm)", title = sprintf("%s Lake", lake)) +
+             labs(x = "", y = ylabel, title = sprintf("%s Lake", lake)) +
              theme_bw() +
              theme(text = element_text(family = "Segoe UI Semilight"))
 

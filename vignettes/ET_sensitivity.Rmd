@@ -21,45 +21,24 @@ library(reshape2)
 ```
 
 ```{r ETcalc, echo=FALSE, eval=TRUE, warning=FALSE, message=FALSE}
-plot_lake_ET <- function(lake){
-  data("weather", package = "cslsdata")
-  if (lake == "Pleasant") {
-    data("psnt_lst", package = "cslsdata"); lst <- psnt_lst
-    data("psnt_isotopes", package = "cslsdata"); isotopes <- psnt_isotopes
-    data("psnt_lake_levels", package = "cslsdata"); lake_levels <- psnt_lake_levels
-    data("psnt_gw_levels", package = "cslsdata"); gw_levels <- psnt_gw_levels
-    data("psnt_stage_vol", package = "cslsdata"); stage_vol <- psnt_stage_vol
-    data("psnt_dictionary", package = "cslsdata"); site_dictionary <- psnt_dictionary
-  } else if (lake == "Long") {
-    data("long_lst", package = "cslsdata"); lst <- long_lst
-    data("long_isotopes", package = "cslsdata"); isotopes <- long_isotopes
-    data("long_lake_levels", package = "cslsdata"); lake_levels <- long_lake_levels
-    data("long_gw_levels", package = "cslsdata"); gw_levels <- long_gw_levels
-    data("long_stage_vol", package = "cslsdata"); stage_vol <- long_stage_vol
-    data("long_dictionary", package = "cslsdata"); site_dictionary <- long_dictionary
-  } else if (lake == "Plainfield") {
-    data("pfl_lst", package = "cslsdata"); lst <- pfl_lst
-    data("pfl_isotopes", package = "cslsdata"); isotopes <- pfl_isotopes
-    data("pfl_lake_levels", package = "cslsdata"); lake_levels <- pfl_lake_levels
-    data("pfl_gw_levels", package = "cslsdata"); gw_levels <- pfl_gw_levels
-    data("pfl_stage_vol", package = "cslsdata"); stage_vol <- pfl_stage_vol
-    data("pfl_dictionary", package = "cslsdata"); site_dictionary <- pfl_dictionary
-  }
-
-timeseries <- find_overlap_timeseries(weather, lst, isotopes, lake_levels,
-                                      gw_levels)
-timeseries <- as_datetime(timeseries)
-
-# Monthly summary
-monthly_weather   <- summarise_weather(weather, lst, stage_vol, site_dictionary, 
-                                       timeseries, wind_elev = 3, z0 = 0.02, 
-                                       Lz = 90, lake_albedo = 0.08)
-
-monthly_ET  <- monthly_weather %>%
-               select(date = .data$date, 
-                      ET = .data$ET_mm)
-
-return(monthly_ET)
+get_lake_evap <- function(lake){
+  weather         <- cslsdata::weather
+  lst             <- cslsdata::lst_HOBO[[lake]]
+  isotopes        <- cslsdata::isotopes[[lake]]
+  lake_levels     <- cslsdata::lake_levels[[lake]]
+  gw_levels       <- cslsdata::gw_levels[[lake]]
+  elev_area_vol   <- cslsdata::elev_area_vol[[lake]]
+  dictionary      <- cslsdata::dictionary[[lake]]
+  
+  analysis        <- find_timeseries(weather, lst, isotopes, lake_levels, 
+                                     gw_levels, dictionary, static_gw = FALSE, 
+                                     threshold = 0.01, by_gw_iso = FALSE)
+  monthly_weather <- summarise_weather(weather, lst, elev_area_vol,
+                                         dictionary, analysis)
+  monthly_evap    <- monthly_weather %>%
+                     select(date = .data$date, 
+                            E = .data$E_mm)
+  return(monthly_evap)
 }
 ```
 
@@ -119,51 +98,52 @@ body is much lower than resistance to evaporation from a leaf, provided the lake
 is sufficiently warm.
 
 ```{r ETplot, echo=FALSE, eval=TRUE, warning=FALSE, message=FALSE, fig.width = 7, fig.height = 5}
-psnt_ET <- plot_lake_ET("Pleasant")
-long_ET <- plot_lake_ET("Long")
-pfl_ET  <- plot_lake_ET("Plainfield")
+psnt_evap <- get_lake_evap("Pleasant")
+long_evap <- get_lake_evap("Long")
+pfl_evap  <- get_lake_evap("Plainfield")
 
-colnames(psnt_ET) <- c("date", "Pleasant")
-colnames(long_ET) <- c("date", "Long")
-colnames(pfl_ET) <- c("date", "Plainfield")
+colnames(psnt_evap) <- c("date", "Pleasant")
+colnames(long_evap) <- c("date", "Long")
+colnames(pfl_evap)  <- c("date", "Plainfield")
 
-monthly_ET <- merge(psnt_ET, long_ET)
-monthly_ET <- merge(monthly_ET, pfl_ET)
+monthly_evap <- merge(psnt_evap, long_evap)
+monthly_evap <- merge(monthly_evap, pfl_evap)
 
 
-data("weather_rpet", package = "cslsdata")
+weather_rpet <- cslsdata::weather_rpet
 ET_hck <- weather_rpet %>%
           group_by(date = floor_date(date, unit = "month")) %>%
           summarise(ET_hck = sum(ET))
 
-monthly_ET <- merge(monthly_ET, ET_hck)
-monthly_ET <- monthly_ET[2:(nrow(monthly_ET)-1), ]
-melted_ET  <- melt(monthly_ET, id.vars = "date")
+monthly_evap$date <- floor_date(monthly_evap$date, unit = "month")
+ET_hck$date       <- floor_date(ET_hck$date, unit = "month")
+monthly_evap      <- merge(monthly_evap, ET_hck)
+melted_evap       <- melt(monthly_evap, id.vars = "date")
 
-plot_ET <- ggplot(data = melted_ET, 
+plot_evap <- ggplot(data = melted_evap, 
                   aes(x = as.Date(date), y = value, fill = variable)) +
-           geom_col(position = "dodge") +
-           scale_y_continuous(limits = c(0, 200),
-                              expand = c(0, 0)) +
-           scale_x_date(date_breaks = "2 months",
-                        date_labels = "%b %y") +
-           scale_fill_manual(name = "Flux",
-                             values = c("steelblue4", 
-                                        "steelblue3", 
-                                        "steelblue2", 
-                                        "orchid4"),
-                             breaks = c("Pleasant", 
-                                        "Long", 
-                                        "Plainfield", 
-                                        "ET_hck"),
-                             labels = c("Pleasant", 
-                                        "Long", 
-                                        "Plainfield", 
-                                        "FAO ET0")) +
-           labs(x = "", y = "ET (mm)") +
-           theme_bw() + 
-           theme(text = element_text(family = "Segoe UI Semilight"))
-plot_ET
+             geom_col(position = "dodge") +
+             scale_y_continuous(limits = c(0, 200),
+                                expand = c(0, 0)) +
+             scale_x_date(date_breaks = "2 months",
+                          date_labels = "%b %y") +
+             scale_fill_manual(name = "Flux",
+                               values = c("steelblue4", 
+                                          "steelblue3", 
+                                          "steelblue2", 
+                                          "orchid4"),
+                               breaks = c("Pleasant", 
+                                          "Long", 
+                                          "Plainfield", 
+                                          "ET_hck"),
+                               labels = c("Pleasant", 
+                                          "Long", 
+                                          "Plainfield", 
+                                          "FAO ET0")) +
+             labs(x = "", y = "Evaporation (mm)") +
+             theme_bw() + 
+             theme(text = element_text(family = "Segoe UI Semilight"))
+plot_evap
 ```
 
 ## Session info

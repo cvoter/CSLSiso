@@ -17,145 +17,176 @@ library(reshape2) #for melting
 library(ggplot2) #for plotting
 library(extrafont) #for fonts
 library(dplyr) #for %>% pipes
+library(lubridate) #for month
+library(forcats)
 ```
 
 ```{r fcns, eval=TRUE, echo=FALSE, fig.width = 7, fig.height = 3}
-lake_sensitivity <- function(lake){
-  data("weather", package = "cslsdata")
-    if (lake == "Pleasant") {
-      data("psnt_lst", package = "cslsdata"); lst <- psnt_lst
-      data("psnt_isotopes", package = "cslsdata"); isotopes <- psnt_isotopes
-      data("psnt_lake_levels", package = "cslsdata"); lake_levels <- psnt_lake_levels
-      data("psnt_gw_levels", package = "cslsdata"); gw_levels <- psnt_gw_levels
-      data("psnt_stage_vol", package = "cslsdata"); stage_vol <- psnt_stage_vol
-      data("psnt_dictionary", package = "cslsdata"); site_dictionary <- psnt_dictionary
-    } else if (lake == "Long") {
-      data("long_lst", package = "cslsdata"); lst <- long_lst
-      data("long_isotopes", package = "cslsdata"); isotopes <- long_isotopes
-      data("long_lake_levels", package = "cslsdata"); lake_levels <- long_lake_levels
-      data("long_gw_levels", package = "cslsdata"); gw_levels <- long_gw_levels
-      data("long_stage_vol", package = "cslsdata"); stage_vol <- long_stage_vol
-      data("long_dictionary", package = "cslsdata"); site_dictionary <- long_dictionary
-    } else if (lake == "Plainfield") {
-      data("pfl_lst", package = "cslsdata"); lst <- pfl_lst
-      data("pfl_isotopes", package = "cslsdata"); isotopes <- pfl_isotopes
-      data("pfl_lake_levels", package = "cslsdata"); lake_levels <- pfl_lake_levels
-      data("pfl_gw_levels", package = "cslsdata"); gw_levels <- pfl_gw_levels
-      data("pfl_stage_vol", package = "cslsdata"); stage_vol <- pfl_stage_vol
-      data("pfl_dictionary", package = "cslsdata"); site_dictionary <- pfl_dictionary
-    }
+iso_sensitivity <- function(lake){
+  h2o_bal_default <- runall_csls_budget(lake)
+  h2o_bal_gw      <- runall_csls_budget(lake, static_gw = TRUE)
+  h2o_bal_lake    <- runall_csls_budget(lake, static_lake = TRUE)
+  h2o_bal_knif    <- runall_csls_budget(lake, extend_pcpn = FALSE)
+  h2o_bal_csls    <- runall_csls_budget(lake, use_kniffin_pcpn = FALSE)
   
-  h2o_bal_default <- summarise_h2o_bal(lake, weather, lst, isotopes, lake_levels, gw_levels,
-                                       site_dictionary, stage_vol, 
-                                       static_gw = FALSE, median_threshold = 0.01, 
-                                       static_lake = FALSE, 
-                                       use_kniffin_pcpn = TRUE)
-  h2o_bal_gw <- summarise_h2o_bal(lake, weather, lst, isotopes, lake_levels, gw_levels,
-                                       site_dictionary, stage_vol, 
-                                       static_gw = TRUE, median_threshold = 0.01, 
-                                       static_lake = FALSE, 
-                                       use_kniffin_pcpn = TRUE)
-  h2o_bal_lake <- summarise_h2o_bal(lake, weather, lst, isotopes, lake_levels, gw_levels,
-                                       site_dictionary, stage_vol, 
-                                       static_gw = FALSE, median_threshold = 0.01, 
-                                       static_lake = TRUE, 
-                                       use_kniffin_pcpn = TRUE)
-  h2o_bal_both <- summarise_h2o_bal(lake, weather, lst, isotopes, lake_levels, gw_levels,
-                                       site_dictionary, stage_vol, 
-                                       static_gw = TRUE, median_threshold = 0.01, 
-                                       static_lake = TRUE, 
-                                       use_kniffin_pcpn = TRUE)
+  h2o_bal_default$case <- "Default"
+  h2o_bal_gw$case      <- "GW"
+  h2o_bal_lake$case    <- "LK"
+  h2o_bal_knif$case    <- "KNF"
+  h2o_bal_csls$case    <- "CSLS"
+
+  h2o_bal <- rbind(h2o_bal_default, 
+                   subset(h2o_bal_gw, case != "Default"), 
+                   subset(h2o_bal_lake, case != "Default"), 
+                   subset(h2o_bal_knif, case != "Default"),
+                   subset(h2o_bal_csls, case != "Default"))
+  h2o_bal <- h2o_bal %>%
+             filter(is.na(GWin_m3) == FALSE,
+                    month(date) != 12) %>%
+             arrange(date) %>%
+             select(date, case, GWin_m3)
   
-  # Combine
-  h2o_bal_default$static <- "Dynamic"
-  h2o_bal_gw$static      <- "S-GW"
-  h2o_bal_lake$static    <- "S-Lake"
-  h2o_bal_both$static    <- "Static"
+  h2o_bal$case <- fct_relevel(h2o_bal$case, c("Default", "GW", "LK", "KNF", 
+                                              "CSLS"))
   
-  h2o_bal_combo <- rbind(h2o_bal_default, h2o_bal_gw, h2o_bal_lake, h2o_bal_both)
-  h2o_bal_combo <- select(h2o_bal_combo, c(date, static, GWin))
-  h2o_bal_combo <- h2o_bal_combo[order(h2o_bal_combo$date),]
-  h2o_bal_combo <- subset(h2o_bal_combo, is.na(GWin) == FALSE)
-  h2o_bal_combo
+  h2o_bal_melt     <- melt(h2o_bal, id.vars = c("date", "case"))
   
-  return(h2o_bal_combo)
+  plot_sensitivity <- ggplot(data = h2o_bal_melt) +
+                      geom_col(aes(x = case, y = value, fill = case)) +
+                      facet_wrap(~as.Date(date), scales = "fixed") +
+                      scale_y_continuous(expand = c(0,0)) +
+                      theme_bw() + 
+                      labs(x = "", 
+                           y = "GW Inflow (m^3)", 
+                           title = sprintf("%s Lake", lake)) +
+                      guides(fill = FALSE) +
+                      theme(text = element_text(family = "Segoe UI Semilight"))
+  return(plot_sensitivity)
 }
 
-plot_sensitivity <- function(lake, h2o_bal_combo) {
-  h2o_bal_melt     <- melt(h2o_bal_combo, id.vars = c("date", "static"))
+timestep_sensitivity <- function(lake){
+  h2o_bal_default  <- runall_csls_budget(lake, by_gw_iso = TRUE)
+  h2o_bal_timestep <- runall_csls_budget(lake, by_gw_iso = FALSE)
+  
+  h2o_bal_default$static  <- "Default"
+  h2o_bal_timestep$static <- "Calendar"
+  
+  h2o_bal <- rbind(h2o_bal_default, h2o_bal_timestep)
+  h2o_bal <- select(h2o_bal, c(date, static, GWin_m3))
+  h2o_bal <- h2o_bal[order(h2o_bal$date),]
+  h2o_bal <- subset(h2o_bal, is.na(GWin_m3) == FALSE & month(date) != 12)
+  
+  return(h2o_bal)
+}
+
+plot_timestep <- function(lake, h2o_bal) {
+  h2o_bal_melt <- melt(h2o_bal, id.vars = c("date", "static"))
+  h2o_bal_melt$date <- floor_date(h2o_bal_melt$date, unit = "month")
   plot_sensitivity <- ggplot(data = h2o_bal_melt) +
-    geom_col(aes(x = static, y = value, fill = static)) +
-    facet_grid(~as.Date(date), scales = "fixed") +
-    scale_y_continuous(expand = c(0,0)) +
-    theme_bw() + 
-    labs(x = "", 
-         y = "GW Inflow (mm)", 
-         title = sprintf("%s Lake", lake)) +
-    guides(fill = FALSE) +
-    theme(text = element_text(family = "Segoe UI Semilight"))
+                      geom_col(aes(x = static, y = value, fill = static)) +
+                      facet_wrap(~as.Date(date), scales = "fixed") +
+                      scale_y_continuous(expand = c(0,0)) +
+                      theme_bw() + 
+                      labs(x = "", 
+                           y = "GW Inflow (mm)", 
+                           title = sprintf("%s Lake", lake)) +
+                      guides(fill = FALSE) +
+                      theme(text = element_text(family = "Segoe UI Semilight"))
   return(plot_sensitivity)
 }
 ```
 
-## Sensitivity to Isotope Measurements
+## Overview
 
-To explore how sensitive this water balance is to the groundwater and lake
-isotope measurements, this compares the water balance calculated with:
+This Rmarkdown file explores how sensitive the final water balance is to key
+choices we've made. These include:
 
-1. **Dynamic** definitions of well upgradient/downgradient and lake isotope
-measurements. Upgradient wells are determined based on 30-day daily differences in lake and gw levels. Lake measurements for the month of interest are used when available, otherwise the fall measurement (from Oct 2018) is used.
-2. **Static well** upgradient/downgradient definitions. Water levels are not
-used to determine upgradient/downgradient wells, we just use a pre-defined set
-of wells for all months.
-3. **Static lake** measurement. Use Oct 2018 measurement for all months.
-4. **Both** static well and static lake definitions
+* **Isotope measurements.** How we select which measurmenets to use for a given
+month, or how we gap data where no measurements exist.
+* **Timesteps.** How to bin our fluxes, whether by calendar month or by one
+month ahead of sample date.
 
-### Overall
+## Isotope Measurements
 
-**The GW approach** only matters at Long Lake in the spring, i.e., where and
-when the flip in gw levels is most dramatic.
+### Upgradient groundwater isotopes (GW)
+**No difference**
 
-**The Lake approach** matters substantially in the spring. At all lakes, GWin is
->60% lower when calculated using fall (Oct 2018) values vs. with measured spring
-(Apr 2019) values.
+Our options here are to select "upgradient" wells by:
 
-### Pleasant Lake
+* gw levels at time of measurement (default)
+* static list of "upgradient" wells (**GW**)
 
-At this lake, the GW approach does not affect the final water balance at any
-time during the year.
+Use default. This does not matter much for any of the lakes. Evidently all measured
+upgradient wells are sufficiently similar to one another that the selection of
+how many to include is minimally important to groundwater inflow calculations.
 
-Using fall (Oct 2018) lake measurements in the spring (April 2019) reduces GWin
-by 66%.
+### Lake isotopes (LK)
+**Clear choice**
 
-```{r psnt, eval=TRUE, echo=FALSE, fig.width = 7, fig.height = 3}
+Our options here are to select lake isotope measurements by:
+
+* a linear interpolation of measured lake isotope values (default)
+* assign all dates the value measured during fall turnover (**LK**)
+
+The calculation of groundwater inflow is very sensitive to the choice of lake
+isotope measurements at all lakes in the spring and summer months. While the
+study was originally designed to use only one fall turnover measurement, based
+on our literature review and conversations with Dave Krabbenhoft and Meg
+Haserodt at the USGS, it is probably most appropriate to use the measured &
+interpolated lake isotope values.
+
+### Precipitation isotopes (KNF, CSLS)
+**Choice important, but not clear**
+
+With our own CSLS measurement, we can fill in precipitation measurements by:
+
+* For a month with no precipitation measurement, if the precipitation collector
+was active and a measurement was made the next month, backfill to month with no
+measurement. (default) 
+* Do not backfill, if mising CSLS measurement, just use Kniffin measurement
+(**KNF**)
+
+We can also use Maribeth Kniffin's measurements to fill in precipitation
+measurements. Our options here are:
+
+* Average in Kniffin measurements for the calendar month (default)
+* Use only CSLS measurements (**CSLS**)
+
+Our precipitation approach can affect groundwater inflow measurements by about
+20%. The months that are most sensitive to this are October, when precipitation
+measurements were taken with a day of lake and groundwater measurements, and
+April, when no precipitation measurements were collected until a month later
+(May 20).
+
+```{r iso, eval=TRUE, echo=FALSE, fig.width = 7, fig.height = 5}
+iso_sensitivity("Pleasant")
+iso_sensitivity("Long")
+iso_sensitivity("Plainfield")
+```
+
+## Monthly Timestep
+The choice of monthly timestep (one month before sample data, or by calendar
+month) does affect groundwater inflow because it changes the weight placed on
+isotope measurments. Recall:
+
+\begin{align}
+GW_{in} = \frac{P*(\delta^{18}O_{L} - \delta^{18}O_{P}) + E*(\delta^{18}O_{E} - 
+          \delta^{18}O_{L})}{\delta^{18}O_{GW_{in}} - \delta^{18}O_{L}}
+\end{align}
+
+Given how arbitrary the calendar month is as a window, I'd vote for going with
+the window of 1 month before each groundwater sampling date.
+
+```{r timestep, eval=TRUE, echo=FALSE, fig.width = 7, fig.height = 5}
 lake <- "Pleasant"
-h2o_bal_combo <- lake_sensitivity(lake)
-plot_sensitivity(lake, h2o_bal_combo)
-```
+h2o_bal <- timestep_sensitivity(lake)
+plot_timestep(lake, h2o_bal)
 
-### Long Lake 
-Only using wells that from a pre-determined list of "upgradient" wells in the
-spring (April 2019) reduces GWin by 14.5%. There is no difference in the fall or
-winter.
-
-Using fall (Oct 2018) lake measurements in the spring (April 2019) reduces GWin
-by 63%.
-
-```{r long, eval=TRUE, echo=FALSE, fig.width = 7, fig.height = 3}
 lake <- "Long"
-h2o_bal_combo <- lake_sensitivity(lake)
-plot_sensitivity(lake, h2o_bal_combo)
-```
+h2o_bal <- timestep_sensitivity(lake)
+plot_timestep(lake, h2o_bal)
 
-### Plainfield Lake
-At this lake, the GW approach does not affect the final water balance at any
-time during the year.
-
-Using fall (Oct 2018) lake measurements in the spring (April 2019) reduces GWin
-by 64%.
-
-```{r pfl, eval=TRUE, echo=FALSE, fig.width = 7, fig.height = 3}
 lake <- "Plainfield"
-h2o_bal_combo <- lake_sensitivity(lake)
-plot_sensitivity(lake, h2o_bal_combo)
+h2o_bal <- timestep_sensitivity(lake)
+plot_timestep(lake, h2o_bal)
 ```

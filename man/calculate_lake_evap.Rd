@@ -4,29 +4,28 @@
 \alias{calculate_lake_evap}
 \title{Calculate Lake Evaporation}
 \usage{
-calculate_lake_evap(weather, lst, stage_vol, site_dictionary, Lz = 90,
-  lake_albedo = 0.08, wind_elev = 3, z0 = 0.02)
+calculate_lake_evap(weather, lst, elev_area_vol, dictionary, Lz = 90,
+  lake_albedo = 0.08, wind_elev = 3, z0 = 0.02,
+  no_condensation = FALSE)
 }
 \arguments{
-\item{weather}{a data frame with sub-monthly weather including date, atmp (air
-temperature, deg C), RH (relative humidity, percent), P
-(precipitation, mm), Rs (incoming solar radiation, MJ/m^2),
-and wind (wind speed, m/s) as formatted in the
-\code{\link{weather}} dataset.}
+\item{weather}{a data frame with sub-monthly weather including including date
+(POSIXct), atmp (air temperature, deg C), P (precipitation, mm), RH
+(relative humidity, percent), Rs (solar radiation, MJ), and wind (wind
+speed, m/s)}
 
 \item{lst}{a data frame with sub-monthly lake surface temperature
-measurements as formatted in the \code{\link{lst}} dataset, subset
+measurements as formatted in the lst_HOBO dataset, subset
 for a single lake.}
 
-\item{stage_vol}{a data frame with the lake, stage_m, surf_area_m2, and
-volume_m3 as in the \code{\link{stage_vol}} dataset, subset
+\item{elev_area_vol}{a data frame with the lake, stage_m, surf_area_m2, and
+volume_m3 as in the elev_area_voldataset, subset
 for a single lake.}
 
-\item{site_dictionary}{a data frame with the lake, obs_type, site_id,
-SWIMS_station, USGS_id, WBIC, and static_iso_type of
-measurement sites, as in the
-\code{\link{site_dictionary}} dataset, subset for a
-single lake.}
+\item{dictionary}{a data frame with site id numbers and static isotope
+site classifications as formatted in the
+dictionary dataset, subset to
+records for the lake of interest.}
 
 \item{Lz}{the longitude of the local timezone (degrees west of Greenwich,
 ranges from 0 to 360 degrees). Defaults to 90 for Central Time
@@ -39,6 +38,11 @@ station.}
 
 \item{z0}{aeorodynamic roughness of landcover at site of weather measurements
 (m), defaults to 0.02 for a grass.}
+
+\item{no_condensation}{logical defaults to FALSE to include days with
+condensation in daily lake evaporation calculations.
+If TRUE, sets all days with condensation (i.e.,
+negative lake evaporation) to zero.}
 }
 \value{
 weather, a list with daily weather information including:

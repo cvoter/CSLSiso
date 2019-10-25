@@ -23,41 +23,22 @@ library(knitr)
 
 ```{r fcns, eval=TRUE, echo=FALSE}
 get_dynamic_sites <- function(lake){
-  data("weather", package = "cslsdata")
-  if (lake == "Pleasant") {
-    data("psnt_lst", package = "cslsdata"); lst <- psnt_lst
-    data("psnt_isotopes", package = "cslsdata"); isotopes <- psnt_isotopes
-    data("psnt_lake_levels", package = "cslsdata"); lake_levels <- psnt_lake_levels
-    data("psnt_gw_levels", package = "cslsdata"); gw_levels <- psnt_gw_levels
-    data("psnt_stage_vol", package = "cslsdata"); stage_vol <- psnt_stage_vol
-    data("psnt_dictionary", package = "cslsdata"); site_dictionary <- psnt_dictionary
-  } else if (lake == "Long") {
-    data("long_lst", package = "cslsdata"); lst <- long_lst
-    data("long_isotopes", package = "cslsdata"); isotopes <- long_isotopes
-    data("long_lake_levels", package = "cslsdata"); lake_levels <- long_lake_levels
-    data("long_gw_levels", package = "cslsdata"); gw_levels <- long_gw_levels
-    data("long_stage_vol", package = "cslsdata"); stage_vol <- long_stage_vol
-    data("long_dictionary", package = "cslsdata"); site_dictionary <- long_dictionary
-  } else if (lake == "Plainfield") {
-    data("pfl_lst", package = "cslsdata"); lst <- pfl_lst
-    data("pfl_isotopes", package = "cslsdata"); isotopes <- pfl_isotopes
-    data("pfl_lake_levels", package = "cslsdata"); lake_levels <- pfl_lake_levels
-    data("pfl_gw_levels", package = "cslsdata"); gw_levels <- pfl_gw_levels
-    data("pfl_stage_vol", package = "cslsdata"); stage_vol <- pfl_stage_vol
-    data("pfl_dictionary", package = "cslsdata"); site_dictionary <- pfl_dictionary
-  }
+  weather         <- cslsdata::weather
+  lst             <- cslsdata::lst_HOBO[[lake]]
+  isotopes        <- cslsdata::isotopes[[lake]]
+  lake_levels     <- cslsdata::lake_levels[[lake]]
+  gw_levels       <- cslsdata::gw_levels[[lake]]
+  elev_area_vol   <- cslsdata::elev_area_vol[[lake]]
+  dictionary      <- cslsdata::dictionary[[lake]]
   
   # Identify monthly timeseries with complete coverage of input data
-  timeseries <- find_overlap_timeseries(weather, lst, isotopes, lake_levels,
-                                        gw_levels)
-  timeseries <- as_datetime(timeseries)
+  analysis <- find_timeseries(weather, lst, isotopes, lake_levels, gw_levels,
+                              dictionary, static_gw = FALSE, threshold = 0.01, 
+                              by_gw_iso = TRUE)
 
-  monthly_isotopes  <- summarise_isotopes(isotopes, site_dictionary, timeseries,
+  monthly_isotopes  <- summarise_isotopes(isotopes, dictionary, analysis,
                                         static_gw = FALSE, lake_levels,
-                                        gw_levels, 
-                                        median_threshold = 0.01,
-                                        static_lake= FALSE, 
-                                        use_kniffin_pcpn = TRUE)
+                                        gw_levels,)
   monthly_isotopes            <- monthly_isotopes %>%
                                  filter(is.na(.data$GWin_sites) == FALSE &
                                           .data$GWin_sites != "") %>%
@@ -68,17 +49,10 @@ get_dynamic_sites <- function(lake){
   colnames(upgradient_sites)  <- c("Month", "Upgradient Wells")
   return(upgradient_sites)
 }
-get_upgradient_sites <- function(lake, site_dictionary){
-  if (lake == "Pleasant") {
-    data("psnt_dictionary", package = "cslsdata"); site_dictionary <- psnt_dictionary
-  } else if (lake == "Long") {
-    data("long_dictionary", package = "cslsdata"); site_dictionary <- long_dictionary
-  } else if (lake == "Plainfield") {
-    data("pfl_dictionary", package = "cslsdata"); site_dictionary <- pfl_dictionary
-  }
-  upgradient_sites <- site_dictionary %>% 
-                      filter(.data$lake == !!lake,
-                             .data$static_iso_class == "upgradient") %>%
+get_upgradient_sites <- function(lake){
+  dictionary       <- cslsdata::dictionary[[lake]]
+  upgradient_sites <- dictionary %>% 
+                      filter(.data$static_iso_class == "upgradient") %>%
                       select(.data$static_iso_class,
                              .data$site_id)
   upgradient_sites <- str_c(unique(upgradient_sites$site_id), collapse = ", ")
@@ -86,18 +60,8 @@ get_upgradient_sites <- function(lake, site_dictionary){
 }
 
 get_water_level_diff <- function(lake){
-  if (lake == "Pleasant") {
-    data("psnt_lake_levels", package = "cslsdata"); lake_levels <- psnt_lake_levels
-    data("psnt_gw_levels", package = "cslsdata"); gw_levels <- psnt_gw_levels
-  } else if (lake == "Long") {
-    data("long_lake_levels", package = "cslsdata"); lake_levels <- long_lake_levels
-    data("long_gw_levels", package = "cslsdata"); gw_levels <- long_gw_levels
-  } else if (lake == "Plainfield") {
-    data("pfl_lake_levels", package = "cslsdata"); lake_levels <- pfl_lake_levels
-    data("pfl_gw_levels", package = "cslsdata"); gw_levels <- pfl_gw_levels
-  }
-  gw_levels   <- subset_gw_levels(lake, water_levels, site_dictionary)
-  lake_levels <- subset_lake_levels(lake, water_levels, site_dictionary)
+  lake_levels     <- cslsdata::lake_levels[[lake]]
+  gw_levels       <- cslsdata::gw_levels[[lake]]
   for (i in 1:nrow(gw_levels)) {
     today <- gw_levels$date[i]
     gw    <- gw_levels$level_m[i]
@@ -165,7 +129,7 @@ include_graphics(system.file("images",
 ```{r psnt, eval=TRUE, echo=FALSE}
 lake = "Pleasant"
 upgradient_sites      <- get_upgradient_sites(lake)
-data("psnt_isotopes", package = "cslsdata"); lake_isotopes <- psnt_isotopes
+lake_isotopes         <- cslsdata::isotopes[[lake]]
 lake_isotopes$diff_m  <- 0
 water_level_diff      <- get_water_level_diff(lake)
 level_plot            <- plot_levels(lake, water_level_diff, lake_isotopes)
@@ -204,7 +168,7 @@ d18O_plot
 ```{r long, eval=TRUE, echo=FALSE}
 lake = "Long"
 upgradient_sites      <- get_upgradient_sites(lake)
-data("long_isotopes", package = "cslsdata"); lake_isotopes <- long_isotopes
+lake_isotopes         <- cslsdata::isotopes[[lake]]
 lake_isotopes$diff_m  <- 0
 water_level_diff      <- get_water_level_diff(lake)
 level_plot            <- plot_levels(lake, water_level_diff, lake_isotopes)
@@ -243,7 +207,7 @@ d18O_plot
 ```{r pfl, eval=TRUE, echo=FALSE}
 lake = "Plainfield"
 upgradient_sites      <- get_upgradient_sites(lake)
-data("pfl_isotopes", package = "cslsdata"); lake_isotopes <- pfl_isotopes
+lake_isotopes         <- cslsdata::isotopes[[lake]]
 lake_isotopes$diff_m  <- 0
 water_level_diff      <- get_water_level_diff(lake)
 level_plot            <- plot_levels(lake, water_level_diff, lake_isotopes)

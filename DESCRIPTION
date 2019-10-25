@@ -26,6 +26,7 @@ Imports:
     usethis,
     cslsdata
 Suggests:
+    forcats,
     devtools,
     rmarkdown,
     knitr,

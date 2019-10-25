@@ -4,34 +4,35 @@
 \alias{summarise_weather}
 \title{Monthly Weather}
 \usage{
-summarise_weather(weather, lst, stage_vol, site_dictionary, timeseries,
-  wind_elev = 3, z0 = 0.02, Lz = 90, lake_albedo = 0.08)
+summarise_weather(weather, lst, elev_area_vol, dictionary, analysis,
+  wind_elev = 3, z0 = 0.02, Lz = 90, lake_albedo = 0.08,
+  no_condensation = FALSE)
 }
 \arguments{
-\item{weather}{a data frame with sub-monthly weather including date, atmp (air
-temperature, deg C), RH (relative humidity, percent), P
-(precipitation, mm), Rs (incoming solar radiation, MJ/m^2),
-and wind (wind speed, m/s) as formatted in the
-weather dataset.}
+\item{weather}{a data frame with sub-monthly weather including including date
+(POSIXct), atmp (air temperature, deg C), P (precipitation, mm), RH
+(relative humidity, percent), Rs (solar radiation, MJ), and wind (wind
+speed, m/s)}
 
 \item{lst}{a data frame with sub-monthly lake surface temperature
-measurements as formatted in the lst dataset, subset
+measurements as formatted in the lst_HOBO dataset, subset
 for a single lake.}
 
-\item{stage_vol}{a data frame with the lake, stage_m, surf_area_m2, and
-volume_m3 as in the stage_vol dataset, subset
+\item{elev_area_vol}{a data frame with the lake, stage_m, surf_area_m2, and
+volume_m3 as in the elev_area_voldataset, subset
 for a single lake.}
 
-\item{site_dictionary}{a data frame with the lake, obs_type, site_id,
-SWIMS_station, USGS_id, WBIC, and static_iso_type of
-measurement sites, as in the
-site_dictionary dataset, subset for a
-single lake.}
+\item{dictionary}{a data frame with site id numbers and static isotope
+site classifications as formatted in the
+dictionary dataset, subset to
+records for the lake of interest.}
 
-\item{timeseries}{a vector of all months in the common timeseries among input
-datasets}
+\item{analysis}{a list with dates (POSIXct) to analyze, and intervals
+(lubridate interval) covering the month before each analysis
+date.}
 
-\item{wind_elev}{height of wind measurement, defaults to 3m for Hancock station.}
+\item{wind_elev}{height of wind measurement, defaults to 3m for Hancock
+station.}
 
 \item{z0}{aeorodynamic roughness of landcover at site of weather measurements
 (m), defaults to 0.02 for a grass.}
@@ -41,6 +42,11 @@ ranges from 0 to 360 degrees). Defaults to 90 for Central Time
 Zone, USA.}
 
 \item{lake_albedo}{albedo of the lake, defaults to 0.08 for open water.}
+
+\item{no_condensation}{logical defaults to FALSE to include days with
+condensation in daily lake evaporation calculations.
+If TRUE, sets all days with condensation (i.e.,
+negative lake evaporation) to zero.}
 }
 \value{
 monthly_weather, a data frame with the following columns:

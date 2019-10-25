@@ -4,48 +4,7 @@
 #' level, groundwater level, stage-volume inputs and summarises water balance
 #' inputs over a common timeseries.
 #'
-#' @param weather a data frame with sub-monthly weather including date, atmp (air
-#'                temperature, deg C), RH (relative humidity, percent), P
-#'                (precipitation, mm), Rs (incoming solar radiation, MJ/m^2),
-#'                and wind (wind speed, m/s) as formatted in the
-#'                \code{\link{weather}} dataset
-#' @param lst a data frame with sub-monthly lake surface temperature
-#'            measurements as formatted in the \code{\link{lst}} dataset, subset
-#'            for a single lake.
-#' @param isotopes a data frame with isotopes measurements as formatted in the
-#'                 \code{\link{isotopes}} dataset, subset for a single lake.
-#' @param lake_levels a data frame with daily water level measurements as
-#'                    formatted in the \code{\link{water_levels}} dataset,
-#'                    subset to lake level records for the lake of interest.
-#' @param gw_levels a data frame with daily water level measurements as
-#'                  formatted in the \code{\link{water_levels}} dataset,
-#'                  subset to groundwater level records at the lake of
-#'                  interest.
-#' @param stage_vol a data frame with the lake, stage_m, surf_area_m2, and
-#'                  volume_m3 as in the \code{\link{stage_vol}} dataset, subset
-#'                  for a single lake.
-#' @param site_dictionary a data frame with site id numbers and static isotope
-#'                        site classifications as formatted in the
-#'                        \code{\link{site_dictionary}} dataset, subset to
-#'                        records for the lake of interest.
-#' @param static_gw logical defaults to FALSE to use lake_levels and gw_levels
-#'                  to define upgradient/downgradient wells at each measurement
-#'                  date. If TRUE, uses static definitions of
-#'                  upgradient/downgradient wells in site dictionary.
-#' @param median_threshold minimum median difference between lake levels and
-#'                         groundwater levels during the month of measurement in
-#'                         order to classify groundwater measurement.
-#' @param static_lake logical defaults to FALSE to use actual measurement for
-#'                    each month. If TRUE, uses mean of fall (Sept-Nov) isotope
-#'                    samples for the lake.
-#' @param use_kniffin_pcpn logical defaults to TRUE to average in precipitation
-#'                         measurements by Maribeth Kniffin for each month.
-#' @param pcpnfile name of file with dates of precipitation collector deployment.
-#'                 Defaults to "csls_isotope_precipitation_deployment.csv"
-#' @param pcpndir name of directory with file with dates of precipitation
-#'                collector deployment. Defaults to "system.file" to indicate is
-#'                stored within inst/extdata within the installed isoH2Obudget
-#'                package files.
+#' @inheritParams summarise_h2o_bal
 #'
 #' @return h2o_bal_inputs, a data frame ordered by date with data only for the
 #'         overlap timeseries for:
@@ -78,41 +37,44 @@
 #' @export
 
 summarise_inputs <- function(weather, lst, isotopes, lake_levels, gw_levels,
-                             stage_vol, site_dictionary, static_gw = FALSE,
-                             median_threshold = 0.01, static_lake = FALSE,
-                             use_kniffin_pcpn = TRUE,
-                             pcpnfile = 'csls_isotope_precipitation_deployment.csv',
-                             pcpndir = "system.file"){
+                             elev_area_vol, dictionary, static_gw = FALSE,
+                             threshold = 0.01, static_lake = FALSE,
+                             use_kniffin_pcpn = TRUE, extend_pcpn = TRUE,
+                             by_gw_iso = TRUE){
 
   # Identify monthly timeseries with complete coverage of input data
-  timeseries <- find_overlap_timeseries(weather, lst, isotopes, lake_levels,
-                                        gw_levels)
-  timeseries <- as_datetime(timeseries)
+  analysis <- find_timeseries(weather, lst, isotopes, lake_levels, gw_levels,
+                              dictionary, static_gw, threshold, by_gw_iso)
 
   # Summarize inputs over common timeseries
-  monthly_weather   <- summarise_weather(weather, lst, stage_vol,
-                                         site_dictionary, timeseries)
-  monthly_lst       <- summarise_lst(lst, timeseries)
-  monthly_dV        <- summarise_dV(lake_levels, timeseries)
-  monthly_isotopes  <- summarise_isotopes(isotopes, site_dictionary, timeseries,
+  monthly_weather   <- summarise_weather(weather, lst, elev_area_vol,
+                                         dictionary, analysis)
+  monthly_lst       <- summarise_lst(lst, analysis)
+  monthly_dV        <- summarise_dV(lake_levels, analysis)
+  monthly_isotopes  <- summarise_isotopes(isotopes, dictionary, analysis,
                                           static_gw, lake_levels,
-                                          gw_levels, median_threshold,
+                                          gw_levels, threshold,
                                           static_lake, use_kniffin_pcpn,
-                                          pcpnfile, pcpndir)
+                                          extend_pcpn)
   monthly_isotopes  <- summarise_d18O_evap(monthly_weather, monthly_lst,
                                            monthly_isotopes)
   h2o_bal_inputs <- merge(monthly_weather, monthly_lst)
   h2o_bal_inputs <- merge(h2o_bal_inputs, monthly_dV)
   h2o_bal_inputs <- merge(h2o_bal_inputs, monthly_isotopes)
 
-  h2o_bal_inputs <- h2o_bal_inputs %>%
-                    select(.data$date, .data$atmp_degC, .data$RH_pct,
-                           .data$P_mm, .data$ET_mm, .data$atmp_K, .data$ltmp_K,
-                           .data$dV, .data$d18O_lake, .data$d18O_pcpn,
-                           .data$d18O_GWin, .data$d18O_GWout, .data$d18O_evap,
-                           .data$d2H_lake, .data$d2H_pcpn, .data$d2H_GWin,
-                           .data$d2H_GWout, .data$d2H_evap, .data$GWin_sites,
-                           .data$GWout_sites)
+  h2o_bal_inputs$P_m3 <- h2o_bal_inputs$P_mm*h2o_bal_inputs$mean_area_m2/1000
+  h2o_bal_inputs$E_m3 <- h2o_bal_inputs$E_mm*h2o_bal_inputs$mean_area_m2/1000
 
+  h2o_bal_inputs <- h2o_bal_inputs %>%
+                    select(.data$date, .data$ltmp_degC, .data$ltmp_K,
+                           .data$atmp_degC, .data$atmp_K, .data$RH_pct,
+                           .data$P_mm, .data$E_mm, .data$dV_mm, .data$P_m3,
+                           .data$E_m3, .data$dV_m3, .data$mean_vol_m3,
+                           .data$mean_area_m2, .data$d18O_lake,
+                           .data$d18O_pcpn, .data$d18O_GWin, .data$d18O_GWout,
+                           .data$d18O_evap, .data$d2H_lake, .data$d2H_pcpn,
+                           .data$d2H_GWin, .data$d2H_GWout, .data$d2H_evap,
+                           .data$delta_d18O_lake, .data$delta_d2H_lake,
+                           .data$GWin_sites, .data$GWout_sites)
   return(h2o_bal_inputs)
 }

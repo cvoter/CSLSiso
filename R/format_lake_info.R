@@ -3,12 +3,7 @@
 #' Extracts surface area and depth of lake and re-formats for input to lake
 #' evaporation functions.
 #'
-#' @param stage_vol a data frame with the lake, stage_m, surf_area_m2, and
-#'                  volume_m3 as in the stage_vol dataset, subset
-#'                  for a single lake.
-#' @param lst a data frame with sub-monthly lake surface temperature
-#'            measurements as formatted in the stage_vol dataset, subset
-#'            for a single lake.
+#' @inheritParams calculate_lake_evap
 #'
 #' @return lake, a list with lake data that includes:
 #' \describe{
@@ -17,9 +12,9 @@
 #' }
 #'
 #' @export
-format_lake_info <- function(stage_vol, lst) {
-  lake <- list(A = 1e-6*max(stage_vol$surf_area_m2),
-               depth_m = max(stage_vol$depth_m),
+format_lake_info <- function(elev_area_vol, lst) {
+  lake <- list(A = 1e-6*max(elev_area_vol$area_m2),
+               depth_m = max(elev_area_vol$elev_m) - min(elev_area_vol$elev_m),
                lst = lst)
   return(lake)
 }

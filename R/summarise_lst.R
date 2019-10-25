@@ -3,30 +3,35 @@
 #' Summarizes sub-monthly lake surface temperature at a monthly timestep for a
 #' single lake
 #'
-#' @param lst a data frame with sub-monthly lake surface temperature
-#'            measurements as formatted in the lst dataset, subset
-#'            for a single lake.
-#' @param timeseries a vector of all months in the common timeseries among input
-#'                   datasets
+#' @inheritParams summarise_inputs
+#' @param analysis a list with dates (POSIXct) to analyze, and intervals
+#'                 (lubridate interval) covering the month before each analysis
+#'                 date.
 #'
 #' @return monthly_lst, a data frame with the following columns:
 #' \describe{
 #' \item{date}{first of the month for each monthly observation}
-#' \item{ltmp_K}{mean monthly lake surface temperature (degrees K)}
+#' \item{ltmp_degC}{mean lake surface temperature (degrees K)}
+#' \item{ltmp_K}{mean lake surface temperature (degrees K)}
 #' }
 #'
 #' @importFrom magrittr %>%
-#' @importFrom dplyr group_by summarise
+#' @importFrom dplyr filter
 #' @importFrom rlang .data
-#' @importFrom lubridate floor_date
+#' @import lubridate
 #' @importFrom NISTunits NISTdegCtOk
 #'
 #' @export
-summarise_lst <- function(lst, timeseries){
-  monthly_lst <- lst %>%
-                 group_by(date = floor_date(.data$date, unit = "month")) %>%
-                 filter(date %in% timeseries) %>%
-                 summarise(ltmp_K = NISTdegCtOk(mean(.data$ltmp)))
-  monthly_lst <- fill_timeseries_gaps(monthly_lst, timeseries)
+summarise_lst <- function(lst, analysis){
+  monthly_lst <- NULL
+  for (i in 1:length(analysis$intervals)) {
+    these_lst                <- lst %>%
+                                filter(.data$date %within% analysis$intervals[i])
+    monthly_lst$date[i]      <- analysis$dates[i]
+    monthly_lst$ltmp_degC[i] <- mean(these_lst$ltmp, na.rm = TRUE)
+    monthly_lst$ltmp_K[i]    <- NISTdegCtOk(monthly_lst$ltmp_degC[i])
+  }
+  monthly_lst$date <- as_datetime(monthly_lst$date)
+  monthly_lst <- as.data.frame(monthly_lst)
   return(monthly_lst)
 }

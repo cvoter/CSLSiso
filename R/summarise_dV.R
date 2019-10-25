@@ -1,18 +1,19 @@
 #' Monthly Change in Lake Volume
 #'
-#' Calculates the monthly change in lake volume based on daily lake levels and a
-#' stage-volume relationship from bathymetry analysis. .
+#' Calculates the monthly change in lake volume based on daily lake levels and
+#' an elevation-volume relationship from bathymetry analysis.
 #'
-#' @param lake_levels a data frame with daily water level measurements as
-#'                    formatted in the \code{\link{water_levels}} dataset,
-#'                    subset to lake level records for the lake of interest.
-#' @param timeseries a vector of all months in the common timeseries among input
-#'                   datasets
+#' @inheritParams summarise_inputs
+#' @param analysis a list with dates (POSIXct) to analyze, and intervals
+#'                 (lubridate interval) covering the month before each analysis
+#'                 date.
 #'
 #' @return monthly_dV, a data frame with the following columns:
 #' \describe{
 #' \item{date}{first of the month for each monthly observation}
-#' \item{dV}{change in lake volume during the month as a depth (mm)}
+#' \item{dV}{change in lake volume during the month (m^3)}
+#' \item{mean_vol_m3}{mean lake volume during the month (m^3)}
+#' \item{mean_area_m2}{mean lake surface area during the month (m^2)}
 #' }
 #'
 #' @import lubridate
@@ -22,28 +23,27 @@
 #'
 #' @export
 
-summarise_dV <- function(lake_levels, timeseries) {
+summarise_dV <- function(lake_levels, analysis) {
   monthly_dV <- NULL
-  for (i in 1:length(timeseries)) {
-    this_month  <- timeseries[i]
+  for (i in 1:length(analysis$dates)) {
+    these_levels <- lake_levels %>%
+                    filter(.data$date %within% analysis$intervals[i])
+    vol_start <- these_levels %>%
+                 filter(.data$date == min(.data$date)) %>%
+                 select(.data$vol_m3) %>%
+                 as.numeric()
+    vol_end   <- these_levels %>%
+                 filter(.data$date == max(.data$date)) %>%
+                 select(.data$vol_m3) %>%
+                 as.numeric()
+    vol_mean  <- mean(these_levels$vol_m3)
+    area_mean <- mean(these_levels$area_m2)
 
-    daily_stage <- lake_levels %>%
-                   filter(month(.data$date) == month(this_month),
-                          year(.data$date) == year(this_month)) %>%
-                   mutate(stage_m = .data$level_m) %>%
-                   select(.data$date, .data$stage_m)
-    stage_start <- daily_stage %>%
-                   filter(.data$date == min(.data$date)) %>%
-                   select(.data$stage_m) %>%
-                   as.numeric()
-    stage_end   <- daily_stage %>%
-                   filter(.data$date == max(.data$date)) %>%
-                   select(.data$stage_m) %>%
-                   as.numeric()
-    dV          <- (stage_end - stage_start)*1000 # m to mm
-
-    monthly_dV$date[i] <- this_month
-    monthly_dV$dV[i]   <- dV
+    monthly_dV$date[i]         <- analysis$dates[i]
+    monthly_dV$dV_m3[i]        <- vol_end - vol_start
+    monthly_dV$dV_mm[i]        <- 1000*monthly_dV$dV_m3[i]/area_mean
+    monthly_dV$mean_vol_m3[i]  <- vol_mean
+    monthly_dV$mean_area_m2[i] <- area_mean
   }
 
   # R bizzarly looses the class of date objects in for loops, fix here

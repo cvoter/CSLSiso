@@ -44,89 +44,46 @@ fill_timeseries_gaps <- function (df, timeseries){
 #' Identifies the start date, end date, and number of months in the monthly
 #' timeseries with complete input data coverage.
 #'
-#' @param weather a data frame with daily weather in the following columns:
-#' \itemize{
-#' \item date - date and time of weather observation
-#' \item atmp - air temperature (deg C)
-#' \item pcpn - precipitation (mm)
-#' \item relh - relative humidity (percent)
-#' \item rpet - reference potential evapotranspiration (mm)
-#' }
-#' @param lst a data frame with every-other-week lake surface temperature info:
-#' \itemize{
-#' \item WBIC - Water Body Identification Code for lake
-#' \item date - date and time of observation
-#' \item ltmp - lake surface temperature (degrees C)
-#' \item units - units of lake surface temperature, should all be "DEGREES C"
-#' }
-#' @param isotopes a data frame with isotope measurements structured as follows:
-#' \itemize{
-#' \item date - date of measurement
-#' \item lake - lake associated with measurement
-#' \item site_id - unique ID for site of measurement, e.g. "PRECIP", "LONG",
-#'                "LL-01"
-#' \item d18O - isotopic composition for 18O (per mil)
-#' \item d2H - isotopic composition for duterium (per mil)
-#' }
-#' @param lake_levels a data frame with daily lake levels structured as follows:
-#' \itemize{
-#' \item date - date of water level measurement
-#' \item site_no - UGSG site number
-#' \item obs_type - type of observation (LK = lake level)
-#' \item level_m - water level in meters above mean sea level
-#' }
-#' @param gw_levels a data frame with daily groundwater levels structured as
-#'                  follows:
-#' \itemize{
-#' \item date - date of water level measurement
-#' \item site_no - UGSG site number
-#' \item obs_type - type of observation (GW = groundwater level)
-#' \item level_m - water level in meters above mean sea level
-#' }
+#' @inheritParams summarise_inputs
 #'
-#' @return a list with the following variables:
-#' \describe{
-#' \item{start_date}{start date (1st of the month) of timeseries with
-#'                   overlapping input data}
-#' \item{end_date}{end date (last day of the month) of timeseries with
-#'                 overlapping input data}
-#' \item{nmonths}{number of months in timeseries with overlapping input data}
-#' }
+#' @import lubridate
+#' @importFrom magrittr %>%
+#' @importFrom dplyr filter select group_by summarise
+#' @importFrom rlang .data
 #'
 #' @export
 
-find_overlap_timeseries <- function(weather, lst, isotopes, lake_levels,
-                                    gw_levels){
-  start_weather  <- find_start_date(weather$date, all_days = TRUE)
-  start_lst      <- find_start_date(lst$date)
-  start_isotopes <- find_start_date(isotopes$date)
-  start_lake     <- find_start_date(lake_levels$date, all_days = TRUE)
-  start_gw       <- find_start_date(gw_levels$date)
-  start_date     <- max(start_weather,
-                        start_lst,
-                        start_isotopes,
-                        start_lake,
-                        start_gw)
-
-  end_weather  <- find_end_date(weather$date, all_days = TRUE)
-  end_lst      <- find_end_date(lst$date)
-  end_isotopes <- find_end_date(isotopes$date)
-  end_lake     <- find_end_date(lake_levels$date, all_days = TRUE)
-  end_gw       <- find_end_date(gw_levels$date)
-  end_date     <- min(end_weather,
-                      end_lst,
-                      end_isotopes,
-                      end_lake,
-                      end_gw)
-
-  nmonths <- find_nmonths(start_date, end_date)
-
-  timeseries <- NULL
-  for (i in 1:nmonths){
-    timeseries[i] <- start_date + months(i-1)
+find_timeseries <- function(weather, lst, isotopes, lake_levels, gw_levels,
+                            dictionary, static_gw = FALSE, threshold = 0.01,
+                            by_gw_iso = TRUE){
+  if (by_gw_iso){
+    isotopes           <- iso_site_type(isotopes, dictionary, static_gw,
+                                        lake_levels, gw_levels, threshold)
+    analysis_dates     <- isotopes %>%
+                          filter(.data$site_type == "upgradient") %>%
+                          group_by(floor_date(.data$date, unit = "month")) %>%
+                          summarise(date = floor_date(mean(.data$date), unit = "day")) %>%
+                          select(.data$date) %>%
+                          unlist()
+    analysis_dates     <- as_datetime(analysis_dates)
+    analysis_intervals <- interval(analysis_dates %m-% months(1), analysis_dates)
+  } else {
+    start_date     <- find_start_date(isotopes$date)
+    end_date       <- find_end_date(isotopes$date)
+    nmonths        <- find_nmonths(start_date, end_date)
+    analysis_dates <- NULL
+    for (i in 1:nmonths){
+      analysis_dates[i] <- start_date + months(i-1)
+    }
+    analysis_dates <- as_datetime(analysis_dates)
+    analysis_intervals <- interval(analysis_dates,
+                                   analysis_dates + months(1) - days(1))
+    analysis_dates     <- analysis_dates + months(1) - days(1)
   }
 
-  return(timeseries)
+
+  return(list(dates = analysis_dates,
+              intervals = analysis_intervals))
 }
 
 # ------------------------------------------------------------------------------
@@ -136,12 +93,15 @@ find_overlap_timeseries <- function(weather, lst, isotopes, lake_levels,
 #' the month)
 #'
 #' @param date_vector vector with dates in timeseries
-#' @param all_days [logical] defaults to FALSE to indicate that timeseries does
+#' @param all_days logical defaults to FALSE to indicate that timeseries does
 #'                 not need to include values for every day within the month,
 #'                 set to TRUE to force this behavior.
 #'
-#' @return start_date first useable date in the timeseries (rounded to the first
-#'         of the month)
+#' @return
+#' \describe{
+#' \item{start_date}{first useable date in the timeseries (rounded to the first
+#'                   of the month)}
+#' }
 #'
 #' @import lubridate
 #'

@@ -4,21 +4,23 @@
 \alias{summarise_lst}
 \title{Monthly Lake Surface Temperature}
 \usage{
-summarise_lst(lst, timeseries)
+summarise_lst(lst, analysis)
 }
 \arguments{
 \item{lst}{a data frame with sub-monthly lake surface temperature
-measurements as formatted in the lst dataset, subset
+measurements as formatted in the lst_HOBO dataset, subset
 for a single lake.}
 
-\item{timeseries}{a vector of all months in the common timeseries among input
-datasets}
+\item{analysis}{a list with dates (POSIXct) to analyze, and intervals
+(lubridate interval) covering the month before each analysis
+date.}
 }
 \value{
 monthly_lst, a data frame with the following columns:
 \describe{
 \item{date}{first of the month for each monthly observation}
-\item{ltmp_K}{mean monthly lake surface temperature (degrees K)}
+\item{ltmp_degC}{mean lake surface temperature (degrees K)}
+\item{ltmp_K}{mean lake surface temperature (degrees K)}
 }
 }
 \description{

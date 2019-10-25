@@ -4,16 +4,16 @@
 \alias{iso_site_type}
 \title{Classify Groundwater Stable Isotope Measurements (Dynamic)}
 \usage{
-iso_site_type(isotopes, site_dictionary, static_gw = FALSE, lake_levels,
-  gw_levels, median_threshold = 0.03)
+iso_site_type(isotopes, dictionary, static_gw = FALSE,
+  lake_levels = NULL, gw_levels = NULL, threshold = 0.01)
 }
 \arguments{
-\item{isotopes}{a data frame with isotope measurements as formatted in the
-\code{\link{isotopes}} dataset, subset to records for the lake
-of interest.}
+\item{isotopes}{a data frame with isotopes measurements as formatted in the
+isotopes dataset, subset for a single lake.}
 
-\item{site_dictionary}{a data frame with site id numbers as formatted in the
-\code{\link{site_dictionary}} dataset, subset to
+\item{dictionary}{a data frame with site id numbers and static isotope
+site classifications as formatted in the
+dictionary dataset, subset to
 records for the lake of interest.}
 
 \item{static_gw}{logical defaults to FALSE to use lake_levels and gw_levels
@@ -22,22 +22,17 @@ date. If TRUE, uses static definitions of
 upgradient/downgradient wells in site dictionary.}
 
 \item{lake_levels}{a data frame with daily water level measurements as
-formatted in the \code{\link{water_levels}} dataset,
+formatted in the lake_levels dataset,
 subset to lake level records for the lake of interest.}
 
 \item{gw_levels}{a data frame with daily water level measurements as
-formatted in the \code{\link{water_levels}} dataset,
+formatted in the lake_levels dataset,
 subset to groundwater level records at the lake of
 interest.}
 
-\item{median_threshold}{minimum median difference between lake levels and
-groundwater levels during the month of measurement in
-order to classify groundwater measurement.}
-}
-\value{
-isotopes - the same data frame provided to the function, but with an
-                   additional column for "site_type" with values of
-                   "precipitation", "lake", "upgradient", or "downgradient".
+\item{threshold}{minimum median difference between lake levels and
+groundwater levels during the month of measurement in order
+to classify groundwater measurement.}
 }
 \description{
 Classifies the site type of isotope measurements as precipitation, lake,
