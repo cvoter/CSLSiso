@@ -1,0 +1,219 @@
+---
+title: "CSLS GW-Lake Interactions"
+output: 
+  rmarkdown::html_vignette:
+    toc: true
+vignette: >
+  %\VignetteIndexEntry{Put the title of your vignette here}
+  %\VignetteEngine{knitr::rmarkdown}
+  \usepackage[utf8]{inputenc}
+---
+
+```{r setup, echo=FALSE, warning=FALSE, message=FALSE}
+library(devtools)
+library(isoH2Obudget)
+library(cslsdata)
+library(reshape2) #for melting
+library(ggplot2) #for plotting
+library(extrafont) #for fonts
+library(dplyr) #for %>% pipes
+library(lubridate)
+library(knitr)
+library(H2Ochem)
+
+
+plot_bulk_fcn <- function(parameter, plotting_name, text_size = 12) {
+  SWIMS_parameter <- filter_parameter(parameter = parameter, 
+                                      plotting_name = plotting_name)
+  plot_obj <- plot_bulk(SWIMS_parameter, text_size)
+  return(plot_obj)
+}
+
+plot_timeseries_fcn <- function(parameter, plotting_name, text_size = 12) {
+  SWIMS_parameter <- filter_parameter(parameter = parameter, 
+                                      plotting_name = plotting_name)
+  plot_obj <- plot_timeseries(SWIMS_parameter, text_size)
+  return(plot_obj)
+}
+
+text_size = 24
+
+```
+
+## Water Budget
+Our water budget model uses stable isotope measurements of precipitation,
+evaporation, lake water, and inflowing groundwater as well as calculated lake
+evaporation, observed precipitation and observed changes in lake levels to
+calculate monthly groundwater flow into and out of a lake.
+
+**Key Observations**
+
+* **Groundwater inflow** is a major component of the water budget in all three
+lakes, representing 65% (Long), 77% (Plainfield), or 83% (Pleasant) of incoming
+water over the year.
+* **Groundwater outflow** briefly drops to near-zero at Long Lake in May 2019,
+but increases to its highest observed levels by July 2019. All lakes show a
+similar pattern of very high groundwater throughflow during the summer (Jun &
+Jul 2019).
+* **Change in lake volume** is a much larger component of outgoing water in Long
+(31%) and Plainfield (25%) than it is in Pleasant (6%) over this year.
+* **Lake residence time** is fairly short, less than a year for all lakes (9.7
+months Pleasant, 7.0 months Long, 5.2 months Plainfield).
+
+### Pleasant Lake - Monthly 
+
+```{r psnt, eval=TRUE, echo=FALSE, fig.width = 7, fig.height = 5}
+lake = "Pleasant"
+monthly_h2o_bal <- runall_csls_budget(lake)
+plot_balance(lake, monthly_h2o_bal, as_vol = TRUE, text_size = text_size)
+```
+
+### Long Lake - Monthly
+
+```{r long, eval=TRUE, echo=FALSE, fig.width = 7, fig.height = 5}
+lake = "Long"
+monthly_h2o_bal <- runall_csls_budget(lake, by_gw_iso = FALSE)
+plot_balance(lake, monthly_h2o_bal, as_vol = TRUE, text_size = text_size)
+```
+
+### Plainfield Lake - Monthly
+
+```{r pfl, eval=TRUE, echo=FALSE, fig.width = 7, fig.height = 5}
+lake = "Plainfield"
+monthly_h2o_bal <- runall_csls_budget(lake)
+plot_balance(lake, monthly_h2o_bal, as_vol = TRUE, text_size = text_size)
+```
+
+### All Lakes - Annual
+
+```{r all, eval=TRUE, echo=FALSE, fig.width = 7, fig.height = 3.5}
+psnt      <- runall_csls_budget(lake = "Pleasant", annual = TRUE)
+psnt$lake <- "Pleasant"
+long      <- runall_csls_budget("Long", annual = TRUE)
+long$lake <- "Long"
+pfl       <- runall_csls_budget("Plainfield", annual = TRUE)
+pfl$lake  <- "Plainfield"
+
+annual_h2o_bal <- rbind(psnt, long, pfl)
+
+res_time <- annual_h2o_bal %>%
+            mutate("Residence Time (months)" = round(res_time*12, digits = 1),
+                   Lake = lake) %>%
+            select("Lake", "Residence Time (months)")
+
+plot_annual_bal(annual_h2o_bal, text_size = text_size)
+plot_annual_bal(annual_h2o_bal, as_pcnt = TRUE, text_size = text_size)
+kable(res_time)
+```
+
+## Water Chemistry
+
+## Conductivity
+
+Conductivity is generally higher in groundwater wells than in the lake, with the
+exception of one downgradient well at Pleasant. Difficult to identify meaningful
+difference in upgradient vs. downgradient wells.
+
+```{r Conductivity, eval=TRUE, echo=FALSE, warning=FALSE, message=FALSE, fig.width=7, fig.height=5, fig.align="center"}
+parameter     <-"CONDUCTIVITY, UMHOS/CM @ 25C"
+plotting_name <- "Conductivity"
+
+plot_bulk_fcn(parameter, plotting_name)
+plot_timeseries_fcn(parameter, plotting_name)
+```
+
+## Calcium
+
+Calcium behaves very similarly to conductivity - generally higher in wells, with
+the exception of one downgradient well at Pleasant. Even less of a clear
+difference in upgradient vs. downgradient wells for calcium. Plainfield seems to
+have two outlier values for upgradient well measurements late in the timeseries.
+
+```{r Ca, eval=TRUE, echo=FALSE, warning=FALSE, message=FALSE, fig.width=7, fig.height=5, fig.align="center"}
+parameter     <-"CALCIUM TOTAL RECOVERABLE"
+plotting_name <- "Total Recoverable Calcium"
+
+plot_bulk_fcn(parameter, plotting_name)
+plot_timeseries_fcn(parameter, plotting_name)
+```
+
+## Magnesium
+
+Magnesium behaves very similarly to Calcium. Again, generally higher in
+groundwater than in the lake, but no clear differences in upgradient vs.
+downgradient with the possible exception of the one downgradient well at
+Pleasant. Also two outliers in upgradient well measurements at Plainfield late
+in the timeseries.
+
+```{r Mg, eval=TRUE, echo=FALSE, warning=FALSE, message=FALSE, fig.width=7, fig.height=5, fig.align="center"}
+parameter     <- "MAGNESIUM TOTAL RECOVERABLE"
+plotting_name <- "Total Recoverabel Magnesium"
+
+plot_bulk_fcn(parameter, plotting_name)
+plot_timeseries_fcn(parameter, plotting_name)
+```
+
+## Conservativeness
+
+Not sure we have a very conservative chem parameter to use for mass balance
+purposes. Ca vs. Mg comparison is a bit messy.
+
+```{r conservative, eval=TRUE, echo=FALSE, warning=FALSE, message=FALSE, fig.width=7, fig.height=5, fig.align="center"}
+parameter     <-"CONDUCTIVITY, UMHOS/CM @ 25C"
+plotting_name <- "Conductivity"
+
+Ca <- filter_parameter(parameter = "CALCIUM TOTAL RECOVERABLE", 
+                       plotting_name = "Total Recoverable Calcium")
+Mg <- filter_parameter(parameter = "MAGNESIUM TOTAL RECOVERABLE", 
+                       plotting_name = "Total Recoverabel Magnesium")
+Cnd <- filter_parameter(parameter = "CONDUCTIVITY, UMHOS/CM @ 25C", 
+                       plotting_name = "Conductivity")
+Ca_simple <- Ca %>%
+           mutate(Ca = .data$result,
+                  date = floor_date(.data$date, unit = "week")) %>%
+           select(.data$date,
+                  .data$lake,
+                  .data$Ca,
+                  .data$site_type)
+Mg_simple <- Mg %>%
+           mutate(Mg = .data$result,
+                  date = floor_date(.data$date, unit = "week")) %>%
+           select(.data$date,
+                  .data$lake,
+                  .data$Mg,
+                  .data$site_type)
+Cnd_simple <- Cnd %>%
+           mutate(Cnd = .data$result,
+                  date = floor_date(.data$date, unit = "week")) %>%
+           select(.data$date,
+                  .data$lake,
+                  .data$Cnd,
+                  .data$site_type)
+
+
+compare <- merge(Ca_simple, Mg_simple)
+ggplot(compare, aes(x = Ca, y = Mg)) +
+  facet_grid(~lake, scales = "free") +
+  geom_point(aes(color = site_type), 
+             size = 2) +
+  stat_smooth(method = "lm", se = FALSE, color = "grey40") +
+  labs(x = "Calcium (mg/L)", y = "Magnesium (mg/L)", color = "Site") +
+  theme_bw() +
+  theme(text = element_text(family = "Segoe UI Semilight"),
+        panel.grid.major = element_blank(),
+        panel.grid.minor = element_blank())
+
+# compare <- merge(Ca_simple, Cnd_simple)
+# ggplot(compare, aes(x = Ca, y = Cnd)) +
+#   facet_grid(~lake, scales = "free") +
+#   geom_point(aes(color = site_type), 
+#              size = 2) +
+#   stat_smooth(method = "lm", se = FALSE, color = "grey40") +
+#   labs(x = "Calcium (mg/L)", y = "Conductivity (uS/cm)", color = "Site") +
+#   theme_bw() +
+#   theme(text = element_text(family = "Segoe UI Semilight"),
+#         panel.grid.major = element_blank(),
+#         panel.grid.minor = element_blank())
+
+```
+

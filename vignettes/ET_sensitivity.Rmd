@@ -30,11 +30,9 @@ get_lake_evap <- function(lake){
   elev_area_vol   <- cslsdata::elev_area_vol[[lake]]
   dictionary      <- cslsdata::dictionary[[lake]]
   
-  analysis        <- find_timeseries(weather, lst, isotopes, lake_levels, 
-                                     gw_levels, dictionary, static_gw = FALSE, 
-                                     threshold = 0.01, by_gw_iso = FALSE)
+  timeseries        <- find_timeseries(isotopes)
   monthly_weather <- summarise_weather(weather, lst, elev_area_vol,
-                                         dictionary, analysis)
+                                       dictionary, timeseries)
   monthly_evap    <- monthly_weather %>%
                      select(date = .data$date, 
                             E = .data$E_mm)

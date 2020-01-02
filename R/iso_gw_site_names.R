@@ -28,21 +28,27 @@ iso_gw_site_names <- function(monthly_isotopes, isotopes) {
       tmp           <- isotopes %>%
                        filter(floor_date(.data$date, unit = "month") ==
                                 floor_date(monthly_isotopes$date[i], unit = "month"),
-                              .data$site_type == "upgradient") %>%
-                       summarise(site_ids = str_c(unique(.data$site_id),
-                                                  collapse = ", "))
-      GWin_sites[i] <- tmp$site_ids
+                              .data$site_type == "upgradient")
+      if (nrow(tmp) > 0) {
+        tmp <- tmp %>%
+               summarise(site_ids = str_c(unique(.data$site_id),
+                                          collapse = ", "))
+        GWin_sites[i] <- tmp$site_ids
+      }
     }
     # Note GWout sites, if exist
     if (length(monthly_isotopes$d18O_GWout) > 0){
       if (is.na(monthly_isotopes$d18O_GWout[i]) == FALSE) {
-        tmp            <- isotopes %>%
-                          filter(floor_date(.data$date, unit = "month") ==
-                                   floor_date(monthly_isotopes$date[i], unit = "month"),
-                                 .data$site_type == "downgradient") %>%
-                          summarise(site_ids = str_c(unique(.data$site_id),
-                                                     collapse = ", "))
-        GWout_sites[i] <- tmp$site_ids
+        tmp <- isotopes %>%
+               filter(floor_date(.data$date, unit = "month") ==
+                        floor_date(monthly_isotopes$date[i], unit = "month"),
+                      .data$site_type == "downgradient")
+        if (nrow(tmp) > 0) {
+          tmp <- tmp %>%
+                 summarise(site_ids = str_c(unique(.data$site_id),
+                                            collapse = ", "))
+          GWout_sites[i] <- tmp$site_ids
+        }
       }
     }
   }

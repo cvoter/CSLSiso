@@ -4,10 +4,23 @@
 \alias{runall_csls_inputs}
 \title{Run functions to summarise and gather inputs for a CSLS lake}
 \usage{
-runall_csls_inputs(lake)
+runall_csls_inputs(lake, threshold = 0.01, by_gw_iso = FALSE,
+  annual = FALSE)
 }
 \arguments{
 \item{lake}{name of lake (e.g., Pleasant, Long, or Plainfield)}
+
+\item{threshold}{minimum median difference between lake levels and
+groundwater levels during the month of measurement in order
+to classify groundwater measurement.}
+
+\item{by_gw_iso}{logical defaults to TRUE to calculate water balance
+30 days prior to upgradient groundwater isotope measurements.
+If FALSE, calculates balance by calendar month instead (30
+days before last day of the month)}
+
+\item{annual}{defaults to FALSE to calculate water balance on a monthly
+basis. If TRUE, calculates the annual balance instead.}
 }
 \value{
 monthly_inputs, a data frame with the following columns:

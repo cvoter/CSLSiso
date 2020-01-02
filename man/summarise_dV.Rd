@@ -4,14 +4,14 @@
 \alias{summarise_dV}
 \title{Monthly Change in Lake Volume}
 \usage{
-summarise_dV(lake_levels, analysis)
+summarise_dV(lake_levels, timeseries)
 }
 \arguments{
 \item{lake_levels}{a data frame with daily water level measurements as
 formatted in the lake_levels dataset,
 subset to lake level records for the lake of interest.}
 
-\item{analysis}{a list with dates (POSIXct) to analyze, and intervals
+\item{timeseries}{a list with dates (POSIXct) to analyze, and intervals
 (lubridate interval) covering the month before each analysis
 date.}
 }

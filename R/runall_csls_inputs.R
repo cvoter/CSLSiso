@@ -34,6 +34,7 @@
 #' }
 #'
 #' @param lake name of lake (e.g., Pleasant, Long, or Plainfield)
+#' @inheritParams summarise_h2o_bal
 #'
 #' @return monthly_inputs, a data frame with the following columns:
 #' \describe{
@@ -67,15 +68,17 @@
 #'
 #' @export
 
-runall_csls_inputs <- function(lake){
-    weather         <- cslsdata::weather
-    lst             <- cslsdata::lst_HOBO[[lake]]
-    isotopes        <- cslsdata::isotopes[[lake]]
-    lake_levels     <- cslsdata::lake_levels[[lake]]
-    gw_levels       <- cslsdata::gw_levels[[lake]]
-    elev_area_vol   <- cslsdata::elev_area_vol[[lake]]
-    dictionary      <- cslsdata::dictionary[[lake]]
-    monthly_inputs  <- summarise_inputs(weather, lst, isotopes, lake_levels,
-                                        gw_levels, elev_area_vol, dictionary)
-  return(monthly_inputs)
+runall_csls_inputs <- function(lake, threshold = 0.01, by_gw_iso = FALSE,
+                               annual = FALSE){
+    weather       <- cslsdata::weather
+    lst           <- cslsdata::lst_HOBO[[lake]]
+    isotopes      <- cslsdata::isotopes[[lake]]
+    lake_levels   <- cslsdata::lake_levels[[lake]]
+    gw_levels     <- cslsdata::gw_levels[[lake]]
+    elev_area_vol <- cslsdata::elev_area_vol[[lake]]
+    dictionary    <- cslsdata::dictionary[[lake]]
+    inputs        <- summarise_inputs(weather, lst, isotopes, lake_levels,
+                                      gw_levels, elev_area_vol, dictionary,
+                                      threshold, by_gw_iso, annual)
+  return(inputs)
 }

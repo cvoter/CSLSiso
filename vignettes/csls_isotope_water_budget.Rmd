@@ -1,5 +1,5 @@
 ---
-title: "CSLS Isotope Water Budget"
+title: "CSLS Isotope Lake Water Budget"
 output: 
   rmarkdown::html_vignette:
     toc: true
@@ -13,296 +13,616 @@ vignette: >
 library(devtools)
 library(isoH2Obudget)
 library(cslsdata)
-library(reshape2) #for melting
-library(ggplot2) #for plotting
-library(extrafont) #for fonts
-library(dplyr) #for %>% pipes
+library(reshape2)  # for melting
+library(ggplot2)  # for plotting
+library(cowplot)  # for subplots
+library(extrafont)  # for fonts
+library(dplyr)  # for %>% pipes
 library(lubridate)
+library(knitr)
+library(stringr)
+
+text_size = 12
 ```
 
-## Updates
-Updates since last dicussion include:
-* **Lake elevation-area-volume relationship incorporated.** Now calculate the
-water balance both as a depth (mm) and as a volume (m^3). Dynamic lake surface
-area and lake depth is also incorporated into lake ET measurements.
-* **Lake surface temperature.** Switch to use hourly HOBO lake surface
-temperature, instead of every-other-week field measurements. Used in both the
-d18O_evap calculations and lake evaporation calculations. Makes a notable
-difference in lake evaporation calculations - lake evaporation drops to nearly
-zero (as expected) during ice cover (also now retroactively set lake evaporation
-to zero during ice cover).
-* **Calculate budget either by calendar month, or by date of isotope measurement.**
-
-## Overview
-This water budget model uses stable isotope measurements of precipitation,
-evaporation, lake water, and inflowing groundwater as well as observed
-precipitation and evaporation rates to calculate monthly groundwater flow into
-and out of a lake.
+## Overview {#top}
+This **water budget** model uses 1) observed changes in lake levels, 2) observed
+precipitation, 3) calculated lake evaporation, and 4) stable isotope
+measurements of precipitation, evaporation, lake water, and inflowing
+groundwater to calculate monthly groundwater flow into and out of a lake.
 
 <br>
 
-**Groundwater inflow** is calculated based on Krabbenhoft et al. (1990),
-assuming no surface water inputs to the lake:
+The lakes in the Central Sands Lakes Study (Pleasant Lake, Long Lake, and
+Plainfield Lake) are all seepage lakes, a type of lake that does not have
+inflowing streams, outflowing streams, or appreciable surface runoff. The
+water budget for a seepage lake is as follows:
 
 \begin{align}
 \tag{1}
-GW_{in} = \frac{P*(\delta^{18}O_{L} - \delta^{18}O_{P}) + E*(\delta^{18}O_{E} - 
-          \delta^{18}O_{L})}{\delta^{18}O_{GW_{in}} - \delta^{18}O_{L}}
+\frac{dV}{dt} = P - E + GW_{in} - GW_{out}
 \end{align}
 
-where $GW_{in}$ is the groundwater inflow (mm), $P$ is precipitation (mm), $E$
-is evaporation (mm), and $\delta^{18}O_{x}$ is the relative isotopic composition
-in units of per mil relative to a known standard. $\delta^{18}O_{L}$ is measured
-at the lake, $\delta^{18}O_{P}$ is measured from precipitation,
-$\delta^{18}O_{E}$ is estimated for evaporation, and $\delta^{18}O_{GW_{in}}$ is
-measured at inflowing groundwater wells.
+where $\frac{dV}{dt}$ is the change in lake volume (m^3^), $P$ is the
+precipitation (m^3^), $E$ is the lake evaporation (m^3^), $GW_{in}$ is the
+groundwater flowing in to the lake (m^3^), and $GW_{out}$ is the groundwater
+flowing out of the lake.
 
 <br>
 
-**Groundwater outflow** can then be calculated as the only remaining term in the
-water balance:
+[**Change in Lake Volume**](#dV) is *directly measured* using a water level
+logger at each lake. Daily lake levels elevations are converted into daily lake
+volumes using lake elevation-volume relationships developed from lake bathymetry
+maps.
+
+<br>
+
+[**Precipitation**](#precip) is *directly measured* at a nearby weather station.
+It is converted to a volume by multiplying the total precipitation (mm) by the
+average lake area during the month of interest. Average lake area is determined
+using daily lake level elevation from water level loggers and the lake
+elevation-area relationships developed from bathymetry maps.
+
+<br>
+
+[**Lake Evaporation**](#evap) is *calculated* based on the lake energy-budget
+approach outlined in McJannet et al. (2008) as described in McMahon et al.
+(2013). This approach uses:
+
+* Measured incoming solar radiation, wind speed, relative humidity, and air
+temperature from a nearby weather station
+* Lake surface temperature from continuous temperature loggers
+* Area and depth of the lake from daily lake stage measurements and
+elevation-area relationships
+
+Evaporation as a depth (Eq. 2) is summarized at a monthly timestep and converted
+to a volume using the average lake area during that month, as in the
+precipitation calculations.
 
 \begin{align}
 \tag{2}
-\frac{dV}{dt} = 0 = GW_{in} + P - GW_{out} - E
+E = \frac{\Delta_{w}*(R_{n} - G_{w}) + 
+          \frac{60*60*24*\rho_{a}*c_{a}*(es_{w} - es_{a})}{r_{a}}}{\lambda*(\Delta_{w} + \gamma)}
 \end{align}
 
-where $\frac{dV}{dt}$ is the change in lake volume (mm) and $GW_{out}$ is the
-groundwater outflow (mm). If changes in lake volume are measured (i.e.,
-$\frac{dV}{dt} \neq 0$), then these changes are substituted for 0 and the
-modeled groundwater outflows are adjusted.
+where $E$ is lake evaporation (mm/day), $\Delta_{w}$ is the slope of the
+saturation water vapour curve at water temperature (kPa/deg C), $R_{n}$ is the
+net radiation (MJ/m^2^/day), $G_{w}$ is the change in heat storage in the water
+body (MJ/m^2/day), $\rho_{a}$ is the density of air (kg/m^3^), $c_{a}$ is the
+specific heat of air (MJ/kg/K), $es_{w}$ is the saturation vapour pressure at
+water temperature (kPa), $es_{a}$ is the saturation vapour pressure of the air
+(kPa), $r_{a}$ is the aerodynamic resistence (s/m), $\lambda$ is the latent heat
+of vapourisation (MJ/kg), and $\gamma$ is the psychormetric constant (kPa/deg
+C).
 
-<br> 
+<br>
 
-$\delta^{18}O_{E}$ **must be estimated** since it cannot be directly measured
-like $\delta^{18}O_{P}$, $\delta^{18}O_{L}$, or $\delta^{18}O_{GW_{in}}$
-(Krabbenhoft et al., 1990).
+[**Groundwater inflow**](#GWin) is *calculated* using monthly changes in lake
+volume, precipitation, lake evaporation, and stable isotope measurements based
+on the approach in Krabbenhoft et al. (1990) and modified based on Mook (2000) to
+account for non-steady state conditions in lake levels:
+
 \begin{align}
 \tag{3}
-\delta^{18}O_{E} = \frac{\alpha * \delta^{18}O_{L} - h*\delta^{18}O_{A} - 
-                  \epsilon}{1 - h +10^{-3}\Delta \epsilon}
+GW_{in} = \frac{P*(\delta^{18}O_{L} - \delta^{18}O_{P}) + E*(\delta^{18}O_{E} - 
+          \delta^{18}O_{L}) + V*d\delta^{18}O_{L}/dt}{\delta^{18}O_{GW_{in}} - \delta^{18}O_{L}}
 \end{align}
 
-The relative humidity normalized to the temperature of the surface water (-),
-$h$, is calculated as follows:
+where $GW_{in}$ is the groundwater inflow (m^3^), $P$ is precipitation (m^3^), $E$
+is evaporation (m^3^), V is the lake volume (m^3^) and $\delta^{18}O_{x}$ is the
+relative isotopic composition in units of per mil relative to a known standard.
+$\delta^{18}O_{L}$ is measured at the lake, $\delta^{18}O_{P}$ is measured from
+precipitation, $\delta^{18}O_{E}$ is estimated for evaporation, and
+$\delta^{18}O_{GW_{in}}$ is measured at inflowing groundwater wells.
+
+<br>
+
+[**Groundwater outflow**](#GWout) can then be *calculated* as the only remaining
+term in the water balance:
+
 \begin{align}
 \tag{4}
-h = \frac{RH}{100}*\frac{es_{A}}{es_{L}}
+GW_{out} = GW_{in} + P - E - \frac{dV}{dt}
 \end{align}
 
-where $RH$ is the relative humidity (%), $es_{A}$ is the saturated vapor
-pressure for the air (kPa), and $es_{L}$ is the saturated vapor pressure for
-the lake (kPa). Saturated vapor pressure is calculated based on Allen et al.
-(1998) using air temperature (degrees C) or lake temperature (degrees C) for
-$t$ as appropriate:
-\begin{align}
-\tag{5}
-es = 0.6108e^{\frac{17.27T}{237 + T}}
-\end{align}
-
-The equilibrium isotope fractionation factor (-), $\alpha$, is calculated
-based on Ozaydin et al. (2001), where $t$ is the lake surface temperature (K):
-
-\begin{align}
-\tag{6}
-\alpha &= e^{\frac{-2.0667 - \frac{415.6}{t} + (\frac{1137}{t^2})*10^3}{1000}}
-\end{align}
-
-The kinetic fractionation factor (-), $\Delta \epsilon$, is calculated based
-on Krabbenhoft et al. (1990):
-\begin{align}
-\tag{7}
-\Delta \epsilon = 14.3*(1 - h)
-\end{align}
-
-The total fractionation factor (-), $\epsilon$, combines both the isotopic
-fractionation factor and the kinetic fractionation factor (Krabbenhoft et al.,
-1990):
-\begin{align}
-\tag{8}
-\epsilon = 1000(1 - \frac{1}{\alpha}) + \Delta \epsilon
-\end{align}
-
-Lastly, the isotopic composition of the atmosphere, $\delta^{18}O_{A}$, is
-calculated based on Gibson et al. (2016):
-\begin{align}
-\tag{9}
-\delta^{18}O_{A} &= \frac{\delta^{18}O_{P} - k*\epsilonv}{1 + 10^{-3}*k*\epsilon^{+}})
-\end{align}
-
-where $k$ can vary from 0.5 for highly seasonal climates to 1.0 for non-seasonal
-climates but is set to 1.0 here and $\epsilon^{+}$ is defined as:
-
-\begin{align}
-\tag{10}
-\epsilon^{+} &= (\alpha - 1)*1000
-\end{align}
-
-## Input data
+## Detailed Approach
 Input data for the Central Sands Lake Study sites (Pleasant Lake, Long Lake, and
-Plainfield Lake) are located in the "data" folder of this project, with raw csv
-files located in the "inst/extdata" directory. For examples of how to convert
-raw csv files into the .Rda inputs required for the functions in this package,
-see the vignette "retrieve_csls_inputs_data".
+Plainfield Lake) are saved in the `cslsdata` R data package. The `cslsdata`
+package includes a `data-raw` directory where raw data is stored together with
+the scripts used to clean raw data and save them as Rda files. Detailed
+information on the source of each dataset is captured in the roxygen
+documentation files for this package. For example, to access information on the
+lake level dataset, load the package into RStudio using `library(cslsdata)` and
+try `?lake_levels`.
 
-Required inputs include:
+<br>
 
-### 1. Meteorological Data
-For the Central Sands Lake Study (CSLS), hourly air temperature, relative
-humidity, precipitation, and reference potential evapotranspiration are
-downloaded from the [Hancock Agricultural Research Station
-website](https://enviroweather.msu.edu/weather.php?stn=hck). 
+Below, we describe all additional assumptions and calculations used to transform
+`cslsdata` Rda files from their form in the `cslsdata` package into the monthly
+inputs required for monthly water balance calculations.
 
-```{r weather, eval=TRUE, echo=FALSE}
+```{r plot_fcns, eval=TRUE, echo=FALSE, message=FALSE, warning=FALSE}
+lake_level_plot <- function(ydata, ylabel, title = "", 
+                            lakes = c("Pleasant", "Long", "Plainfield")){
+  lake_levels <- NULL
+  for (lake in lakes){
+  tmp           <- cslsdata::lake_levels[[lake]]
+  tmp           <- tmp[c("date", ydata)]
+  colnames(tmp) <- c("x", "y")
+  tmp$lake      <- lake
+  lake_levels <- rbind(lake_levels, tmp)
+  }
+  lake_levels$lake <- factor(lake_levels$lake, levels = lakes)
+  
+  plot_obj <- ggplot(lake_levels) +
+              geom_line(aes(x = x, y = y)) +
+              scale_x_datetime(date_breaks = "6 months",
+                               date_labels = "%b '%y") +
+              labs(x = "", y = ylabel, title = title) +
+              facet_wrap(~lake, scales = "free_y", ncol = 3) +
+              theme_bw() +
+              theme(text = element_text(family = "Segoe UI Semilight",
+                                        size = text_size),
+                    plot.title = element_text(hjust = 0.5),
+                    panel.grid.major = element_blank(),
+                    panel.grid.minor = element_blank())
+  
+  if (ydata != "level_m") {
+    plot_obj <- plot_obj + scale_y_continuous(labels = scales::scientific)
+  }
+  
+  return(plot_obj)
+}
+
+elev_area_vol_plot <- function(ydata, ylabel, title = "", 
+                               lakes = c("Pleasant", "Long", "Plainfield")){
+  elev_area_vol <- NULL
+  for (lake in lakes){
+  tmp           <- cslsdata::elev_area_vol[[lake]]
+  tmp           <- tmp[c("elev_m", ydata)]
+  colnames(tmp) <- c("x", "y")
+  tmp$lake      <- lake
+  elev_area_vol <- rbind(elev_area_vol, tmp)
+  }
+  elev_area_vol$lake <- factor(elev_area_vol$lake, levels = lakes)
+  
+  plot_obj <- ggplot(elev_area_vol) +
+              geom_line(aes(x = x, y = y)) +
+              facet_wrap(~lake, scales = "free") +
+              scale_y_continuous(labels = scales::scientific) +
+              labs(x = "Elevation (m)", y = ylabel, title = title) +
+              theme_bw() +
+              theme(text = element_text(family = "Segoe UI Semilight",
+                                        size = text_size),
+                    plot.title = element_text(hjust = 0.5),
+                    panel.grid.major = element_blank(),
+                    panel.grid.minor = element_blank())
+  
+  return(plot_obj)
+}
+
+inputs_plot <- function(ydata, ylabel, geom_type = "col", title = "", 
+                        lakes = c("Pleasant", "Long", "Plainfield")){
+  inputs <- NULL
+  for (lake in lakes){
+  tmp           <- runall_csls_inputs(lake)
+  tmp           <- tmp[c("date", ydata)]
+  colnames(tmp) <- c("x", "y")
+  tmp$lake      <- lake
+  inputs <- rbind(inputs, tmp)
+  }
+  inputs$lake <- factor(inputs$lake, levels = lakes)
+  
+  # Specify plot type (column or point)
+  if (geom_type == "col") {
+    plot_obj <- ggplot(inputs, aes(x = x, y = y)) +
+                geom_col()
+  } else if (geom_type == "point") {
+    plot_obj <- ggplot(inputs, aes(x = x, y = y)) +
+                geom_point()
+  }
+  
+  plot_obj <- plot_obj +
+              scale_x_datetime(date_breaks = "6 months",
+                               date_labels = "%b '%y") +
+              facet_wrap(~lake) +
+              scale_y_continuous(labels = scales::scientific) +
+              labs(x = "", y = ylabel, title = title) +
+              theme_bw() +
+              theme(text = element_text(family = "Segoe UI Semilight",
+                                        size = text_size),
+                    plot.title = element_text(hjust = 0.5),
+                    panel.grid.major = element_blank(),
+                    panel.grid.minor = element_blank())
+  
+  return(plot_obj)
+}
+
+
+iso_plot <- function(ydata = "d18O", ylabel = expression(delta^18*'O'), title = "", 
+                     lakes = c("Pleasant", "Long", "Plainfield")){
+  monthly_isotopes <- NULL
+  for (lake in lakes){
+    isotopes    <- cslsdata::isotopes[[lake]]
+    dictionary  <- cslsdata::dictionary[[lake]]
+    lake_levels <- cslsdata::lake_levels[[lake]]
+    gw_levels   <- cslsdata::gw_levels[[lake]]
+
+    # Measured values
+    tmp1     <- iso_site_type(isotopes, dictionary, lake_levels, gw_levels)
+    tmp1      <- tmp1 %>%
+                 group_by(floor_date(.data$date, unit = "month"),
+                          variable = .data$site_type) %>%
+                 filter(is.na(.data$site_type) == FALSE &
+                          .data$site_type != "") %>%
+                 summarise(date = floor_date(mean(.data$date), unit = "day"),
+                           value = mean(.data$d18O)) %>%
+                 ungroup() %>%
+                 select(.data$date, .data$variable, .data$value)
+    
+    tmp1$variable <- tmp1$variable %>%
+                     str_replace("upgradient","Groundwater") %>%
+                     str_replace("lake","Lake") %>%
+                     str_replace("precipitation","Precipitation")
+    tmp1$lake <- lake
+    tmp1$measurement <- "actual"
+
+    # monthly values
+    tmp2 <- summarise_isotopes(isotopes, dictionary, 
+                               find_timeseries(isotopes), 
+                               lake_levels, gw_levels) %>% 
+            select(date, d18O_GWin, d18O_lake, d18O_pcpn) %>% 
+            melt(id.vars = "date")
+    
+    tmp2$variable <- tmp2$variable %>%
+                     str_replace("d18O_GWin","Groundwater") %>%
+                     str_replace("d18O_lake","Lake") %>%
+                     str_replace("d18O_pcpn","Precipitation")
+   tmp2$lake <- lake
+   tmp2$measurement <- "monthly"
+   
+   monthly_isotopes <- rbind(monthly_isotopes, tmp1, tmp2)
+  }
+
+  plot_obj <- ggplot(monthly_isotopes,
+                     aes(x = date, y = value, color = measurement)) +
+              geom_point() +
+              scale_x_datetime(date_breaks = "6 months",
+                               date_labels = "%b '%y") +
+              facet_wrap(lake~variable) +
+              labs(x = "", y = ylabel, title = title) +
+              theme_bw() +
+              theme(text = element_text(family = "Segoe UI Semilight",
+                                        size = text_size),
+                    plot.title = element_text(hjust = 0.5),
+                    panel.grid.major = element_blank(),
+                    panel.grid.minor = element_blank())
+  
+  return(plot_obj)
+}
+```
+
+### Change in Lake Volume {#dV}
+[back to top](#top)
+
+We obtain **daily lake elevation data** from water level loggers at USGS gages
+at all three lakes in the Central Sands Lakes Study.
+
+```{r dV01, eval=TRUE, echo=FALSE, message=FALSE, warning=FALSE, fig.width = 6.5, fig.height = 2.5}
+lake_level_plot("level_m", "Lake Elevation (m)")
+```
+
+We also have the **elevation-volume relationships** for each lake from lake
+bathymetry data (calculated in ArcGIS).
+
+```{r dV02, eval=TRUE, echo=FALSE, message=FALSE, warning=FALSE, fig.width = 6.5, fig.height = 2.5}
+elev_area_vol_plot("vol_m3", expression(Lake~Volume~(m^{3})))
+```
+
+We convert these daily lake level elevations to **daily lake volumes** using these elevation-volume relationships.
+
+```{r dV03, eval=TRUE, echo=FALSE, message=FALSE, warning=FALSE, fig.width = 6.5, fig.height = 2.5}
+lake_level_plot("vol_m3", expression(Lake~Volume~(m^{3})))
+```
+
+The **change in lake volume** for a given month is then the difference
+between the lake volume on the last day of the month and the lake volume on the
+first day of the month.
+
+```{r dV04, eval=TRUE, echo=FALSE, message=FALSE, warning=FALSE, fig.width = 6.5, fig.height = 2.5}
+inputs_plot("dV_m3", expression(Change~Lake~Volume~(m^{3})))
+```
+
+### Precipitation {#precip}
+[back to top](#top)
+
+We obtain hourly precipitation depth (mm) from the [Hancock Agricultural
+Research Station](https://enviroweather.msu.edu/weather.php?stn=hck) (station
+id: hck). The station is located in Hancock, WI (location: 44.1188, -89.533,
+elevation: 241m), approximately 8 miles from Plainfield Lake, 8.5 miles from
+Long Lake, and 14.5 miles from Pleasant Lake.
+
+```{r precip0, eval=TRUE, echo=FALSE, message=FALSE, warning=FALSE, fig.width = 6.5, fig.height = 2.5}
 weather <- cslsdata::weather
-head(weather)
+monthly_weather <- weather %>%
+                   group_by(date = floor_date(.data$date, unit = "month")) %>%
+                   summarise(P = sum(.data$P))
+ggplot(monthly_weather, aes(x = date, y = P)) +
+  geom_col() +
+  scale_x_datetime(date_breaks = "3 months",
+                   date_labels = "%b '%y") +
+  scale_y_continuous(labels = scales::scientific) +
+  labs(x = "",
+       y = "Monthly Precipitation (mm)") +
+  theme_bw() +
+  theme(text = element_text(family = "Segoe UI Semilight",
+                            size = text_size),
+        plot.title = element_text(hjust = 0.5),
+        panel.grid.major = element_blank(),
+        panel.grid.minor = element_blank())
 ```
 
-### 2. Lake Temperature Data
-Lake surface temperatures are extracted from the surface-most HOBO sensor with
-hourly measurements of vertical lake temperature profiles.
+<br>
 
-```{r lst, eval=TRUE, echo=FALSE}
-lake <- "Pleasant"
-lst  <- cslsdata::lst_HOBO[[lake]]
-head(lst)
+To convert precipitation as a depth to precipitation as a volume, We use the
+**daily lake elevations** at the USGS gages at each lake.
+
+```{r precip1, eval=TRUE, echo=FALSE, message=FALSE, warning=FALSE, fig.width = 6.5, fig.height = 2.5}
+lake_level_plot("level_m", "Lake Elevation (m)")
 ```
 
-### 3. Stable Isotope Measurements
-Measurements of $\delta^{18}O_{L}$ and $\delta^{18}O_{GW_{in}}$ are collected on
-site for each lake while $\delta^{18}O_{P}$ is measured using samples collected
-at the Hancock Research Station. 
+We also use the **elevation-area relationships** for each lake from lake
+bathymetry data (calculated in ArcGIS).
 
-```{r isotopes, eval=TRUE, echo=FALSE}
-isotopes <- cslsdata::isotopes[[lake]]
-head(isotopes)
+```{r precip2, eval=TRUE, echo=FALSE, message=FALSE, warning=FALSE, fig.width = 6.5, fig.height = 2.5}
+elev_area_vol_plot("area_m2", expression(Lake~Area~(m^{2})))
 ```
 
-### 4. Lake and Groundwater Levels
-Daily lake levels and groundwater levels are retrieved from the DNR Water Use
-section ArcGIS feature services. 
+We convert daily lake level elevations to **daily lake areas** using these
+elevation-area relationships.
 
-```{r water_levels, eval=TRUE, echo=FALSE}
-lake_levels <- cslsdata::lake_levels[[lake]]
-head(lake_levels)
-
-gw_levels  <- cslsdata::gw_levels[[lake]]
-head(gw_levels)
+```{r precip3, eval=TRUE, echo=FALSE, message=FALSE, warning=FALSE, fig.width = 6.5, fig.height = 2.5}
+lake_level_plot("area_m2", expression(Lake~Area~(m^{2})))
 ```
 
-### 5. Bathymetry Information
-In order to assess potential changes in lake volume, bathymetry information is
-also needed. This includes the relationships between elevation, lake volume, and
-lake surface area.
+Then, we calculate the **mean monthly lake area**.
 
-```{r stage_vol, eval=TRUE, echo=FALSE}
-elev_area_vol <- cslsdata::elev_area_vol[[lake]]
-head(elev_area_vol)
+```{r precip4, eval=TRUE, echo=FALSE, message=FALSE, warning=FALSE, fig.width = 6.5, fig.height = 2.5}
+inputs_plot("mean_area_m2", expression(Lake~Area~(m^{2})), "point")
 ```
 
-### 6. Site Dictionary
-Lastly, we also need a site dictionary which maps various ID codes for each
-measurement site to one another.
+By multiplying monthly precipitation as a depth (mm) by the mean monthly lake
+area (m^2^), we obtain **monthly precipitation as a volume (m^3^)** for each lake.
 
-```{r site_dict, eval=TRUE, echo=FALSE}
-dictionary <- cslsdata::dictionary[[lake]]
-head(dictionary)
+```{r precip5, eval=TRUE, echo=FALSE, message=FALSE, warning=FALSE, fig.width = 6.5, fig.height = 2.5}
+inputs_plot("P_m3", expression(Precipitation~(m^{3})), "col")
 ```
 
-## Analysis
-### 1. Subset for lake of interest
-First, subset the input data sets for records related to the lake of interest.
-In this example, we're using Pleasant Lake.
+### Lake Evaporation {#evap}
+[back to top](#top)
 
-```{r subset, eval=TRUE, echo=TRUE}
-# Identify monthly timeseries with complete coverage of input data
-analysis <- find_timeseries(weather, lst, isotopes, lake_levels, gw_levels,
-                            dictionary, static_gw = FALSE, threshold = 0.01, 
-                            by_gw_iso = TRUE)
+All lake evaporation calculations are contained in the `H2Oevap` package; more
+details on this energy-balance approach can be obtained by searching the
+documentation for that package. Broadly, the energy-budget lake evaporation
+equations require information on:
+
+* Lake location (latitude, longitude, elevation, latitude of time zone)
+* Lake size (area, depth)
+* Lake surface temperature (daily values, taken from surface-most continuous
+temperature logger)
+* Meteorological parameters (daily relative humidity, air temperature, incoming solar
+radiation, wind speed from nearby weather station)
+* Heat absorption and reflection parameters (e.g., albedo of water, density and
+specific heat of air)
+
+These lake evaporation equations yeild daily lake evaporation (mm/day), which is
+converted to monthly lake evaporation volume by summing over each month and
+multiplying by the average monthly lake area, as in the [precipitation](#precip)
+calculations.
+
+```{r evap, eval=TRUE, echo=FALSE, message=FALSE, warning=FALSE, fig.width = 7, fig.height = 2.5}
+inputs_plot("E_m3", expression(Evaporation~(m^{3})), "col")
 ```
 
-### 2. Analyze at a monthly timestep
-Next, summarize records at a monthly time step. Here, we have **monthly weather**...
+### Groundwater Inflow {#GWin}
+[back to top](#top)
 
-```{r monthly_weather, eval=TRUE, echo=FALSE}
-monthly_weather <- summarise_weather(weather, lst, elev_area_vol, dictionary,
-                                     analysis)
-head(monthly_weather)
+As indicated in Eq. 3, calculation of groundwater inflow requires:
+
+1. Monthly **precipitation**, **evaporation**, and **mean lake volume**. These
+are calculated per the previous sections.
+
+2. Monthly **groundwater stable isotope measurements** are derived from regular
+CSLS sampling at four groundwater wells near each lake. These measurements were
+taken approximately every other month. Upgradient wells representing inflowing
+groundwater are defined as wells where the mean daily difference between
+groundwater levels and lake levels in the 30-day period prior to sampling is
+greater than 1 cm (i.e., the precision of the water level logger). All
+upgradient well measurements from the same sampling event for a lake are
+averaged, then linearly interpolated to estimate values on the last day of each
+month.
+
+3. Monthly **lake stable isotope measurements** are derived from regular CSLS
+sampling at each lake. These measurements were taken less frequently than
+groundwater measurements; approximately every other month during the ice-free
+period. All lake measurements are linearly interpolated to estimate values on
+the last day of each month during the ice-free period.
+
+4. Monthly **precipitation stable isotope measurements** are derived from
+regular CSLS sampling at two precipitation collectors located at Hancock
+Agricultural Research Station. These measurements were taken approximately every
+month during the snow-free season. They are supplemented by monthly measurements
+taken by Maribeth Kniffin at the same location from May 2016 to April 2017.
+Since 1) we do not have access to the exact days that Maribeth Kniffin collected
+her measurements and 2) precipitation samples are an aggregate sample of all
+precipitation collected between sample dates (i.e., they are not a snapshot in
+time), we do not perform any linear interpolation on these samples. Instead, we
+assume all precipitation measurements represent precipitation on the last day of
+the month in which they were collected. Maribeth Kniffin's data is only used for
+months when we do not have CSLS-collected data.
+
+```{r iso, eval=TRUE, echo=FALSE, message=FALSE, warning=FALSE, fig.width = 6.5, fig.height = 7.5}
+lakes <- c("Pleasant", "Long", "Plainfield")
+monthly_isotopes <- NULL
+for (lake in lakes){
+  isotopes    <- cslsdata::isotopes[[lake]]
+  dictionary  <- cslsdata::dictionary[[lake]]
+  lake_levels <- cslsdata::lake_levels[[lake]]
+  gw_levels   <- cslsdata::gw_levels[[lake]]
+  
+  # Measured values
+  tmp1 <- iso_site_type(isotopes, dictionary, lake_levels, gw_levels)
+  tmp1 <- tmp1 %>%
+          group_by(floor_date(.data$date, unit = "month"),
+                   variable = .data$site_type) %>%
+          filter(is.na(.data$site_type) == FALSE,
+                 .data$site_type != "",
+                 .data$site_type != "downgradient") %>%
+          summarise(date = floor_date(mean(.data$date), unit = "day"),
+                    value = mean(.data$d18O)) %>%
+          ungroup() %>%
+          select(.data$date, .data$variable, .data$value)
+  
+  tmp1$variable <- tmp1$variable %>%
+                   str_replace("upgradient","Groundwater") %>%
+                   str_replace("lake","Lake") %>%
+                   str_replace("precipitation","Precipitation")
+  tmp1$lake <- lake
+  tmp1$measurement <- "actual"
+  
+  # monthly values
+  tmp2 <- summarise_isotopes(isotopes, dictionary, 
+                             find_timeseries(isotopes), 
+                             lake_levels, gw_levels) %>% 
+          select(date, d18O_GWin, d18O_lake, d18O_pcpn) %>% 
+          melt(id.vars = "date")
+  
+  tmp2$variable    <- tmp2$variable %>%
+                      str_replace("d18O_GWin","Groundwater") %>%
+                      str_replace("d18O_lake","Lake") %>%
+                      str_replace("d18O_pcpn","Precipitation")
+  tmp2$lake        <- lake
+  tmp2$measurement <- "monthly"
+  
+  tmp3      <- tmp1 %>% filter(variable == "Precipitation")
+  tmp3      <- fill_timeseries_gaps(tmp3, find_timeseries(isotopes))
+  kniffin_isotopes <- isoH2Obudget::kniffin[["isotopes"]]
+  for (i in 1:nrow(tmp3)) {
+    this_month    <- month(tmp3$date[i])
+    this_i        <- which(month(tmp3$date) == this_month)
+    tmp3$value[i]    <- mean(tmp3$value[this_i], na.rm = TRUE)
+    tmp3$measurement[i] <- "actual"
+    tmp3$value[is.nan(tmp3$value)] <- NA
+    kniffin_month <- kniffin_isotopes %>% filter(month(.data$date) == this_month)
+    if (is.na(tmp3$value[i])){
+      tmp3$value[i]       <- kniffin_month$d18O_pcpn
+      tmp3$measurement[i] <- "kniffin"
+    }
+  }
+  tmp3$lake <- lake
+  tmp3$variable <- "Precipitation"
+  
+  monthly_isotopes <- rbind(monthly_isotopes, tmp1, tmp2, tmp3)
+}
+
+monthly_isotopes$lake <- factor(monthly_isotopes$lake, levels = lakes)
+
+ggplot(monthly_isotopes %>% arrange(measurement), 
+       aes(x = date, y = value, color = measurement, shape = measurement)) +
+  geom_point() +
+  scale_x_datetime(date_breaks = "4 months",
+                   date_labels = "%b '%y") +
+  facet_grid(variable~lake) +
+  labs(x = "", y = expression(delta^18*'O'), title = "") +
+  scale_color_manual(name = "",
+                     values = c("red", "purple", "grey70"),
+                     labels = c("Measured by CSLS", 
+                                "Measured by M. Kniffin", 
+                                "Monthly Interpolation")) +
+  scale_shape_manual(name = "",
+                     values = c(19, 15, 17),
+                     labels = c("Measured by CSLS", 
+                                "Measured by M. Kniffin", 
+                                "Monthly Interpolation")) +
+  theme_bw() +
+  theme(text = element_text(family = "Segoe UI Semilight",
+                            size = text_size),
+        plot.title = element_text(hjust = 0.5),
+        panel.grid.major = element_blank(),
+        panel.grid.minor = element_blank(),
+        legend.position = "top")
+  
 ```
 
-...**monthly lake surface temperature**...
+5. Monthly **evaporation stable isotope measurements** must be estimated since
+it cannot be directly measured. We estimate $\delta^{18}O_{E}$ as follows
+(Krabbenhoft et al., 1990, eq. 5):
 
-```{r monthly_lst, eval=TRUE, echo=FALSE}
-monthly_lst <- summarise_lst(lst, analysis)
-head(monthly_lst)
-```
+   \begin{align}
+   \tag{5}
+   \delta^{18}O_{E} = \frac{\alpha * \delta^{18}O_{L} - h*\delta^{18}O_{A} - 
+                      \epsilon}{1 - h +10^{-3}\Delta \epsilon}
+   \end{align}
 
-...**monthly isotope measurements**, including the calculated
-$\delta^{18}O_{E}$...
+   The relative humidity normalized to the temperature of the surface water (-),
+   $h$, is calculated as follows (Mook, 2000, eq. 1.8):
+   \begin{align}
+   \tag{6}
+   h = \frac{RH}{100}*\frac{es_{A}}{es_{L}}
+   \end{align}
 
-```{r monthly_isotopes, eval=TRUE, echo=FALSE}
-monthly_isotopes <- summarise_isotopes(isotopes, dictionary, analysis,
-                                       static_gw = FALSE, lake_levels,
-                                       gw_levels)
-monthly_isotopes <- summarise_d18O_evap(monthly_weather, monthly_lst,
-                                        monthly_isotopes)
-monthly_isotopes
-```
+   where $RH$ is the relative humidity (%), $es_{A}$ is the saturated vapor
+   pressure for the air (kPa), and $es_{L}$ is the saturated vapor pressure for
+   the lake (kPa). Saturated vapor pressure is calculated based on Allen et al. (1998) 
+   using air temperature (degrees C) or lake temperature (degrees C) for $t$ as 
+   appropriate:
+   \begin{align} 
+   \tag{7} 
+   es = 0.6108*exp(\frac{17.27T}{237 + T})
+   \end{align}
 
-...**monthly change in lake volume** as a depth (mm)...
+   The equilibrium isotope fractionation factor (-), $\alpha$, is calculated
+   based on Ozaydin et al. (2001), where $t$ is the lake surface temperature
+   (K):
 
-```{r monthly_dV, eval=TRUE, echo=FALSE}
-monthly_dV <- summarise_dV(lake_levels, analysis)
-head(monthly_dV)
-```
+   \begin{align}
+   \tag{8}
+   \alpha &= e^{\frac{-2.0667 - \frac{415.6}{t} + (\frac{1137}{t^2})*10^3}{1000}}
+   \end{align}
 
-...and the **monthly water balance**, with all fluxes as a depth (mm).
+   The kinetic fractionation factor (-), $\Delta \epsilon$, is calculated based
+   on Krabbenhoft et al. (1990):
+   \begin{align}
+   \tag{9}
+   \Delta \epsilon = 14.3*(1 - h)
+   \end{align}
 
-```{r monthly_h2o_bal, eval=TRUE, echo=FALSE}
-monthly_h2o_bal <- runall_csls_budget(lake)
-monthly_h2o_bal
-```
+   The total fractionation factor (-), $\epsilon$, combines both the isotopic
+   fractionation factor and the kinetic fractionation factor (Krabbenhoft et
+   al., 1990):
+   \begin{align}
+   \tag{10}
+   \epsilon = 1000(1 - \frac{1}{\alpha}) + \Delta \epsilon
+   \end{align}
 
-## Visualization
+   Lastly, the isotopic composition of the atmosphere, $\delta^{18}O_{A}$, is
+   calculated based on Gibson et al. (2016):
+   \begin{align}
+   \tag{11}
+   \delta^{18}O_{A} &= \frac{\delta^{18}O_{P} - k*\epsilon^{+}}{1 + 10^{-3}*k*\epsilon^{+}})
+   \end{align}
 
-This gets us to the point where we can visualize the water balance. A few notes:
+   where $k$ can vary from 0.5 for highly seasonal climates to 1.0 for
+   non-seasonal climates but is set to 1.0 here and $\epsilon^{+}$ is defined
+   as:
+   \begin{align}
+   \tag{12}
+   \epsilon^{+} &= (\alpha - 1)*1000
+   \end{align}
 
-* **Aug 2019 balance.** Ignore this for now - not enough lake level data to get
-good estimates on change in volume, etc. during this time period (only go
-through 7/15).
-* **Change in Lake Volume.** Proportionally, the changes in lake volume at
-Pleasant Lake are much smaller than at Long and Plainfield.
-* **Groundwater flow.** At all lakes, groundwater inflow is highest in April and
-June of 2019, but groundwater outflow also remains high. September and October are 
+### Groundwater Outflow {#GWout}
+[back to top](#top)
 
-### 1. Pleasant Lake
-
-```{r plot, eval=TRUE, echo=FALSE, fig.width = 7, fig.height = 4}
-monthly_h2o_bal <- monthly_h2o_bal %>%
-                   filter(!month(.data$date) %in% c(8, 12))
-plot_balance(lake, monthly_h2o_bal, as_vol = TRUE)
-```
-
-### 2. Long Lake
-
-
-```{r long, eval=TRUE, echo=FALSE, fig.width = 7, fig.height = 5}
-lake = "Long"
-monthly_h2o_bal <- runall_csls_budget(lake)
-monthly_h2o_bal <- monthly_h2o_bal %>%
-                   filter(!month(.data$date) %in% c(8, 12))
-plot_balance(lake, monthly_h2o_bal, as_vol = TRUE)
-```
-
-### 3. Plainfield Lake
-
-```{r pfl, eval=TRUE, echo=FALSE, fig.width = 7, fig.height = 5}
-lake = "Plainfield"
-monthly_h2o_bal <- runall_csls_budget(lake)
-monthly_h2o_bal <- monthly_h2o_bal %>%
-                   filter(!month(.data$date) %in% c(8, 12))
-plot_balance(lake, monthly_h2o_bal, as_vol = TRUE)
-```
 
 ## Session Info
 

@@ -4,39 +4,23 @@
 \alias{runall_csls_budget}
 \title{Run isoH2Obudget start to finish for a CSLS lake}
 \usage{
-runall_csls_budget(lake, static_gw = FALSE, threshold = 0.01,
-  static_lake = FALSE, use_kniffin_pcpn = TRUE, extend_pcpn = TRUE,
-  by_gw_iso = TRUE)
+runall_csls_budget(lake, threshold = 0.01, by_gw_iso = FALSE,
+  annual = FALSE)
 }
 \arguments{
 \item{lake}{name of lake (e.g., Pleasant, Long, or Plainfield)}
-
-\item{static_gw}{logical defaults to FALSE to use lake_levels and gw_levels
-to define upgradient/downgradient wells at each measurement
-date. If TRUE, uses static definitions of
-upgradient/downgradient wells in site dictionary.}
 
 \item{threshold}{minimum median difference between lake levels and
 groundwater levels during the month of measurement in order
 to classify groundwater measurement.}
 
-\item{static_lake}{logical defaults to FALSE to use actual measurement for
-each month. If TRUE, uses mean of fall (Sept-Nov) isotope
-samples for the lake.}
-
-\item{use_kniffin_pcpn}{logical defaults to TRUE to average in precipitation
-isotope measurements by Maribeth Kniffin for each
-month. Kniffin measurements taken at Hancock
-Agricultural Research Station from May 2016 - Apr
-2015 for each month.}
-
-\item{extend_pcpn}{logical defaults to TRUE to backfill months with no
-precipitation}
-
 \item{by_gw_iso}{logical defaults to TRUE to calculate water balance
 30 days prior to upgradient groundwater isotope measurements.
 If FALSE, calculates balance by calendar month instead (30
 days before last day of the month)}
+
+\item{annual}{defaults to FALSE to calculate water balance on a monthly
+basis. If TRUE, calculates the annual balance instead.}
 }
 \value{
 monthly_h2o_bal, a data frame with the following columns:

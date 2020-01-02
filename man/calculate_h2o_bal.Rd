@@ -4,10 +4,10 @@
 \alias{calculate_h2o_bal}
 \title{Calculate Water Balance}
 \usage{
-calculate_h2o_bal(h2o_bal_inputs)
+calculate_h2o_bal(inputs)
 }
 \arguments{
-\item{h2o_bal_inputs}{a data frame with the date, air temperature (in degrees
+\item{inputs}{a data frame with the date, air temperature (in degrees
 C and Kelvin), relative humidity (percent),
 precipitation (mm), lake evaporation (m), lake surface
 temperature (Kelvin), change in lake volume (mm), d18O

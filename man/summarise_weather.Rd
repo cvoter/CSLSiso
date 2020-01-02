@@ -4,7 +4,7 @@
 \alias{summarise_weather}
 \title{Monthly Weather}
 \usage{
-summarise_weather(weather, lst, elev_area_vol, dictionary, analysis,
+summarise_weather(weather, lst, elev_area_vol, dictionary, timeseries,
   wind_elev = 3, z0 = 0.02, Lz = 90, lake_albedo = 0.08,
   no_condensation = FALSE)
 }
@@ -27,7 +27,7 @@ site classifications as formatted in the
 dictionary dataset, subset to
 records for the lake of interest.}
 
-\item{analysis}{a list with dates (POSIXct) to analyze, and intervals
+\item{timeseries}{a list with dates (POSIXct) to analyze, and intervals
 (lubridate interval) covering the month before each analysis
 date.}
 

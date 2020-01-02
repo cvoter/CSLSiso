@@ -37,44 +37,71 @@
 #' @export
 
 summarise_inputs <- function(weather, lst, isotopes, lake_levels, gw_levels,
-                             elev_area_vol, dictionary, static_gw = FALSE,
-                             threshold = 0.01, static_lake = FALSE,
-                             use_kniffin_pcpn = TRUE, extend_pcpn = TRUE,
-                             by_gw_iso = TRUE){
+                             elev_area_vol, dictionary, threshold = 0.01,
+                             by_gw_iso = FALSE, annual = FALSE){
 
   # Identify monthly timeseries with complete coverage of input data
-  analysis <- find_timeseries(weather, lst, isotopes, lake_levels, gw_levels,
-                              dictionary, static_gw, threshold, by_gw_iso)
+  timeseries <- find_timeseries(isotopes)
 
   # Summarize inputs over common timeseries
   monthly_weather   <- summarise_weather(weather, lst, elev_area_vol,
-                                         dictionary, analysis)
-  monthly_lst       <- summarise_lst(lst, analysis)
-  monthly_dV        <- summarise_dV(lake_levels, analysis)
-  monthly_isotopes  <- summarise_isotopes(isotopes, dictionary, analysis,
-                                          static_gw, lake_levels,
-                                          gw_levels, threshold,
-                                          static_lake, use_kniffin_pcpn,
-                                          extend_pcpn)
+                                         dictionary, timeseries)
+  monthly_lst       <- summarise_lst(lst, timeseries)
+  monthly_dV        <- summarise_dV(lake_levels, timeseries)
+  monthly_isotopes  <- summarise_isotopes(isotopes, dictionary, timeseries,
+                                          lake_levels, gw_levels, threshold)
   monthly_isotopes  <- summarise_d18O_evap(monthly_weather, monthly_lst,
                                            monthly_isotopes)
-  h2o_bal_inputs <- merge(monthly_weather, monthly_lst)
-  h2o_bal_inputs <- merge(h2o_bal_inputs, monthly_dV)
-  h2o_bal_inputs <- merge(h2o_bal_inputs, monthly_isotopes)
+  inputs <- merge(monthly_weather, monthly_lst)
+  inputs <- merge(inputs, monthly_dV)
+  inputs <- merge(inputs, monthly_isotopes)
 
-  h2o_bal_inputs$P_m3 <- h2o_bal_inputs$P_mm*h2o_bal_inputs$mean_area_m2/1000
-  h2o_bal_inputs$E_m3 <- h2o_bal_inputs$E_mm*h2o_bal_inputs$mean_area_m2/1000
+  inputs$P_m3 <- inputs$P_mm*inputs$mean_area_m2/1000
+  inputs$E_m3 <- inputs$E_mm*inputs$mean_area_m2/1000
 
-  h2o_bal_inputs <- h2o_bal_inputs %>%
-                    select(.data$date, .data$ltmp_degC, .data$ltmp_K,
-                           .data$atmp_degC, .data$atmp_K, .data$RH_pct,
-                           .data$P_mm, .data$E_mm, .data$dV_mm, .data$P_m3,
-                           .data$E_m3, .data$dV_m3, .data$mean_vol_m3,
-                           .data$mean_area_m2, .data$d18O_lake,
-                           .data$d18O_pcpn, .data$d18O_GWin, .data$d18O_GWout,
-                           .data$d18O_evap, .data$d2H_lake, .data$d2H_pcpn,
-                           .data$d2H_GWin, .data$d2H_GWout, .data$d2H_evap,
-                           .data$delta_d18O_lake, .data$delta_d2H_lake,
-                           .data$GWin_sites, .data$GWout_sites)
-  return(h2o_bal_inputs)
+  inputs <- inputs %>%
+            select(.data$date, .data$ltmp_degC, .data$ltmp_K, .data$atmp_degC,
+                   .data$atmp_K, .data$RH_pct, .data$P_mm, .data$E_mm,
+                   .data$dV_mm, .data$P_m3, .data$E_m3, .data$dV_m3,
+                   .data$mean_vol_m3, .data$mean_area_m2, .data$d18O_lake,
+                   .data$d18O_pcpn, .data$d18O_GWin, .data$d18O_GWout,
+                   .data$d18O_evap, .data$d2H_lake, .data$d2H_pcpn,
+                   .data$d2H_GWin, .data$d2H_GWout, .data$d2H_evap,
+                   .data$delta_d18O_lake, .data$delta_d2H_lake,
+                   .data$GWin_sites, .data$GWout_sites)
+  if (annual){
+    inputs <- inputs %>%
+              mutate(d18O_evap = .data$d18O_evap*.data$E_m3/
+                                 sum(.data$E_m3[!is.na(.data$d18O_evap)]),
+                     d2H_evap = .data$d2H_evap*.data$E_m3/
+                                sum(.data$E_m3[!is.na(.data$d2H_evap)]),
+                     d18O_pcpn = .data$d18O_pcpn*.data$P_m3/
+                                 sum(.data$P_m3[!is.na(.data$d18O_pcpn)]),
+                     d2H_pcpn = .data$d2H_pcpn*.data$P_m3/
+                                sum(.data$P_m3[!is.na(.data$d2H_pcpn)]),
+                     delta_d18O_lake = .data$d18O_lake[.data$date == max(.data$date)] -
+                                       .data$d18O_lake[.data$date == min(.data$date)],
+                     delta_d2H_lake = .data$d2H_lake[.data$date == max(.data$date)] -
+                                      .data$d2H_lake[.data$date == min(.data$date)]) %>%
+              summarise(date = interval(min(.data$date), max(.data$date)),
+                        P_mm = sum(.data$P_mm, na.rm = TRUE),
+                        E_mm = sum(.data$E_mm, na.rm = TRUE),
+                        dV_mm = sum(.data$dV_mm, na.rm = TRUE),
+                        P_m3 = sum(.data$P_m3, na.rm = TRUE),
+                        E_m3 = sum(.data$E_m3, na.rm = TRUE),
+                        dV_m3 = sum(.data$dV_m3, na.rm = TRUE),
+                        mean_vol_m3 = mean(.data$mean_vol_m3, na.rm = TRUE),
+                        mean_area_m2 = mean(.data$mean_area_m2, na.rm = TRUE),
+                        d18O_lake = mean(.data$d18O_lake, na.rm = TRUE),
+                        d2H_lake = mean(.data$d2H_lake, na.rm = TRUE),
+                        d18O_GWin = mean(.data$d18O_GWin, na.rm = TRUE),
+                        d2H_GWin = mean(.data$d2H_GWin, na.rm = TRUE),
+                        d18O_evap = sum(.data$d18O_evap, na.rm = TRUE),
+                        d2H_evap = sum(.data$d2H_evap, na.rm = TRUE),
+                        d18O_pcpn = sum(.data$d18O_pcpn, na.rm = TRUE),
+                        d2H_pcpn = sum(.data$d2H_pcpn, na.rm = TRUE),
+                        delta_d18O_lake = mean(.data$delta_d18O_lake),
+                        delta_d2H_lake = mean(.data$delta_d2H_lake))
+  }
+  return(inputs)
 }

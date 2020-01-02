@@ -4,19 +4,10 @@
 \alias{find_timeseries}
 \title{Identify Months With Overlapping Data}
 \usage{
-find_timeseries(weather, lst, isotopes, lake_levels, gw_levels, dictionary,
-  static_gw = FALSE, threshold = 0.01, by_gw_iso = TRUE)
+find_timeseries(isotopes, lake_levels = NULL, gw_levels = NULL,
+  dictionary = NULL, threshold = 0.01, by_gw_iso = FALSE)
 }
 \arguments{
-\item{weather}{a data frame with sub-monthly weather including including date
-(POSIXct), atmp (air temperature, deg C), P (precipitation, mm), RH
-(relative humidity, percent), Rs (solar radiation, MJ), and wind (wind
-speed, m/s)}
-
-\item{lst}{a data frame with sub-monthly lake surface temperature
-measurements as formatted in the lst_HOBO dataset, subset
-for a single lake.}
-
 \item{isotopes}{a data frame with isotopes measurements as formatted in the
 isotopes dataset, subset for a single lake.}
 
@@ -33,11 +24,6 @@ interest.}
 site classifications as formatted in the
 dictionary dataset, subset to
 records for the lake of interest.}
-
-\item{static_gw}{logical defaults to FALSE to use lake_levels and gw_levels
-to define upgradient/downgradient wells at each measurement
-date. If TRUE, uses static definitions of
-upgradient/downgradient wells in site dictionary.}
 
 \item{threshold}{minimum median difference between lake levels and
 groundwater levels during the month of measurement in order

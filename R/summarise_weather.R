@@ -3,7 +3,7 @@
 #' Summarizes sub-monthly weather at a monthly timestep
 #'
 #' @inheritParams summarise_inputs
-#' @param analysis a list with dates (POSIXct) to analyze, and intervals
+#' @param timeseries a list with dates (POSIXct) to analyze, and intervals
 #'                 (lubridate interval) covering the month before each analysis
 #'                 date.
 #' @param wind_elev height of wind measurement, defaults to 3m for Hancock
@@ -36,7 +36,7 @@
 #'
 #' @export
 summarise_weather <- function(weather, lst, elev_area_vol, dictionary,
-                              analysis, wind_elev = 3, z0 = 0.02, Lz = 90,
+                              timeseries, wind_elev = 3, z0 = 0.02, Lz = 90,
                               lake_albedo = 0.08, no_condensation = FALSE){
 
   # Get lake evap, ET
@@ -55,16 +55,16 @@ summarise_weather <- function(weather, lst, elev_area_vol, dictionary,
 
   # Summarize weather at a monthly timestep
   monthly_weather <- NULL
-  for (i in 1:length(analysis$intervals)) {
+  for (i in 1:length(timeseries$intervals)) {
     this_weather <- daily_weather %>%
-                    filter(.data$date %within% analysis$intervals[i])
+                    filter(.data$date %within% timeseries$intervals[i])
 
     atmp_min <- mean(this_weather$atmp_min, na.rm = TRUE)
     atmp_max <- mean(this_weather$atmp_max, na.rm = TRUE)
     RH_min   <- mean(this_weather$RH_min, na.rm = TRUE)
     RH_max   <- mean(this_weather$RH_max, na.rm = TRUE)
 
-    monthly_weather$date[i]      <- analysis$dates[i]
+    monthly_weather$date[i]      <- timeseries$dates[i]
     monthly_weather$atmp_degC[i] <- mean(c(atmp_min, atmp_max))
     monthly_weather$atmp_K[i]    <- NISTdegCtOk(monthly_weather$atmp_degC[i])
     monthly_weather$RH_pct[i]    <- mean(c(RH_min, RH_max))

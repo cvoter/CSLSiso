@@ -4,11 +4,13 @@
 \alias{plot_colors}
 \title{Plot Colors}
 \usage{
-plot_colors(plot_obj)
+plot_colors(plot_obj, text_size = 12)
 }
 \arguments{
 \item{plot_obj}{a plot object created with ggplot(data = actual_data, aes(x =
 actual_x, y = actual_y, group = actual_group))}
+
+\item{text_size}{size of font, defaults to 12 point}
 }
 \value{
 new_obj - a plot object with aesthetics added

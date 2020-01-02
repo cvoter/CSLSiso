@@ -4,13 +4,15 @@
 \alias{plot_iso}
 \title{Plot Isotope Relationships}
 \usage{
-plot_iso(lake, lake_isotopes)
+plot_iso(lake, lake_isotopes, text_size = 12)
 }
 \arguments{
 \item{lake}{lake of interest (e.g., "Pleasant", "Long", or "Plainfield")}
 
 \item{lake_isotopes}{a data frame with the date, lake, site_id, d18O, and d2H of
 precip, groundwater, and lake measurements.}
+
+\item{text_size}{size of font, defaults to 12 point}
 }
 \value{
 plot_obj - a plot object with aesthetics added

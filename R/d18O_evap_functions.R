@@ -69,7 +69,10 @@ d18O_evap_sat_vapor_press <- function(tmp) {
 #' Normalized Relative Humidity
 #'
 #' Calculates the relative humidity normalized to the temperature of the surface
-#' water.
+#' water. Based on equation 1.8 of Mook (2000).
+#'
+#' @references Mook, W.G. (ed.) 2000. Environmental Isotopes in the Hydrologic
+#'   Cycle: Volume III: Surface Water. UNESCO. Paris, France.
 #'
 #' @param RH relative humidity (\%)
 #' @param es_a saturation vapor pressure for the air (kPa)

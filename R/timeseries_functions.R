@@ -26,7 +26,7 @@
 #' @export
 
 fill_timeseries_gaps <- function (df, timeseries){
-  no_dates <- timeseries[which(!timeseries %in% df$date)]
+  no_dates <- timeseries$dates[which(!timeseries$dates %in% df$date)]
   no_dates <- as_datetime(no_dates)
   if (length(no_dates) > 0) {
     for (i in 1:length(no_dates)){
@@ -53,12 +53,12 @@ fill_timeseries_gaps <- function (df, timeseries){
 #'
 #' @export
 
-find_timeseries <- function(weather, lst, isotopes, lake_levels, gw_levels,
-                            dictionary, static_gw = FALSE, threshold = 0.01,
-                            by_gw_iso = TRUE){
+find_timeseries <- function(isotopes, lake_levels = NULL, gw_levels = NULL,
+                            dictionary = NULL, threshold = 0.01,
+                            by_gw_iso = FALSE){
   if (by_gw_iso){
-    isotopes           <- iso_site_type(isotopes, dictionary, static_gw,
-                                        lake_levels, gw_levels, threshold)
+    isotopes           <- iso_site_type(isotopes, dictionary, lake_levels,
+                                        gw_levels, threshold)
     analysis_dates     <- isotopes %>%
                           filter(.data$site_type == "upgradient") %>%
                           group_by(floor_date(.data$date, unit = "month")) %>%
@@ -80,7 +80,6 @@ find_timeseries <- function(weather, lst, isotopes, lake_levels, gw_levels,
                                    analysis_dates + months(1) - days(1))
     analysis_dates     <- analysis_dates + months(1) - days(1)
   }
-
 
   return(list(dates = analysis_dates,
               intervals = analysis_intervals))

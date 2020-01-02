@@ -26,8 +26,8 @@
 #' @importFrom NISTunits NISTdegTOradian
 #'
 #' @export
-format_lake_loc <- function(site_dictionary, Lz = 90) {
-  loc     <- site_dictionary %>%
+format_lake_loc <- function(dictionary, Lz = 90) {
+  loc     <- dictionary %>%
              filter(.data$obs_type == "LK") %>%
              select(z = .data$elev_m,
                     phi = .data$lat_deg,

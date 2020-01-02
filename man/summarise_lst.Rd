@@ -4,14 +4,14 @@
 \alias{summarise_lst}
 \title{Monthly Lake Surface Temperature}
 \usage{
-summarise_lst(lst, analysis)
+summarise_lst(lst, timeseries)
 }
 \arguments{
 \item{lst}{a data frame with sub-monthly lake surface temperature
 measurements as formatted in the lst_HOBO dataset, subset
 for a single lake.}
 
-\item{analysis}{a list with dates (POSIXct) to analyze, and intervals
+\item{timeseries}{a list with dates (POSIXct) to analyze, and intervals
 (lubridate interval) covering the month before each analysis
 date.}
 }

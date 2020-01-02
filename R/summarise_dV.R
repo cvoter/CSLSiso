@@ -4,7 +4,7 @@
 #' an elevation-volume relationship from bathymetry analysis.
 #'
 #' @inheritParams summarise_inputs
-#' @param analysis a list with dates (POSIXct) to analyze, and intervals
+#' @param timeseries a list with dates (POSIXct) to analyze, and intervals
 #'                 (lubridate interval) covering the month before each analysis
 #'                 date.
 #'
@@ -23,11 +23,11 @@
 #'
 #' @export
 
-summarise_dV <- function(lake_levels, analysis) {
+summarise_dV <- function(lake_levels, timeseries) {
   monthly_dV <- NULL
-  for (i in 1:length(analysis$dates)) {
+  for (i in 1:length(timeseries$dates)) {
     these_levels <- lake_levels %>%
-                    filter(.data$date %within% analysis$intervals[i])
+                    filter(.data$date %within% timeseries$intervals[i])
     vol_start <- these_levels %>%
                  filter(.data$date == min(.data$date)) %>%
                  select(.data$vol_m3) %>%
@@ -39,7 +39,7 @@ summarise_dV <- function(lake_levels, analysis) {
     vol_mean  <- mean(these_levels$vol_m3)
     area_mean <- mean(these_levels$area_m2)
 
-    monthly_dV$date[i]         <- analysis$dates[i]
+    monthly_dV$date[i]         <- timeseries$dates[i]
     monthly_dV$dV_m3[i]        <- vol_end - vol_start
     monthly_dV$dV_mm[i]        <- 1000*monthly_dV$dV_m3[i]/area_mean
     monthly_dV$mean_vol_m3[i]  <- vol_mean

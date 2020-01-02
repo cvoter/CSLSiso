@@ -3,7 +3,7 @@
 #' Summarizes isotope measurements at a monthly timestep for a single lake
 #'
 #' @inheritParams summarise_inputs
-#' @param analysis a list with dates (POSIXct) to analyze, and intervals
+#' @param timeseries a list with dates (POSIXct) to analyze, and intervals
 #'                 (lubridate interval) covering the month before each analysis
 #'                 date.
 #'
@@ -29,14 +29,11 @@
 #' @importFrom stringr str_replace str_c
 #'
 #' @export
-summarise_isotopes <- function(isotopes, dictionary, analysis,
-                               static_gw = FALSE, lake_levels = NULL,
-                               gw_levels = NULL, threshold = 0.01,
-                               static_lake = FALSE, use_kniffin_pcpn = TRUE,
-                               extend_pcpn = TRUE) {
+summarise_isotopes <- function(isotopes, dictionary, timeseries, lake_levels,
+                               gw_levels, threshold = 0.01) {
   # Assign site type to each measurement
-  isotopes <- iso_site_type(isotopes, dictionary, static_gw,
-                            lake_levels, gw_levels, threshold)
+  isotopes <- iso_site_type(isotopes, dictionary, lake_levels, gw_levels,
+                            threshold)
 
   # Mean d180 by month and site type, drop values w/out site type
   isomelt <- isotopes %>%
@@ -70,21 +67,21 @@ summarise_isotopes <- function(isotopes, dictionary, analysis,
   }
 
   # Fill gaps in timeseries, values, and add notes on which gw well used
-  monthly_isotopes <- iso_lake_gapfill(monthly_isotopes, static_lake)
-  monthly_isotopes <- iso_pcpn_gapfill(monthly_isotopes, extend_pcpn,
-                                       use_kniffin_pcpn)
-  monthly_isotopes <- monthly_isotopes %>%
-                      filter(!is.na(.data$d18O_GWin))
-  monthly_isotopes <- iso_lake_change(monthly_isotopes)
+  monthly_isotopes <- fill_timeseries_gaps(monthly_isotopes, timeseries)
+  monthly_isotopes <- iso_gapfill(monthly_isotopes)
   monthly_isotopes <- iso_gw_site_names(monthly_isotopes, isotopes)
+  monthly_isotopes <- monthly_isotopes %>%
+                      filter(.data$date %in% timeseries$dates)
+  monthly_isotopes <- iso_lake_change(monthly_isotopes)
 
-  # Fix dates if analyzing by calendar month
-  if (any(!monthly_isotopes$date %in% analysis$dates)) {
-    for (i in 1:nrow(monthly_isotopes)){
-      this_month <- floor_date(monthly_isotopes$date[i], unit = "month")
-      monthly_isotopes$date[i] <- analysis$dates[floor_date(analysis$dates,
-                                                            unit = "month") ==
-                                                   this_month]
+  # No lake or evap data during ice on
+  ice <- cslsdata::ice
+  ice_interval <- interval(round_date(ice$ice_on, unit = "month"),
+                           round_date(ice$ice_off, unit = "month"))
+  for (i in 1:nrow(monthly_isotopes)) {
+    if (monthly_isotopes$date[i] %within% ice_interval) {
+      monthly_isotopes$d18O_lake[i] <- NA
+      monthly_isotopes$d2H_lake[i]  <- NA
     }
   }
 

@@ -3,7 +3,7 @@
 #' Give all required inputs, calculates the remaining terms of the water
 #' balance: groundwater inflow and groundwater outflow.
 #'
-#' @param h2o_bal_inputs a data frame with the date, air temperature (in degrees
+#' @param inputs a data frame with the date, air temperature (in degrees
 #'                       C and Kelvin), relative humidity (percent),
 #'                       precipitation (mm), lake evaporation (m), lake surface
 #'                       temperature (Kelvin), change in lake volume (mm), d18O
@@ -26,9 +26,9 @@
 #'
 #' @export
 
-calculate_h2o_bal <- function (h2o_bal_inputs){
-  h2o_bal <- h2o_bal_inputs %>%
-              mutate(GWin_m3 = calculate_GW_inflow(.data$P_m3,
+calculate_h2o_bal <- function(inputs){
+  h2o_bal <- inputs %>%
+             mutate(GWin_m3 = calculate_GW_inflow(.data$P_m3,
                                                 .data$E_m3,
                                                 .data$d18O_pcpn,
                                                 .data$d18O_lake,
@@ -46,7 +46,7 @@ calculate_h2o_bal <- function (h2o_bal_inputs){
                                                    .data$delta_d18O_lake)) %>%
              select(.data$date, .data$P_m3, .data$E_m3, .data$dV_m3,
                     .data$GWin_m3, .data$P_mm, .data$E_mm, .data$dV_mm,
-                    .data$GWin_mm)
+                    .data$GWin_mm, .data$mean_vol_m3, .data$mean_area_m2)
   h2o_bal <- h2o_bal %>%
              mutate(GWout_m3 = calculate_GW_outflow(.data$P_m3,
                                                     .data$E_m3,
@@ -59,6 +59,7 @@ calculate_h2o_bal <- function (h2o_bal_inputs){
                     select(.data$date, .data$P_m3, .data$E_m3, .data$dV_m3,
                            .data$GWin_m3, .data$GWout_m3, .data$P_mm,
                            .data$E_mm, .data$dV_mm, .data$GWin_mm,
-                           .data$GWout_mm)
+                           .data$GWout_mm, .data$mean_vol_m3,
+                           .data$mean_area_m2)
   return(h2o_bal)
 }

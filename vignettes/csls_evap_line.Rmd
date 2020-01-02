@@ -224,6 +224,159 @@ ggplot() +
 
 ```
 
+```{r LMWL}
+isotopes$site_type <- NA
+for (i in 1:nrow(isotopes)) {
+  site_type             <- dictionary %>%
+                           filter(as.character(.data$site_id) == 
+                                    as.character(isotopes$site_id[i])) %>%
+                           select(.data$obs_type)
+  isotopes$site_type[i] <- as.character(site_type$obs_type[1])
+}
+
+colnames(line_intersect) <- c("d18O", "d2H")
+lake_isotopes <- bind_rows(lake_isotopes, line_intersect)
+
+fig1 <- ggplot() +
+        geom_smooth(data = pcpn_isotopes, 
+                    aes(x = d18O, y = d2H), 
+                    method = "lm",
+                    color = "black") +
+        geom_point(data = subset(isotopes, site_type == "P"), 
+                   aes(x = d18O,
+                       y = d2H,
+                       color = site_type,
+                       shape = lake),
+                   size = 4) +
+        scale_y_continuous(limits = c(-100, -26)) +
+        scale_x_continuous(limits = c(-15, -2)) +
+        scale_shape_manual(name = "Location",
+                           breaks = c("Hancock"),
+                           labels = c("Precipitation"),
+                           values = c(19)) +
+        scale_color_manual(name = "Source Type",
+                           breaks = c("P"),
+                           labels = c("Precipitation"),
+                           values = c("#1F78B4")) +
+       labs(x = expression(paste(delta^{18}, "O ", "(\211)")), 
+            y = expression(paste(delta^{2}, "H ", "(\211)"))) +
+       guides(color = guide_legend(order = 1),
+              shape = guide_legend(order = 2)) +
+       theme_bw() +
+       theme(text = element_text(family = "Segoe UI Semilight",
+                                 size = text_size),
+             panel.grid.major = element_blank(),
+             panel.grid.minor = element_blank())
+
+fig2 <- ggplot() +
+        geom_smooth(data = pcpn_isotopes, 
+                    aes(x = d18O, y = d2H), 
+                    method = "lm",
+                    color = "black") +
+        geom_smooth(data = lake_isotopes, 
+                    aes(x = d18O, y = d2H), 
+                    method = "lm",
+                    color = "black") +
+        geom_point(data = subset(isotopes, site_type != "GW"), 
+                   aes(x = d18O,
+                       y = d2H,
+                       color = site_type,
+                       shape = lake),
+                   size = 4) +
+        scale_y_continuous(limits = c(-100, -26)) +
+        scale_x_continuous(limits = c(-15, -2)) +
+        scale_shape_manual(name = "Location",
+                           breaks = c("Hancock", "Pleasant", "Long",
+                                      "Plainfield"),
+                           labels = c("Precipitation", "Pleasant", "Long", 
+                                      "Plainfield"),
+                           values = c(19, 18, 17, 15)) +
+        scale_color_manual(name = "Source Type",
+                           breaks = c("P", "LK"),
+                           labels = c("Precipitation", "Lake"),
+                           values = c("#FB9A99", "#1F78B4")) +
+       labs(x = expression(paste(delta^{18}, "O ", "(\211)")), 
+            y = expression(paste(delta^{2}, "H ", "(\211)"))) +
+       guides(color = guide_legend(order = 1),
+              shape = guide_legend(order = 2)) +
+       theme_bw() +
+       theme(text = element_text(family = "Segoe UI Semilight",
+                                 size = text_size),
+             panel.grid.major = element_blank(),
+             panel.grid.minor = element_blank())
+
+fig2b <- ggplot() +
+        geom_smooth(data = pcpn_isotopes, 
+                    aes(x = d18O, y = d2H), 
+                    method = "lm",
+                    color = "black") +
+        geom_point(data = subset(isotopes, site_type != "LK"), 
+                   aes(x = d18O,
+                       y = d2H,
+                       color = site_type,
+                       shape = lake),
+                   size = 4) +
+        scale_y_continuous(limits = c(-100, -26)) +
+        scale_x_continuous(limits = c(-15, -2)) +
+        scale_shape_manual(name = "Location",
+                           breaks = c("Hancock", "Pleasant", "Long",
+                                      "Plainfield"),
+                           labels = c("Precipitation", "Pleasant", "Long", 
+                                      "Plainfield"),
+                           values = c(19, 18, 17, 15)) +
+        scale_color_manual(name = "Source Type",
+                           breaks = c("P", "GW"),
+                           labels = c("Precipitation", "Groundwater"),
+                           values = c("#33A02C", "#1F78B4")) +
+       labs(x = expression(paste(delta^{18}, "O ", "(\211)")), 
+            y = expression(paste(delta^{2}, "H ", "(\211)"))) +
+       guides(color = guide_legend(order = 1),
+              shape = guide_legend(order = 2)) +
+       theme_bw() +
+       theme(text = element_text(family = "Segoe UI Semilight",
+                                 size = text_size),
+             panel.grid.major = element_blank(),
+             panel.grid.minor = element_blank())
+
+fig3 <- ggplot() +
+        geom_smooth(data = pcpn_isotopes, 
+                    aes(x = d18O, y = d2H), 
+                    method = "lm",
+                    color = "black") +
+        geom_smooth(data = lake_isotopes, 
+                    aes(x = d18O, y = d2H), 
+                    method = "lm",
+                    color = "black") +
+        geom_point(data = isotopes, 
+                   aes(x = d18O,
+                       y = d2H,
+                       color = site_type,
+                       shape = lake),
+                   size = 4) +
+        scale_y_continuous(limits = c(-100, -26)) +
+        scale_x_continuous(limits = c(-15, -2)) +
+        scale_shape_manual(name = "Location",
+                           breaks = c("Hancock", "Pleasant", "Long",
+                                      "Plainfield"),
+                           labels = c("Precipitation", "Pleasant", "Long", 
+                                      "Plainfield"),
+                           values = c(19, 18, 17, 15)) +
+        scale_color_manual(name = "Source Type",
+                           breaks = c("P", "GW", "LK"),
+                           labels = c("Precipitation", "Groundwater", "Lake"),
+                           values = c("#33A02C", "#FB9A99", "#1F78B4")) +
+       labs(x = expression(paste(delta^{18}, "O ", "(\211)")), 
+            y = expression(paste(delta^{2}, "H ", "(\211)"))) +
+       guides(color = guide_legend(order = 1),
+              shape = guide_legend(order = 2)) +
+       theme_bw() +
+       theme(text = element_text(family = "Segoe UI Semilight",
+                                 size = text_size),
+             panel.grid.major = element_blank(),
+             panel.grid.minor = element_blank())
+        
+```
+
 ## Session Info
 
 The version of R and the versions of packages in use when this R Markdown file

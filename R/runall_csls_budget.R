@@ -48,9 +48,8 @@
 #'
 #' @export
 
-runall_csls_budget <- function(lake, static_gw = FALSE, threshold = 0.01,
-                               static_lake = FALSE, use_kniffin_pcpn = TRUE,
-                               extend_pcpn = TRUE, by_gw_iso = TRUE){
+runall_csls_budget <- function(lake, threshold = 0.01, by_gw_iso = FALSE,
+                               annual = FALSE){
     weather         <- cslsdata::weather
     lst             <- cslsdata::lst_HOBO[[lake]]
     isotopes        <- cslsdata::isotopes[[lake]]
@@ -58,11 +57,8 @@ runall_csls_budget <- function(lake, static_gw = FALSE, threshold = 0.01,
     gw_levels       <- cslsdata::gw_levels[[lake]]
     elev_area_vol   <- cslsdata::elev_area_vol[[lake]]
     dictionary      <- cslsdata::dictionary[[lake]]
-    monthly_h2o_bal <- summarise_h2o_bal(weather, lst, isotopes,
-                                         lake_levels, gw_levels, dictionary,
-                                         elev_area_vol, static_gw,
-                                         threshold, static_lake,
-                                         use_kniffin_pcpn, extend_pcpn,
-                                         by_gw_iso)
-  return(monthly_h2o_bal)
+    h2o_bal         <- summarise_h2o_bal(weather, lst, isotopes, lake_levels,
+                                         gw_levels, elev_area_vol, dictionary,
+                                         threshold, by_gw_iso, annual)
+  return(h2o_bal)
 }

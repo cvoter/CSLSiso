@@ -32,13 +32,11 @@ get_dynamic_sites <- function(lake){
   dictionary      <- cslsdata::dictionary[[lake]]
   
   # Identify monthly timeseries with complete coverage of input data
-  analysis <- find_timeseries(weather, lst, isotopes, lake_levels, gw_levels,
-                              dictionary, static_gw = FALSE, threshold = 0.01, 
-                              by_gw_iso = TRUE)
+  timeseries <- find_timeseries(isotopes, lake_levels, gw_levels,
+                              dictionary, by_gw_iso = TRUE)
 
-  monthly_isotopes  <- summarise_isotopes(isotopes, dictionary, analysis,
-                                        static_gw = FALSE, lake_levels,
-                                        gw_levels,)
+  monthly_isotopes  <- summarise_isotopes(isotopes, dictionary, timeseries, 
+                                          lake_levels, gw_levels)
   monthly_isotopes            <- monthly_isotopes %>%
                                  filter(is.na(.data$GWin_sites) == FALSE &
                                           .data$GWin_sites != "") %>%
@@ -53,8 +51,7 @@ get_upgradient_sites <- function(lake){
   dictionary       <- cslsdata::dictionary[[lake]]
   upgradient_sites <- dictionary %>% 
                       filter(.data$static_iso_class == "upgradient") %>%
-                      select(.data$static_iso_class,
-                             .data$site_id)
+                      select(.data$static_iso_class, .data$site_id)
   upgradient_sites <- str_c(unique(upgradient_sites$site_id), collapse = ", ")
   return(upgradient_sites)
 }

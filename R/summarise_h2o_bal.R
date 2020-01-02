@@ -32,27 +32,15 @@
 #'                        site classifications as formatted in the
 #'                        dictionary dataset, subset to
 #'                        records for the lake of interest.
-#' @param static_gw logical defaults to FALSE to use lake_levels and gw_levels
-#'                  to define upgradient/downgradient wells at each measurement
-#'                  date. If TRUE, uses static definitions of
-#'                  upgradient/downgradient wells in site dictionary.
 #' @param threshold minimum median difference between lake levels and
 #'                  groundwater levels during the month of measurement in order
 #'                  to classify groundwater measurement.
-#' @param static_lake logical defaults to FALSE to use actual measurement for
-#'                    each month. If TRUE, uses mean of fall (Sept-Nov) isotope
-#'                    samples for the lake.
-#' @param use_kniffin_pcpn logical defaults to TRUE to average in precipitation
-#'                         isotope measurements by Maribeth Kniffin for each
-#'                         month. Kniffin measurements taken at Hancock
-#'                         Agricultural Research Station from May 2016 - Apr
-#'                         2015 for each month.
-#' @param extend_pcpn logical defaults to TRUE to backfill months with no
-#'                    precipitation
 #' @param by_gw_iso logical defaults to TRUE to calculate water balance
 #'                 30 days prior to upgradient groundwater isotope measurements.
 #'                 If FALSE, calculates balance by calendar month instead (30
 #'                 days before last day of the month)
+#' @param annual defaults to FALSE to calculate water balance on a monthly
+#'               basis. If TRUE, calculates the annual balance instead.
 #'
 #' @return monthly_h2o_bal, a data frame with the following columns:
 #' \describe{
@@ -65,22 +53,28 @@
 #' }
 #'
 #' @import lubridate
+#' @importFrom NISTunits NISTsecTOyear NISTdayTOsec
 #'
 #' @export
 
 summarise_h2o_bal <- function(weather, lst, isotopes, lake_levels,
-                              gw_levels, dictionary, elev_area_vol,
-                              static_gw = FALSE, threshold = 0.01,
-                              static_lake = FALSE, use_kniffin_pcpn = TRUE,
-                              extend_pcpn = TRUE, by_gw_iso = TRUE) {
+                              gw_levels, elev_area_vol, dictionary,
+                              threshold = 0.01, by_gw_iso = FALSE,
+                              annual = FALSE) {
+
   # Summarise inputs over same monthly timeseries
-  h2o_bal_inputs  <- summarise_inputs(weather, lst, isotopes, lake_levels,
-                                      gw_levels, elev_area_vol, dictionary,
-                                      static_gw, threshold, static_lake,
-                                      use_kniffin_pcpn, extend_pcpn, by_gw_iso)
+  inputs  <- summarise_inputs(weather, lst, isotopes, lake_levels, gw_levels,
+                              elev_area_vol, dictionary, threshold, by_gw_iso,
+                              annual)
 
   # Calculate remaining water balance terms
-  monthly_h2o_bal <- calculate_h2o_bal(h2o_bal_inputs)
+  h2o_bal <- calculate_h2o_bal(inputs)
 
-  return(monthly_h2o_bal)
+  if (annual) {
+    yrs <- NISTsecTOyear(int_length(h2o_bal$date) + NISTdayTOsec(30))
+    h2o_bal$res_time <- h2o_bal$mean_vol_m3/
+                       ((h2o_bal$P_m3 + h2o_bal$GWin_m3)/yrs)
+  }
+
+  return(h2o_bal)
 }
