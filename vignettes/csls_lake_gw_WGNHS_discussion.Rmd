@@ -11,15 +11,15 @@ vignette: >
 
 ```{r setup, echo=FALSE, warning=FALSE, message=FALSE}
 library(devtools)
-library(isoH2Obudget)
-library(cslsdata)
+library(CSLSiso)
+library(CSLSdata)
 library(reshape2) #for melting
 library(ggplot2) #for plotting
 library(extrafont) #for fonts
 library(dplyr) #for %>% pipes
 library(lubridate)
 library(knitr)
-library(H2Ochem)
+library(CSLSchem)
 
 
 plot_bulk_fcn <- function(parameter, plotting_name, text_size = 12) {

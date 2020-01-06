@@ -11,7 +11,7 @@ vignette: >
 
 ```{r setup, echo=FALSE, warning=FALSE, message=FALSE}
 library(devtools)
-library(isoH2Obudget)
+library(CSLSiso)
 library(lubridate)
 library(ggplot2)
 library(extrafont)

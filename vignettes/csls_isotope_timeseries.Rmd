@@ -11,8 +11,8 @@ vignette: >
 
 ```{r setup, echo=FALSE, warning=FALSE, message=FALSE}
 library(devtools)
-library(isoH2Obudget)
-library(cslsdata)
+library(CSLSiso)
+library(CSLSdata)
 library(dplyr) #for pipes, filtering, and selecting
 library(stringr) #for str_c
 library(reshape2) #for melting

@@ -1,4 +1,4 @@
-Package: isoH2Obudget
+Package: CSLSiso
 Type: Package
 Title: Lake Water Budget Using Stable Isotopes
 Version: 0.2.1
@@ -13,7 +13,6 @@ Imports:
     ggplot2,
     extrafont,
     dplyr,
-    jsonlite,
     magrittr,
     rlang,
     bit64,
@@ -22,9 +21,9 @@ Imports:
     stringr,
     zoo,
     reshape2,
-    faoET,
+    CSLSevap,
     usethis,
-    cslsdata
+    CSLSdata
 Suggests:
     forcats,
     devtools,
@@ -32,7 +31,7 @@ Suggests:
     knitr,
     roxygen2,
     testthat (>= 2.1.0),
-    H2Ochem
+    CSLSchem
 License: MIT + file LICENSE
 Encoding: UTF-8
 LazyData: true

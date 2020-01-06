@@ -11,8 +11,8 @@ vignette: >
 
 ```{r setup, echo=FALSE, warning=FALSE, message=FALSE}
 library(devtools)
-library(isoH2Obudget)
-library(cslsdata)
+library(CSLSiso)
+library(CSLSdata)
 library(reshape2)  # for melting
 library(ggplot2)  # for plotting
 library(cowplot)  # for subplots
