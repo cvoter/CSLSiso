@@ -3,10 +3,9 @@
 #' Extracts location information for the lake from the site dictionary and
 #' reformats for input into lake evaporation functions.
 #'
-#' @param site_dictionary a data frame with the elev_m, lat_deg, and long_deg of
-#'                        measurement sites, as in the
-#'                        site_dictionary dataset, subset for a
-#'                        single lake.
+#' @param dictionary a data frame with the elev_m, lat_deg, and long_deg of
+#'                   measurement sites, as in the dictionary dataset,
+#'                   subset for a single lake.
 #' @param Lz the longitude of the local timezone (degrees west of Greenwich,
 #'           ranges from 0 to 360 degrees). Defaults to 90 for Central Time
 #'           Zone, USA.

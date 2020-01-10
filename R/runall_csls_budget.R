@@ -5,26 +5,26 @@
 #'
 #' Loaded data includes the following data in a list format, where each lake has
 #' its own data frame. For example, to access groundwater levels for Pleasant
-#' Lake, the command would be \code{cslsdata::gw_levels[["Pleasant"]]}.
+#' Lake, the command would be \code{CSLSdata::gw_levels[["Pleasant"]]}.
 #' \itemize{
-#' \item \code{\link[cslsdata]{weather}}, hourly weather data including date,
+#' \item \code{\link[CSLSdata]{weather}}, hourly weather data including date,
 #'       atmp (air temperature, deg C), P (precipitation, mm), RH (relative
 #'       humidity, percent), Rs (solar radiation, MJ), and wind (wind speed,
 #'       m/s)
-#' \item \code{\link[cslsdata]{lst_HOBO}}, hourly lake surface temperature from
+#' \item \code{\link[CSLSdata]{lst_HOBO}}, hourly lake surface temperature from
 #'       HOBO loggers, including date, ltmp (lake surface temperature, deg C),
 #'       and elev_m (elevation of the sensor, meters above mean sea level)
-#' \item \code{\link[cslsdata]{isotopes}}, stable isotope measurements including
+#' \item \code{\link[CSLSdata]{isotopes}}, stable isotope measurements including
 #'       date, lake, site_id, d18O measurement, and d2H measurement
-#' \item \code{\link[cslsdata]{lake_levels}}, daily lake levels (meters above
+#' \item \code{\link[CSLSdata]{lake_levels}}, daily lake levels (meters above
 #'       mean sea level)
-#' \item \code{\link[cslsdata]{gw_levels}}, daily groundwater levels including
+#' \item \code{\link[CSLSdata]{gw_levels}}, daily groundwater levels including
 #'       date, site_no, obs_type ("GW"), level_m (level in meters above mean sea
 #'       level), and site_id (CSLS site id)
-#' \item \code{\link[cslsdata]{elev_area_vol}}, storage capacity information,
+#' \item \code{\link[CSLSdata]{elev_area_vol}}, storage capacity information,
 #'       including elev_m (lake level elevation in meters above mean sea level),
 #'       area_m2 (lake surface area, m^2), and vol_m3 (lake volume, m^3)
-#' \item \code{\link[cslsdata]{dictionary}}, links site ids and characteristics
+#' \item \code{\link[CSLSdata]{dictionary}}, links site ids and characteristics
 #'       together with columns for lake, obs_type ("LK", "GW", "P"), site_id
 #'       (e.g., "LL-01"), SWIMS_station_id, USGS_id, WBIC, static_iso_class
 #'       (e.g., "upgradient", "lake", "precipitation"), lat_deg, long_deg,
@@ -44,19 +44,19 @@
 #' \item{dV}{monthly change in lake volume (mm)}
 #' }
 #'
-#' @import cslsdata
+#' @import CSLSdata
 #'
 #' @export
 
 runall_csls_budget <- function(lake, threshold = 0.01, by_gw_iso = FALSE,
                                annual = FALSE){
-    weather         <- cslsdata::weather
-    lst             <- cslsdata::lst_HOBO[[lake]]
-    isotopes        <- cslsdata::isotopes[[lake]]
-    lake_levels     <- cslsdata::lake_levels[[lake]]
-    gw_levels       <- cslsdata::gw_levels[[lake]]
-    elev_area_vol   <- cslsdata::elev_area_vol[[lake]]
-    dictionary      <- cslsdata::dictionary[[lake]]
+    weather         <- CSLSdata::weather
+    lst             <- CSLSdata::lst_HOBO[[lake]]
+    isotopes        <- CSLSdata::isotopes[[lake]]
+    lake_levels     <- CSLSdata::lake_levels[[lake]]
+    gw_levels       <- CSLSdata::gw_levels[[lake]]
+    elev_area_vol   <- CSLSdata::elev_area_vol[[lake]]
+    dictionary      <- CSLSdata::dictionary[[lake]]
     h2o_bal         <- summarise_h2o_bal(weather, lst, isotopes, lake_levels,
                                          gw_levels, elev_area_vol, dictionary,
                                          threshold, by_gw_iso, annual)

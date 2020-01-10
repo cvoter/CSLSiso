@@ -75,7 +75,7 @@ summarise_isotopes <- function(isotopes, dictionary, timeseries, lake_levels,
   monthly_isotopes <- iso_lake_change(monthly_isotopes)
 
   # No lake or evap data during ice on
-  ice <- cslsdata::ice
+  ice <- CSLSdata::ice
   ice_interval <- interval(round_date(ice$ice_on, unit = "month"),
                            round_date(ice$ice_off, unit = "month"))
   for (i in 1:nrow(monthly_isotopes)) {

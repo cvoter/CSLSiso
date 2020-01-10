@@ -4,9 +4,18 @@
 \alias{summarise_inputs}
 \title{Summarize Inputs over Common Timeseries}
 \usage{
-summarise_inputs(weather, lst, isotopes, lake_levels, gw_levels,
-  elev_area_vol, dictionary, threshold = 0.01, by_gw_iso = FALSE,
-  annual = FALSE)
+summarise_inputs(
+  weather,
+  lst,
+  isotopes,
+  lake_levels,
+  gw_levels,
+  elev_area_vol,
+  dictionary,
+  threshold = 0.01,
+  by_gw_iso = FALSE,
+  annual = FALSE
+)
 }
 \arguments{
 \item{weather}{a data frame with sub-monthly weather including including date

@@ -123,6 +123,7 @@ plot_annual_bal <- function(annual_h2o_bal, as_vol = TRUE, as_pcnt = FALSE,
 #' @import lubridate
 #' @importFrom rlang .data
 #' @importFrom reshape2 melt
+#' @importFrom stats reorder
 #'
 #' @export
 

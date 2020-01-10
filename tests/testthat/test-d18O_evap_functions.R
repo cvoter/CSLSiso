@@ -1,4 +1,4 @@
-library(isoH2Obudget)
+library(CSLSiso)
 library(NISTunits)
 
 test_that("d18O_evap functions replicate Krabbenhoft 1990 results", {

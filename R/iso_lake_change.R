@@ -5,7 +5,6 @@
 #' @param monthly_isotopes a data frame with monthly isotope measurements for
 #'                         all dates of desired timeseries (with NAs for months
 #'                         with no measurements)
-#' @inheritParams summarise_isotopes
 #'
 #' @return monthly_isotopes - the same data frame provided to the function, but
 #'                            with delta_d18O_lake and delta_d2H_lake values

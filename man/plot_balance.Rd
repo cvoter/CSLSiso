@@ -4,8 +4,13 @@
 \alias{plot_balance}
 \title{Plot Balance}
 \usage{
-plot_balance(lake, monthly_h2o_bal, as_vol = TRUE, annual = FALSE,
-  text_size = 12)
+plot_balance(
+  lake,
+  monthly_h2o_bal,
+  as_vol = TRUE,
+  annual = FALSE,
+  text_size = 12
+)
 }
 \arguments{
 \item{lake}{lake of interest (e.g., "Pleasant", "Long", or "Plainfield")}

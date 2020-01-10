@@ -4,9 +4,16 @@
 \alias{calculate_lake_evap}
 \title{Calculate Lake Evaporation}
 \usage{
-calculate_lake_evap(weather, lst, elev_area_vol, dictionary, Lz = 90,
-  lake_albedo = 0.08, wind_elev = 3, z0 = 0.02,
-  no_condensation = FALSE)
+calculate_lake_evap(
+  weather,
+  lst,
+  elev_area_vol,
+  dictionary,
+  Lz = 90,
+  wind_elev = 3,
+  z0 = 0.02,
+  no_condensation = FALSE
+)
 }
 \arguments{
 \item{weather}{a data frame with sub-monthly weather including including date
@@ -30,8 +37,6 @@ records for the lake of interest.}
 \item{Lz}{the longitude of the local timezone (degrees west of Greenwich,
 ranges from 0 to 360 degrees). Defaults to 90 for Central Time
 Zone, USA.}
-
-\item{lake_albedo}{albedo of the lake, defaults to 0.08 for open water.}
 
 \item{wind_elev}{height of wind measurement, defaults to 3m for Hancock
 station.}

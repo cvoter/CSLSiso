@@ -4,9 +4,17 @@
 \alias{summarise_weather}
 \title{Monthly Weather}
 \usage{
-summarise_weather(weather, lst, elev_area_vol, dictionary, timeseries,
-  wind_elev = 3, z0 = 0.02, Lz = 90, lake_albedo = 0.08,
-  no_condensation = FALSE)
+summarise_weather(
+  weather,
+  lst,
+  elev_area_vol,
+  dictionary,
+  timeseries,
+  wind_elev = 3,
+  z0 = 0.02,
+  Lz = 90,
+  no_condensation = FALSE
+)
 }
 \arguments{
 \item{weather}{a data frame with sub-monthly weather including including date
@@ -40,8 +48,6 @@ station.}
 \item{Lz}{the longitude of the local timezone (degrees west of Greenwich,
 ranges from 0 to 360 degrees). Defaults to 90 for Central Time
 Zone, USA.}
-
-\item{lake_albedo}{albedo of the lake, defaults to 0.08 for open water.}
 
 \item{no_condensation}{logical defaults to FALSE to include days with
 condensation in daily lake evaporation calculations.

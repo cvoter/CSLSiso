@@ -21,6 +21,7 @@ library(dplyr)  # for %>% pipes
 library(lubridate)
 library(knitr)
 library(stringr)
+library(scales) # for ::
 
 text_size = 12
 ```
@@ -127,18 +128,18 @@ GW_{out} = GW_{in} + P - E - \frac{dV}{dt}
 
 ## Detailed Approach
 Input data for the Central Sands Lake Study sites (Pleasant Lake, Long Lake, and
-Plainfield Lake) are saved in the `cslsdata` R data package. The `cslsdata`
+Plainfield Lake) are saved in the `CSLSdata` R data package. The `CSLSdata`
 package includes a `data-raw` directory where raw data is stored together with
 the scripts used to clean raw data and save them as Rda files. Detailed
 information on the source of each dataset is captured in the roxygen
 documentation files for this package. For example, to access information on the
-lake level dataset, load the package into RStudio using `library(cslsdata)` and
+lake level dataset, load the package into RStudio using `library(CSLSdata)` and
 try `?lake_levels`.
 
 <br>
 
 Below, we describe all additional assumptions and calculations used to transform
-`cslsdata` Rda files from their form in the `cslsdata` package into the monthly
+`CSLSdata` Rda files from their form in the `CSLSdata` package into the monthly
 inputs required for monthly water balance calculations.
 
 ```{r plot_fcns, eval=TRUE, echo=FALSE, message=FALSE, warning=FALSE}
@@ -146,7 +147,7 @@ lake_level_plot <- function(ydata, ylabel, title = "",
                             lakes = c("Pleasant", "Long", "Plainfield")){
   lake_levels <- NULL
   for (lake in lakes){
-  tmp           <- cslsdata::lake_levels[[lake]]
+  tmp           <- CSLSdata::lake_levels[[lake]]
   tmp           <- tmp[c("date", ydata)]
   colnames(tmp) <- c("x", "y")
   tmp$lake      <- lake
@@ -178,7 +179,7 @@ elev_area_vol_plot <- function(ydata, ylabel, title = "",
                                lakes = c("Pleasant", "Long", "Plainfield")){
   elev_area_vol <- NULL
   for (lake in lakes){
-  tmp           <- cslsdata::elev_area_vol[[lake]]
+  tmp           <- CSLSdata::elev_area_vol[[lake]]
   tmp           <- tmp[c("elev_m", ydata)]
   colnames(tmp) <- c("x", "y")
   tmp$lake      <- lake
@@ -243,10 +244,10 @@ iso_plot <- function(ydata = "d18O", ylabel = expression(delta^18*'O'), title = 
                      lakes = c("Pleasant", "Long", "Plainfield")){
   monthly_isotopes <- NULL
   for (lake in lakes){
-    isotopes    <- cslsdata::isotopes[[lake]]
-    dictionary  <- cslsdata::dictionary[[lake]]
-    lake_levels <- cslsdata::lake_levels[[lake]]
-    gw_levels   <- cslsdata::gw_levels[[lake]]
+    isotopes    <- CSLSdata::isotopes[[lake]]
+    dictionary  <- CSLSdata::dictionary[[lake]]
+    lake_levels <- CSLSdata::lake_levels[[lake]]
+    gw_levels   <- CSLSdata::gw_levels[[lake]]
 
     # Measured values
     tmp1     <- iso_site_type(isotopes, dictionary, lake_levels, gw_levels)
@@ -343,7 +344,7 @@ elevation: 241m), approximately 8 miles from Plainfield Lake, 8.5 miles from
 Long Lake, and 14.5 miles from Pleasant Lake.
 
 ```{r precip0, eval=TRUE, echo=FALSE, message=FALSE, warning=FALSE, fig.width = 6.5, fig.height = 2.5}
-weather <- cslsdata::weather
+weather <- CSLSdata::weather
 monthly_weather <- weather %>%
                    group_by(date = floor_date(.data$date, unit = "month")) %>%
                    summarise(P = sum(.data$P))
@@ -465,10 +466,10 @@ months when we do not have CSLS-collected data.
 lakes <- c("Pleasant", "Long", "Plainfield")
 monthly_isotopes <- NULL
 for (lake in lakes){
-  isotopes    <- cslsdata::isotopes[[lake]]
-  dictionary  <- cslsdata::dictionary[[lake]]
-  lake_levels <- cslsdata::lake_levels[[lake]]
-  gw_levels   <- cslsdata::gw_levels[[lake]]
+  isotopes    <- CSLSdata::isotopes[[lake]]
+  dictionary  <- CSLSdata::dictionary[[lake]]
+  lake_levels <- CSLSdata::lake_levels[[lake]]
+  gw_levels   <- CSLSdata::gw_levels[[lake]]
   
   # Measured values
   tmp1 <- iso_site_type(isotopes, dictionary, lake_levels, gw_levels)
@@ -506,7 +507,7 @@ for (lake in lakes){
   
   tmp3      <- tmp1 %>% filter(variable == "Precipitation")
   tmp3      <- fill_timeseries_gaps(tmp3, find_timeseries(isotopes))
-  kniffin_isotopes <- isoH2Obudget::kniffin[["isotopes"]]
+  kniffin_isotopes <- CSLSiso::kniffin[["isotopes"]]
   for (i in 1:nrow(tmp3)) {
     this_month    <- month(tmp3$date[i])
     this_i        <- which(month(tmp3$date) == this_month)

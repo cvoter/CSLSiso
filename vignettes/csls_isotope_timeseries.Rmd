@@ -19,17 +19,18 @@ library(reshape2) #for melting
 library(ggplot2) #for plotting
 library(extrafont) #for fonts
 library(knitr)
+library(scales) # for ::
 ```
 
 ```{r fcns, eval=TRUE, echo=FALSE}
 get_dynamic_sites <- function(lake){
-  weather         <- cslsdata::weather
-  lst             <- cslsdata::lst_HOBO[[lake]]
-  isotopes        <- cslsdata::isotopes[[lake]]
-  lake_levels     <- cslsdata::lake_levels[[lake]]
-  gw_levels       <- cslsdata::gw_levels[[lake]]
-  elev_area_vol   <- cslsdata::elev_area_vol[[lake]]
-  dictionary      <- cslsdata::dictionary[[lake]]
+  weather         <- CSLSdata::weather
+  lst             <- CSLSdata::lst_HOBO[[lake]]
+  isotopes        <- CSLSdata::isotopes[[lake]]
+  lake_levels     <- CSLSdata::lake_levels[[lake]]
+  gw_levels       <- CSLSdata::gw_levels[[lake]]
+  elev_area_vol   <- CSLSdata::elev_area_vol[[lake]]
+  dictionary      <- CSLSdata::dictionary[[lake]]
   
   # Identify monthly timeseries with complete coverage of input data
   timeseries <- find_timeseries(isotopes, lake_levels, gw_levels,
@@ -48,7 +49,7 @@ get_dynamic_sites <- function(lake){
   return(upgradient_sites)
 }
 get_upgradient_sites <- function(lake){
-  dictionary       <- cslsdata::dictionary[[lake]]
+  dictionary       <- CSLSdata::dictionary[[lake]]
   upgradient_sites <- dictionary %>% 
                       filter(.data$static_iso_class == "upgradient") %>%
                       select(.data$static_iso_class, .data$site_id)
@@ -57,8 +58,8 @@ get_upgradient_sites <- function(lake){
 }
 
 get_water_level_diff <- function(lake){
-  lake_levels     <- cslsdata::lake_levels[[lake]]
-  gw_levels       <- cslsdata::gw_levels[[lake]]
+  lake_levels     <- CSLSdata::lake_levels[[lake]]
+  gw_levels       <- CSLSdata::gw_levels[[lake]]
   for (i in 1:nrow(gw_levels)) {
     today <- gw_levels$date[i]
     gw    <- gw_levels$level_m[i]
@@ -101,7 +102,7 @@ well.
 ```{r schematic1, out.width = "75%", eval=TRUE, echo=FALSE, fig.align="center"}
 include_graphics(system.file("images", 
                              "water_level_diff.png", 
-                             package = "isoH2Obudget", 
+                             package = "CSLSiso", 
                              mustWork = TRUE))
 ```
 
@@ -116,7 +117,7 @@ evaporation.
 ```{r schematic2, out.width = "75%", eval=TRUE, echo=FALSE, fig.align="center"}
 include_graphics(system.file("images", 
                              "isotope_signatures.png", 
-                             package = "isoH2Obudget", 
+                             package = "CSLSiso", 
                              mustWork = TRUE))
 ```
 
@@ -126,7 +127,7 @@ include_graphics(system.file("images",
 ```{r psnt, eval=TRUE, echo=FALSE}
 lake = "Pleasant"
 upgradient_sites      <- get_upgradient_sites(lake)
-lake_isotopes         <- cslsdata::isotopes[[lake]]
+lake_isotopes         <- CSLSdata::isotopes[[lake]]
 lake_isotopes$diff_m  <- 0
 water_level_diff      <- get_water_level_diff(lake)
 level_plot            <- plot_levels(lake, water_level_diff, lake_isotopes)
@@ -165,7 +166,7 @@ d18O_plot
 ```{r long, eval=TRUE, echo=FALSE}
 lake = "Long"
 upgradient_sites      <- get_upgradient_sites(lake)
-lake_isotopes         <- cslsdata::isotopes[[lake]]
+lake_isotopes         <- CSLSdata::isotopes[[lake]]
 lake_isotopes$diff_m  <- 0
 water_level_diff      <- get_water_level_diff(lake)
 level_plot            <- plot_levels(lake, water_level_diff, lake_isotopes)
@@ -204,7 +205,7 @@ d18O_plot
 ```{r pfl, eval=TRUE, echo=FALSE}
 lake = "Plainfield"
 upgradient_sites      <- get_upgradient_sites(lake)
-lake_isotopes         <- cslsdata::isotopes[[lake]]
+lake_isotopes         <- CSLSdata::isotopes[[lake]]
 lake_isotopes$diff_m  <- 0
 water_level_diff      <- get_water_level_diff(lake)
 level_plot            <- plot_levels(lake, water_level_diff, lake_isotopes)

@@ -13,7 +13,6 @@
 #' @param Lz the longitude of the local timezone (degrees west of Greenwich,
 #'           ranges from 0 to 360 degrees). Defaults to 90 for Central Time
 #'           Zone, USA.
-#' @param lake_albedo albedo of the lake, defaults to 0.08 for open water.
 #' @param no_condensation logical defaults to FALSE to include days with
 #'                         condensation in daily lake evaporation calculations.
 #'                         If TRUE, sets all days with condensation (i.e.,
@@ -37,13 +36,13 @@
 #' @export
 summarise_weather <- function(weather, lst, elev_area_vol, dictionary,
                               timeseries, wind_elev = 3, z0 = 0.02, Lz = 90,
-                              lake_albedo = 0.08, no_condensation = FALSE){
+                              no_condensation = FALSE){
 
   # Get lake evap, ET
   # In the process converts hourly weather to daily
   # (atmp -> min/max daily atmp and RH -> min/max daily RH)
   daily_weather <- calculate_lake_evap(weather, lst, elev_area_vol, dictionary,
-                                       Lz, lake_albedo, wind_elev, z0,
+                                       Lz, wind_elev, z0,
                                        no_condensation)
 
   # # Ensure months have complete data for summing

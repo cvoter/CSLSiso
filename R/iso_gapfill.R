@@ -8,7 +8,6 @@
 #' @param monthly_isotopes a data frame with monthly isotope measurements for
 #'                         all dates of desired timeseries (with NAs for months
 #'                         with no measurements)
-#' @inheritParams summarise_isotopes
 #'
 #' @return monthly_isotopes - the same data frame provided to the function, but
 #'                            with d18O_lake values filled in for all months
@@ -50,12 +49,12 @@ iso_gapfill <- function(monthly_isotopes) {
   }
 
   # 3. Precip: Average in Maribeth Kniffin values
-  kniffin_isotopes <- isoH2Obudget::kniffin[["isotopes"]]
+  kniffin_isotopes <- CSLSiso::kniffin[["isotopes"]]
   for (i in 1:nrow(monthly_isotopes)) {
     # Average in Maribeth Kniffin data from same location
     this_month    <- monthly_isotopes$date[i]
     kniffin_month <- kniffin_isotopes %>%
-      filter(month(.data$date) == month(this_month))
+                     filter(month(.data$date) == month(this_month))
     if (is.na(monthly_isotopes$d18O_pcpn[i])){
       monthly_isotopes$d18O_pcpn[i] <- kniffin_month$d18O_pcpn
       monthly_isotopes$d2H_pcpn[i]  <- kniffin_month$d2H_pcpn

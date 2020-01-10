@@ -7,14 +7,13 @@
 format_lake_loc(dictionary, Lz = 90)
 }
 \arguments{
+\item{dictionary}{a data frame with the elev_m, lat_deg, and long_deg of
+measurement sites, as in the dictionary dataset,
+subset for a single lake.}
+
 \item{Lz}{the longitude of the local timezone (degrees west of Greenwich,
 ranges from 0 to 360 degrees). Defaults to 90 for Central Time
 Zone, USA.}
-
-\item{site_dictionary}{a data frame with the elev_m, lat_deg, and long_deg of
-measurement sites, as in the
-site_dictionary dataset, subset for a
-single lake.}
 }
 \value{
 loc, a list with the following location-specific parameters:

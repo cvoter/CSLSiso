@@ -1,4 +1,4 @@
 library(testthat)
-library(isoH2Obudget)
+library(CSLSiso)
 
-test_check("isoH2Obudget")
+test_check("CSLSiso")

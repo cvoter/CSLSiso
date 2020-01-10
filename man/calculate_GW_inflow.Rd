@@ -4,8 +4,16 @@
 \alias{calculate_GW_inflow}
 \title{Groundwater Inflow}
 \usage{
-calculate_GW_inflow(P, E, d18O_pcpn, d18O_lake, d18O_GWin, d18O_evap,
-  V = 0, d18O_lake_dt = 0)
+calculate_GW_inflow(
+  P,
+  E,
+  d18O_pcpn,
+  d18O_lake,
+  d18O_GWin,
+  d18O_evap,
+  V = 0,
+  d18O_lake_dt = 0
+)
 }
 \arguments{
 \item{P}{precipitation (mm)}
