@@ -14,7 +14,7 @@ fill_timeseries_gaps(df, timeseries)
 }
 \value{
 df, the same data frame with blank rows added to fill in timeseries,
-       then sorted by date.
+then sorted by date.
 }
 \description{
 This function compares dates in a given (complete) timeseries and dataframe,

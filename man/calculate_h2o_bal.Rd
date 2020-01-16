@@ -20,8 +20,8 @@ by \code{\link{summarise_inputs}}.}
 }
 \value{
 h2o_bal, the caculated water balance fluxes including precipitation,
-        lake evaporation, change in lake volume, groundwater inflow, and
-        groundwater outflow.
+lake evaporation, change in lake volume, groundwater inflow, and
+groundwater outflow.
 }
 \description{
 Give all required inputs, calculates the remaining terms of the water

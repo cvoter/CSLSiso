@@ -16,7 +16,7 @@ set to TRUE to force this behavior.}
 \value{
 \describe{
 \item{start_date}{first useable date in the timeseries (rounded to the first
-                  of the month)}
+of the month)}
 }
 }
 \description{

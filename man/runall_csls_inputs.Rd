@@ -34,18 +34,18 @@ monthly_inputs, a data frame with the following columns:
 \item{dV}{change in lake volume, mm}
 \item{d18O_lake}{mean stable isotope measurement for d18O, lake (per mil)}
 \item{d18O_pcpn}{mean stable isotope measurement for d18O, precipitation
-                 (per mil)}
+(per mil)}
 \item{d18O_GWin}{mean stable isotope measurement for d18O, GWin (per mil)}
 \item{d18O_GWout}{mean stable isotope measurement for d18O, GWout (per mil)}
 \item{d18O_evap}{mean stable isotope measurement for d18O, evaporation (per
-                 mil)}
+mil)}
 \item{d2H_lake}{mean stable isotope measurement for d2H, lake (per mil)}
 \item{d2H_pcpn}{mean stable isotope measurement for d2H, precipitation (per
-                mil)}
+mil)}
 \item{d2H_GWin}{mean stable isotope measurement for d2H, GWin (per mil)}
 \item{d2H_GWout}{mean stable isotope measurement for d2H, GWout (per mil)}
 \item{d2H_evap}{mean stable isotope measurement for d2H, evaporation (per
-                mil)}
+mil)}
 \item{GWin_sites}{name of monitoring wells use for GWin isotopes}
 \item{GWout_sites}{name of monitoring wells use for GWout isotopes}
 }
@@ -60,28 +60,25 @@ its own data frame. For example, to access groundwater levels for Pleasant
 Lake, the command would be \code{CSLSdata::gw_levels[["Pleasant"]]}.
 \itemize{
 \item \code{\link[CSLSdata]{weather}}, hourly weather data including date
-      (POSIXct), atmp (air temperature, deg C), P (precipitation, mm), RH
-      (relative humidity, percent), Rs (solar radiation, MJ), and wind (wind
-      speed, m/s)
+(POSIXct), atmp (air temperature, deg C), P (precipitation, mm), RH
+(relative humidity, percent), Rs (solar radiation, MJ), and wind (wind
+speed, m/s)
 \item \code{\link[CSLSdata]{lst_HOBO}}, hourly lake surface temperature from
-      HOBO loggers, including date (POSIXct), ltmp (lake surface temperature,
-      deg C), and elev_m (elevation of the sensor, meters above mean sea
-      level)
+HOBO loggers, including date (POSIXct), ltmp (lake surface temperature,
+deg C), and elev_m (elevation of the sensor, meters above mean sea
+level)
 \item \code{\link[CSLSdata]{isotopes}}, stable isotope measurements including
-      date (POSIXct), lake, site_id, d18O measurement, and d2H measurement
+date (POSIXct), lake, site_id, d18O measurement, and d2H measurement
 \item \code{\link[CSLSdata]{lake_levels}}, daily lake levels (meters above
-      mean sea level) including date (POSIXct), site_no (USGS), obs_type
-      ("LK"), and level_m (level in meters above mean sea level)
+mean sea level) including date (POSIXct), site_no (USGS), obs_type
+("LK"), and level_m (level in meters above mean sea level)
 \item \code{\link[CSLSdata]{gw_levels}}, daily groundwater levels including
-      date, site_no, obs_type ("GW"), level_m (level in meters above mean sea
-      level), and site_id (CSLS site id)
-\item \code{\link[CSLSdata]{elev_area_vol}}, storage capacity information,
-      including elev_m (lake level elevation in meters above mean sea level),
-      area_m2 (lake surface area, m^2), and vol_m3 (lake volume, m^3)
+date, site_no, obs_type ("GW"), level_m (level in meters above mean sea
+level), and site_id (CSLS site id)
 \item \code{\link[CSLSdata]{dictionary}}, links site ids and characteristics
-      together with columns for lake, obs_type ("LK", "GW", "P"), site_id
-      (e.g., "LL-01"), SWIMS_station_id, USGS_id, WBIC, static_iso_class
-      (e.g., "upgradient", "lake", "precipitation"), lat_deg, long_deg,
-      elev_m, and bouy_bottom_elev_m
+together with columns for lake, obs_type ("LK", "GW", "P"), site_id
+(e.g., "LL-01"), SWIMS_station_id, USGS_id, WBIC, static_iso_class
+(e.g., "upgradient", "lake", "precipitation"), lat_deg, long_deg,
+elev_m, and bouy_bottom_elev_m
 }
 }

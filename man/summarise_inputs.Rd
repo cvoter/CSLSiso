@@ -5,12 +5,12 @@
 \title{Summarize Inputs over Common Timeseries}
 \usage{
 summarise_inputs(
+  lake,
   weather,
   lst,
   isotopes,
   lake_levels,
   gw_levels,
-  elev_area_vol,
   dictionary,
   threshold = 0.01,
   by_gw_iso = FALSE,
@@ -18,6 +18,8 @@ summarise_inputs(
 )
 }
 \arguments{
+\item{lake}{name of lake (e.g., Pleasant, Long, or Plainfield)}
+
 \item{weather}{a data frame with sub-monthly weather including including date
 (POSIXct), atmp (air temperature, deg C), P (precipitation, mm), RH
 (relative humidity, percent), Rs (solar radiation, MJ), and wind (wind
@@ -39,10 +41,6 @@ formatted in the lake_levels dataset,
 subset to groundwater level records at the lake of
 interest.}
 
-\item{elev_area_vol}{a data frame with the lake, stage_m, surf_area_m2, and
-volume_m3 as in the elev_area_voldataset, subset
-for a single lake.}
-
 \item{dictionary}{a data frame with site id numbers and static isotope
 site classifications as formatted in the
 dictionary dataset, subset to
@@ -62,9 +60,9 @@ basis. If TRUE, calculates the annual balance instead.}
 }
 \value{
 h2o_bal_inputs, a data frame ordered by date with data only for the
-        overlap timeseries for:
+overlap timeseries for:
 \describe{date}{dates of monthly timeseries (1st of the month) for months with
-                complete overlapping input data}
+complete overlapping input data}
 \describe{atmp_degC}{mean air temperature (degrees C)}
 \describe{RH_pct}{mean relative humidity (percent)}
 \describe{P_mm}{total precipitation (mm)}
@@ -75,14 +73,14 @@ h2o_bal_inputs, a data frame ordered by date with data only for the
 \describe{d18O_lake}{mean stable isotope measurement for lake}
 \describe{d18O_pcpn}{mean stable isotope measurement for precipitation}
 \describe{d18O_GWin}{mean stable isotope measurement for inflowing
-                     groundwater}
+groundwater}
 \describe{d18O_GWout}{mean stable isotope measurement for outflowing
-                      groundwater}
+groundwater}
 \describe{d18O_evap}{mean stable isotope measurement for evaporation}
 \describe{GWin_sites}{wells included in mean inflowing groundwater stable
-                      isotope measurement}
+isotope measurement}
 \describe{GWout_sites}{wells included in mean outflowing groundwater stable
-                      isotope measurement}
+isotope measurement}
 }
 \description{
 This function takes raw weather, lake surface temperature, isotope, lake

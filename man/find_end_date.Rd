@@ -9,13 +9,13 @@ find_end_date(date_vector, all_days = FALSE)
 \arguments{
 \item{date_vector}{vector with dates in timeseries}
 
-\item{all_days}{[logical] defaults to FALSE to indicate that timeseries does
+\item{all_days}{\link{logical} defaults to FALSE to indicate that timeseries does
 not need to include values for every day within the month,
 set to TRUE to force this behavior.}
 }
 \value{
 end_date last useable date in the timeseries (rounded to the last day
-        of the month)
+of the month)
 }
 \description{
 Identifies the ending date of a monthly timeseries (forced to the last day of

@@ -16,7 +16,7 @@ isotopes dataset, subset for a single lake.}
 }
 \value{
 monthly_isotopes - same data frame with GWin_sites and GWout_sites
-                           added as columns
+added as columns
 }
 \description{
 Identifies which groundwater wells are included in monthly averages of

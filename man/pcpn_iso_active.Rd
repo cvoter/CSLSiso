@@ -5,7 +5,7 @@
 \alias{pcpn_iso_active}
 \title{Precipitation Collection Dates}
 \format{A lubridate interval with time periods when precipitation collector
-  was actively deployed at Hancock Agricultural research station.}
+was actively deployed at Hancock Agricultural research station.}
 \usage{
 data(pcpn_iso_active)
 }

@@ -7,7 +7,7 @@
 d18O_evap_normalized_humidity(RH, es_a, es_l)
 }
 \arguments{
-\item{RH}{relative humidity (\%)}
+\item{RH}{relative humidity (percent)}
 
 \item{es_a}{saturation vapor pressure for the air (kPa)}
 
@@ -15,7 +15,7 @@ d18O_evap_normalized_humidity(RH, es_a, es_l)
 }
 \value{
 h - the relative humidity normalized to the temperature of the
-        surface water (-)
+surface water (-)
 }
 \description{
 Calculates the relative humidity normalized to the temperature of the surface
@@ -23,5 +23,5 @@ water. Based on equation 1.8 of Mook (2000).
 }
 \references{
 Mook, W.G. (ed.) 2000. Environmental Isotopes in the Hydrologic
-  Cycle: Volume III: Surface Water. UNESCO. Paris, France.
+Cycle: Volume III: Surface Water. UNESCO. Paris, France.
 }

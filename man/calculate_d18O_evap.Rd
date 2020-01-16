@@ -11,7 +11,7 @@ calculate_d18O_evap(atmp, ltmp, RH, d18O_pcpn, d18O_lake)
 
 \item{ltmp}{lake surface temperature (K)}
 
-\item{RH}{relative humidity (\%)}
+\item{RH}{relative humidity (percent)}
 
 \item{d18O_pcpn}{d18O isotopic composition of precipitation}
 
@@ -26,7 +26,7 @@ Krabbenhoft et al. (1990). Note that alpha* is equivalent to 1/alpha.
 }
 \references{
 Krabbenhoft, D. P., C. J. Bowser, M. P. Anderson, and J. W.
-  Valley. (1990). Estimating Groundwater Exchange with Lakes: 1. The Stable
-  Isotope Mass Balance Method. Water Resources Research, 26(10):2445-2453.
-  https://doi.org/10.1029/WR026i010p02445
+Valley. (1990). Estimating Groundwater Exchange with Lakes: 1. The Stable
+Isotope Mass Balance Method. Water Resources Research, 26(10):2445-2453.
+https://doi.org/10.1029/WR026i010p02445
 }

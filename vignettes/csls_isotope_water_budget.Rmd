@@ -478,7 +478,8 @@ for (lake in lakes){
                    variable = .data$site_type) %>%
           filter(is.na(.data$site_type) == FALSE,
                  .data$site_type != "",
-                 .data$site_type != "downgradient") %>%
+                 .data$site_type != "downgradient",
+                 .data$site_type != "deep") %>%
           summarise(date = floor_date(mean(.data$date), unit = "day"),
                     value = mean(.data$d18O)) %>%
           ungroup() %>%
@@ -507,16 +508,23 @@ for (lake in lakes){
   
   tmp3      <- tmp1 %>% filter(variable == "Precipitation")
   tmp3      <- fill_timeseries_gaps(tmp3, find_timeseries(isotopes))
-  kniffin_isotopes <- CSLSiso::kniffin[["isotopes"]]
+  kniffin_isotopes <- CSLSdata::kniffin$isotopes
   for (i in 1:nrow(tmp3)) {
     this_month    <- month(tmp3$date[i])
     this_i        <- which(month(tmp3$date) == this_month)
     tmp3$value[i]    <- mean(tmp3$value[this_i], na.rm = TRUE)
     tmp3$measurement[i] <- "actual"
     tmp3$value[is.nan(tmp3$value)] <- NA
-    kniffin_month <- kniffin_isotopes %>% filter(month(.data$date) == this_month)
+    this_kniffin <- kniffin_isotopes %>% 
+                     filter(month(.data$date) == this_month,
+                            .data$site_id == "PRECIP")
+    if (nrow(this_kniffin) == 0) {
+      kniffin_d18O <- NA
+    } else {
+      kniffin_d18O <- mean(this_kniffin$d18O, na.rm = TRUE)
+    }
     if (is.na(tmp3$value[i])){
-      tmp3$value[i]       <- kniffin_month$d18O_pcpn
+      tmp3$value[i]       <- kniffin_d18O
       tmp3$measurement[i] <- "kniffin"
     }
   }

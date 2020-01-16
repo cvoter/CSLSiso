@@ -13,9 +13,9 @@ with no measurements)}
 }
 \value{
 monthly_isotopes - the same data frame provided to the function, but
-                           with delta_d18O_lake and delta_d2H_lake values
-                           filled in for all months (except maybe the very
-                           first).
+with delta_d18O_lake and delta_d2H_lake values
+filled in for all months (except maybe the very
+first).
 }
 \description{
 Calculates change in d18O and d2H in the lake over the previous 30 days.

@@ -22,7 +22,7 @@
 #'
 #' @param atmp air temperature (K)
 #' @param ltmp lake surface temperature (K)
-#' @param RH relative humidity (\%)
+#' @param RH relative humidity (percent)
 #' @param d18O_pcpn d18O isotopic composition of precipitation
 #' @param d18O_lake d18O isotopic composition of the lake
 #'
@@ -74,7 +74,7 @@ d18O_evap_sat_vapor_press <- function(tmp) {
 #' @references Mook, W.G. (ed.) 2000. Environmental Isotopes in the Hydrologic
 #'   Cycle: Volume III: Surface Water. UNESCO. Paris, France.
 #'
-#' @param RH relative humidity (\%)
+#' @param RH relative humidity (percent)
 #' @param es_a saturation vapor pressure for the air (kPa)
 #' @param es_l saturation vapor pressure for the lake (kPa)
 #'

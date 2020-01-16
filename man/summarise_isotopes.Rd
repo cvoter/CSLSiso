@@ -46,9 +46,9 @@ monthly_isotopes, a data frame with the following columns:
 \item{d18O_pcpn}{mean precipitation stable isotope measurement for the month}
 \item{d18O_lake}{mean lake stable isotope measurement for the month}
 \item{d18O_GWin}{mean groundwater inflow stable isotope measurement for the
-                 month}
+month}
 \item{d18O_GWout}{mean groundwater outflow stable isotope measurement for the
-                 month}
+month}
 \item{GWin_sites}{well sites used in mean d18O_GWin each month}
 \item{GWout_sites}{well sites used in mean d18O_GWout each month}
 }

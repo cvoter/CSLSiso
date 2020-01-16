@@ -49,15 +49,24 @@ iso_gapfill <- function(monthly_isotopes) {
   }
 
   # 3. Precip: Average in Maribeth Kniffin values
-  kniffin_isotopes <- CSLSiso::kniffin[["isotopes"]]
+  kniffin_isotopes <- CSLSdata::kniffin$isotopes
   for (i in 1:nrow(monthly_isotopes)) {
     # Average in Maribeth Kniffin data from same location
-    this_month    <- monthly_isotopes$date[i]
-    kniffin_month <- kniffin_isotopes %>%
-                     filter(month(.data$date) == month(this_month))
+    this_month   <- monthly_isotopes$date[i]
+    this_kniffin <- kniffin_isotopes %>%
+                    filter(month(.data$date) == month(this_month),
+                           .data$site_id == "PRECIP")
+    if (nrow(this_kniffin) == 0) {
+      kniffin_d18O <- NA
+      kniffin_d2H  <- NA
+    } else {
+      kniffin_d18O <- mean(this_kniffin$d18O, na.rm = TRUE)
+      kniffin_d2H <- mean(this_kniffin$d2H, na.rm = TRUE)
+    }
+
     if (is.na(monthly_isotopes$d18O_pcpn[i])){
-      monthly_isotopes$d18O_pcpn[i] <- kniffin_month$d18O_pcpn
-      monthly_isotopes$d2H_pcpn[i]  <- kniffin_month$d2H_pcpn
+      monthly_isotopes$d18O_pcpn[i] <- kniffin_d18O
+      monthly_isotopes$d2H_pcpn[i]  <- kniffin_d2H
     }
   }
 

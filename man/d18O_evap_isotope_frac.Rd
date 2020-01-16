@@ -18,7 +18,7 @@ the air-water interface based on equation 9 in Ozaydin et al. (2001).
 }
 \references{
 Ozaydin, V., U. Sendil, and D. Altinbilek. (2001). Stable isotope
-  mass balance method to find the water budget of a lake. Turkish Journal of
-  Engineering and Environmental Sciences, 25:329-344. Retrieved from:
-  https://dergipark.org.tr/download/article-file/126752
+mass balance method to find the water budget of a lake. Turkish Journal of
+Engineering and Environmental Sciences, 25:329-344. Retrieved from:
+https://dergipark.org.tr/download/article-file/126752
 }

@@ -4,17 +4,7 @@
 \alias{summarise_weather}
 \title{Monthly Weather}
 \usage{
-summarise_weather(
-  weather,
-  lst,
-  elev_area_vol,
-  dictionary,
-  timeseries,
-  wind_elev = 3,
-  z0 = 0.02,
-  Lz = 90,
-  no_condensation = FALSE
-)
+summarise_weather(weather, timeseries, lake)
 }
 \arguments{
 \item{weather}{a data frame with sub-monthly weather including including date
@@ -22,37 +12,11 @@ summarise_weather(
 (relative humidity, percent), Rs (solar radiation, MJ), and wind (wind
 speed, m/s)}
 
-\item{lst}{a data frame with sub-monthly lake surface temperature
-measurements as formatted in the lst_HOBO dataset, subset
-for a single lake.}
-
-\item{elev_area_vol}{a data frame with the lake, stage_m, surf_area_m2, and
-volume_m3 as in the elev_area_voldataset, subset
-for a single lake.}
-
-\item{dictionary}{a data frame with site id numbers and static isotope
-site classifications as formatted in the
-dictionary dataset, subset to
-records for the lake of interest.}
-
 \item{timeseries}{a list with dates (POSIXct) to analyze, and intervals
 (lubridate interval) covering the month before each analysis
 date.}
 
-\item{wind_elev}{height of wind measurement, defaults to 3m for Hancock
-station.}
-
-\item{z0}{aeorodynamic roughness of landcover at site of weather measurements
-(m), defaults to 0.02 for a grass.}
-
-\item{Lz}{the longitude of the local timezone (degrees west of Greenwich,
-ranges from 0 to 360 degrees). Defaults to 90 for Central Time
-Zone, USA.}
-
-\item{no_condensation}{logical defaults to FALSE to include days with
-condensation in daily lake evaporation calculations.
-If TRUE, sets all days with condensation (i.e.,
-negative lake evaporation) to zero.}
+\item{lake}{name of lake (e.g., Pleasant, Long, or Plainfield)}
 }
 \value{
 monthly_weather, a data frame with the following columns:
@@ -65,5 +29,5 @@ monthly_weather, a data frame with the following columns:
 }
 }
 \description{
-Summarizes sub-monthly weather at a monthly timestep
+Summarizes sub-monthly weather at a monthly timestep.
 }

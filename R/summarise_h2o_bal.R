@@ -9,6 +9,7 @@
 #'   Isotope Mass Balance Method. Water Resources Research, 26(10):2445-2453.
 #'   https://doi.org/10.1029/WR026i010p02445
 #'
+#' @param lake name of lake (e.g., Pleasant, Long, or Plainfield)
 #' @param weather a data frame with sub-monthly weather including including date
 #'       (POSIXct), atmp (air temperature, deg C), P (precipitation, mm), RH
 #'       (relative humidity, percent), Rs (solar radiation, MJ), and wind (wind
@@ -25,9 +26,6 @@
 #'                  formatted in the lake_levels dataset,
 #'                  subset to groundwater level records at the lake of
 #'                  interest.
-#' @param elev_area_vol a data frame with the lake, stage_m, surf_area_m2, and
-#'                  volume_m3 as in the elev_area_voldataset, subset
-#'                  for a single lake.
 #' @param dictionary a data frame with site id numbers and static isotope
 #'                        site classifications as formatted in the
 #'                        dictionary dataset, subset to
@@ -57,14 +55,13 @@
 #'
 #' @export
 
-summarise_h2o_bal <- function(weather, lst, isotopes, lake_levels,
-                              gw_levels, elev_area_vol, dictionary,
-                              threshold = 0.01, by_gw_iso = FALSE,
-                              annual = FALSE) {
+summarise_h2o_bal <- function(lake, weather, lst, isotopes, lake_levels,
+                              gw_levels, dictionary, threshold = 0.01,
+                              by_gw_iso = FALSE, annual = FALSE) {
 
   # Summarise inputs over same monthly timeseries
-  inputs  <- summarise_inputs(weather, lst, isotopes, lake_levels, gw_levels,
-                              elev_area_vol, dictionary, threshold, by_gw_iso,
+  inputs  <- summarise_inputs(lake, weather, lst, isotopes, lake_levels,
+                              gw_levels, dictionary, threshold, by_gw_iso,
                               annual)
 
   # Calculate remaining water balance terms

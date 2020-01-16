@@ -36,16 +36,15 @@
 #'
 #' @export
 
-summarise_inputs <- function(weather, lst, isotopes, lake_levels, gw_levels,
-                             elev_area_vol, dictionary, threshold = 0.01,
+summarise_inputs <- function(lake, weather, lst, isotopes, lake_levels,
+                             gw_levels, dictionary, threshold = 0.01,
                              by_gw_iso = FALSE, annual = FALSE){
 
   # Identify monthly timeseries with complete coverage of input data
   timeseries <- find_timeseries(isotopes)
 
   # Summarize inputs over common timeseries
-  monthly_weather   <- summarise_weather(weather, lst, elev_area_vol,
-                                         dictionary, timeseries)
+  monthly_weather   <- summarise_weather(weather, timeseries, lake)
   monthly_lst       <- summarise_lst(lst, timeseries)
   monthly_dV        <- summarise_dV(lake_levels, timeseries)
   monthly_isotopes  <- summarise_isotopes(isotopes, dictionary, timeseries,

@@ -20,7 +20,7 @@ precip, groundwater, and lake measurements.}
 }
 \value{
 plot_obj - a plot object with water level difference and dates of
-                   isotope measurements for each lake site.
+isotope measurements for each lake site.
 }
 \description{
 This function creates a plot object to compare the difference in lake level

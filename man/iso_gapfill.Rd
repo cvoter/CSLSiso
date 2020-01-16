@@ -13,8 +13,8 @@ with no measurements)}
 }
 \value{
 monthly_isotopes - the same data frame provided to the function, but
-                           with d18O_lake values filled in for all months
-                           (except maybe the very first and last months).
+with d18O_lake values filled in for all months
+(except maybe the very first and last months).
 }
 \description{
 Linearly interolates lake and GW values for dates in timeseries with missing

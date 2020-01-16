@@ -24,6 +24,6 @@ Calculates the d18O isotope composition of the atmosphere based on equation
 }
 \references{
 Gibson, J.J., S.J. Birks, and Y. Yi. 2016. Stable isotope mass
-  balance of lakes: a contemporary perspective. Quaternary Science Reviews,
-  131:316-328. https://doi.org/10.1016/j.quascirev.2015.04.013
+balance of lakes: a contemporary perspective. Quaternary Science Reviews,
+131:316-328. https://doi.org/10.1016/j.quascirev.2015.04.013
 }

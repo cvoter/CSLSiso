@@ -5,12 +5,12 @@
 \title{Monthly Water Balance}
 \usage{
 summarise_h2o_bal(
+  lake,
   weather,
   lst,
   isotopes,
   lake_levels,
   gw_levels,
-  elev_area_vol,
   dictionary,
   threshold = 0.01,
   by_gw_iso = FALSE,
@@ -18,6 +18,8 @@ summarise_h2o_bal(
 )
 }
 \arguments{
+\item{lake}{name of lake (e.g., Pleasant, Long, or Plainfield)}
+
 \item{weather}{a data frame with sub-monthly weather including including date
 (POSIXct), atmp (air temperature, deg C), P (precipitation, mm), RH
 (relative humidity, percent), Rs (solar radiation, MJ), and wind (wind
@@ -38,10 +40,6 @@ subset to lake level records for the lake of interest.}
 formatted in the lake_levels dataset,
 subset to groundwater level records at the lake of
 interest.}
-
-\item{elev_area_vol}{a data frame with the lake, stage_m, surf_area_m2, and
-volume_m3 as in the elev_area_voldataset, subset
-for a single lake.}
 
 \item{dictionary}{a data frame with site id numbers and static isotope
 site classifications as formatted in the
@@ -78,7 +76,7 @@ on equations 2 and 4 in Krabbenhoft et al. (1990).
 }
 \references{
 Krabbenhoft, D. P., C. J. Bowser, M. P. Anderson, and J. W.
-  Valley. (1990). Estimating Groundwater Exchange with Lakes: 1. The Stable
-  Isotope Mass Balance Method. Water Resources Research, 26(10):2445-2453.
-  https://doi.org/10.1029/WR026i010p02445
+Valley. (1990). Estimating Groundwater Exchange with Lakes: 1. The Stable
+Isotope Mass Balance Method. Water Resources Research, 26(10):2445-2453.
+https://doi.org/10.1029/WR026i010p02445
 }

@@ -22,7 +22,7 @@ to 1/alpha.
 }
 \references{
 Krabbenhoft, D. P., C. J. Bowser, M. P. Anderson, and J. W.
-  Valley. (1990). Estimating Groundwater Exchange with Lakes: 1. The Stable
-  Isotope Mass Balance Method. Water Resources Research, 26(10):2445-2453.
-  https://doi.org/10.1029/WR026i010p02445
+Valley. (1990). Estimating Groundwater Exchange with Lakes: 1. The Stable
+Isotope Mass Balance Method. Water Resources Research, 26(10):2445-2453.
+https://doi.org/10.1029/WR026i010p02445
 }
