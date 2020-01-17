@@ -4,7 +4,7 @@ output:
   rmarkdown::html_vignette:
     toc: true
 vignette: >
-  %\VignetteIndexEntry{Put the title of your vignette here}
+  %\VignetteIndexEntry{CSLS_water_budget_isotopes}
   %\VignetteEngine{knitr::rmarkdown}
   \usepackage[utf8]{inputenc}
 ---
@@ -131,10 +131,8 @@ Input data for the Central Sands Lake Study sites (Pleasant Lake, Long Lake, and
 Plainfield Lake) are saved in the `CSLSdata` R data package. The `CSLSdata`
 package includes a `data-raw` directory where raw data is stored together with
 the scripts used to clean raw data and save them as Rda files. Detailed
-information on the source of each dataset is captured in the roxygen
-documentation files for this package. For example, to access information on the
-lake level dataset, load the package into RStudio using `library(CSLSdata)` and
-try `?lake_levels`.
+information on the source of each dataset is captured in the `CSLSdata` manual.
+This is accessible as a pdf or via RStudio (`help(package = CSLSdata)`).
 
 <br>
 
@@ -203,10 +201,15 @@ elev_area_vol_plot <- function(ydata, ylabel, title = "",
 }
 
 inputs_plot <- function(ydata, ylabel, geom_type = "col", title = "", 
-                        lakes = c("Pleasant", "Long", "Plainfield")){
+                        lakes = c("Pleasant", "Long", "Plainfield"),
+                        inputs_only = TRUE){
   inputs <- NULL
   for (lake in lakes){
-  tmp           <- runall_csls_inputs(lake)
+    if (inputs_only){
+      tmp       <- runall_csls_inputs(lake)
+    } else {
+      tmp       <- runall_csls_budget(lake)
+    }
   tmp           <- tmp[c("date", ydata)]
   colnames(tmp) <- c("x", "y")
   tmp$lake      <- lake
@@ -402,7 +405,7 @@ inputs_plot("P_m3", expression(Precipitation~(m^{3})), "col")
 ### Lake Evaporation {#evap}
 [back to top](#top)
 
-All lake evaporation calculations are contained in the `H2Oevap` package; more
+All lake evaporation calculations are contained in the `CSLSevap` package; more
 details on this energy-balance approach can be obtained by searching the
 documentation for that package. Broadly, the energy-budget lake evaporation
 equations require information on:
@@ -629,9 +632,61 @@ it cannot be directly measured. We estimate $\delta^{18}O_{E}$ as follows
    \epsilon^{+} &= (\alpha - 1)*1000
    \end{align}
 
+```{r iso_evap, eval=TRUE, echo=FALSE, message=FALSE, warning=FALSE, fig.width = 7, fig.height = 2.5}
+inputs_plot("d18O_evap", expression(delta^18*'O'), geom_type = "point")
+```
+
+<br>
+
+With the above information, we can then calculate groundwater inflow using Eq. 3. 
+
+```{r GWin, eval=TRUE, echo=FALSE, message=FALSE, warning=FALSE, fig.width = 6.5, fig.height = 3}
+inputs_plot("GWin_m3", expression(Groundwater~Inflow~(m^{3})), inputs_only = FALSE)
+```
+
 ### Groundwater Outflow {#GWout}
 [back to top](#top)
 
+Finally, we calculate groundwater outflow as the only remaining term of the
+water balance per Eq. 4.
+
+```{r GWout, eval=TRUE, echo=FALSE, message=FALSE, warning=FALSE, fig.width = 6.5, fig.height = 3}
+inputs_plot("GWout_m3", expression(Groundwater~Outflow~(m^{3})), inputs_only = FALSE)
+```
+
+## Overall Water Budget
+With this, we can get the overall water budget for each lake on both a monthly
+(when ice-free) and an annual basis. Groundwater is clearly a critical part of
+lake water, representing over 80% of annual inflows to each lake. The volume of
+flow varies quite a bit by month, with the greatest volumes of flow through
+occuring during the summer (June, July, and August).
+
+### Pleasant Lake - Monthly Balance
+```{r psnt_monthly, eval=TRUE, echo=FALSE, message=FALSE, warning=FALSE, fig.width = 6.5, fig.height = 5}
+plot_balance("Pleasant", runall_csls_budget("Pleasant"))
+```
+
+### Long Lake - Monthly Balance
+```{r long_monthly, eval=TRUE, echo=FALSE, message=FALSE, warning=FALSE, fig.width = 6.5, fig.height = 5}
+plot_balance("Long", runall_csls_budget("Long"))
+```
+
+### Plainfield Lake - Monthly Balance
+```{r pfl_monthly, eval=TRUE, echo=FALSE, message=FALSE, warning=FALSE, fig.width = 6.5, fig.height = 5}
+plot_balance("Plainfield", runall_csls_budget("Plainfield"))
+```
+
+### All Lakes - Annual Balance
+```{r annual, eval=TRUE, echo=FALSE, message=FALSE, warning=FALSE, fig.width = 6.5, fig.height = 3}
+annual_h2o_bal <- NULL
+for (lake in c("Pleasant", "Long", "Plainfield")) {
+  budget <- runall_csls_budget(lake, annual = TRUE)
+  budget$lake <- lake
+  annual_h2o_bal <- rbind(annual_h2o_bal, budget)
+}
+plot_annual_bal(annual_h2o_bal)
+plot_annual_bal(annual_h2o_bal, as_pcnt = TRUE)
+```
 
 ## Session Info
 

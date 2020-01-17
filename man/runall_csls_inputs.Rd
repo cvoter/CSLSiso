@@ -4,7 +4,8 @@
 \alias{runall_csls_inputs}
 \title{Run functions to summarise and gather inputs for a CSLS lake}
 \usage{
-runall_csls_inputs(lake, threshold = 0.01, by_gw_iso = FALSE, annual = FALSE)
+runall_csls_inputs(lake, threshold = 0.01, by_gw_iso = FALSE,
+  annual = FALSE)
 }
 \arguments{
 \item{lake}{name of lake (e.g., Pleasant, Long, or Plainfield)}

@@ -4,14 +4,8 @@
 \alias{summarise_isotopes}
 \title{Monthly Isotope Measurements}
 \usage{
-summarise_isotopes(
-  isotopes,
-  dictionary,
-  timeseries,
-  lake_levels,
-  gw_levels,
-  threshold = 0.01
-)
+summarise_isotopes(isotopes, dictionary, timeseries, lake_levels,
+  gw_levels, threshold = 0.01)
 }
 \arguments{
 \item{isotopes}{a data frame with isotopes measurements as formatted in the

@@ -4,18 +4,8 @@
 \alias{summarise_h2o_bal}
 \title{Monthly Water Balance}
 \usage{
-summarise_h2o_bal(
-  lake,
-  weather,
-  lst,
-  isotopes,
-  lake_levels,
-  gw_levels,
-  dictionary,
-  threshold = 0.01,
-  by_gw_iso = FALSE,
-  annual = FALSE
-)
+summarise_h2o_bal(lake, weather, lst, isotopes, lake_levels, gw_levels,
+  dictionary, threshold = 0.01, by_gw_iso = FALSE, annual = FALSE)
 }
 \arguments{
 \item{lake}{name of lake (e.g., Pleasant, Long, or Plainfield)}

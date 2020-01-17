@@ -4,7 +4,8 @@
 \alias{plot_annual_bal}
 \title{Plot Balance}
 \usage{
-plot_annual_bal(annual_h2o_bal, as_vol = TRUE, as_pcnt = FALSE, text_size = 12)
+plot_annual_bal(annual_h2o_bal, as_vol = TRUE, as_pcnt = FALSE,
+  text_size = 12)
 }
 \arguments{
 \item{annual_h2o_bal}{a data frame with the date and all fluxes into and out
