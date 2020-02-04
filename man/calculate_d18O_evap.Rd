@@ -22,7 +22,7 @@ d18O_evap - the isotope composition of evaporation
 }
 \description{
 Calculates the isotope composition of evaporation based on equation 5 in
-Krabbenhoft et al. (1990). Note that alpha* is equivalent to 1/alpha.
+Krabbenhoft et al. (1990). Note that alpha* is equivalent to alpha^-1.
 }
 \references{
 Krabbenhoft, D. P., C. J. Bowser, M. P. Anderson, and J. W.

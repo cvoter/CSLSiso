@@ -4,12 +4,15 @@
 \alias{d18O_evap_d18O_atm}
 \title{Atmosphere d18O}
 \usage{
-d18O_evap_d18O_atm(d18O_pcpn, alpha, k = 1)
+d18O_evap_d18O_atm(d18O_pcpn, alpha, method = "Gibson", k = 1)
 }
 \arguments{
 \item{d18O_pcpn}{isotopic composition of precipitation}
 
-\item{alpha}{isotope fractionation factor (-)}
+\item{alpha}{equilibrium isotope fractionation factor (-) at the temperature
+of the air-water interface in LV form (i.e., alpha > 1).}
+
+\item{method}{defaults to "Gibson" to use those equations, can also be "Mook".}
 
 \item{k}{weighted factor which reflects seasonality, ranging from 0.5 for
 highly seasonal climates to 1 for non-seasonal climates. Defaults
@@ -19,11 +22,17 @@ to 0.8}
 d18O_atm - the d18O isotope composition of the atmosphere
 }
 \description{
-Calculates the d18O isotope composition of the atmosphere based on equation
-18 in Gibson et al. (2016).
+Calculates the d18O isotope composition of the atmosphere based on Equation
+18 and the definition for espilon+ in the explanation for Equation 3 in
+Gibson et al. (2016). Alternatively, can instead calcuate this value based on
+Equation 1.10 and the definition for epsilon in the explanation for Equation
+1.4 in Mook (2000).
 }
 \references{
 Gibson, J.J., S.J. Birks, and Y. Yi. 2016. Stable isotope mass
 balance of lakes: a contemporary perspective. Quaternary Science Reviews,
 131:316-328. https://doi.org/10.1016/j.quascirev.2015.04.013
+
+Mook, W.G. (ed.) 2000. Environmental Isotopes in the Hydrologic
+Cycle: Volume III: Surface Water. UNESCO. Paris, France.
 }

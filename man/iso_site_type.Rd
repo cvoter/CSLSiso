@@ -4,8 +4,13 @@
 \alias{iso_site_type}
 \title{Classify Groundwater Stable Isotope Measurements (Dynamic)}
 \usage{
-iso_site_type(isotopes, dictionary, lake_levels = NULL,
-  gw_levels = NULL, threshold = 0.01)
+iso_site_type(
+  isotopes,
+  dictionary,
+  lake_levels = NULL,
+  gw_levels = NULL,
+  threshold = 0.01
+)
 }
 \arguments{
 \item{isotopes}{a data frame with isotopes measurements as formatted in the

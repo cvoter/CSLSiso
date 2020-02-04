@@ -2,10 +2,9 @@
 % Please edit documentation in R/runall_csls_inputs.R
 \name{runall_csls_inputs}
 \alias{runall_csls_inputs}
-\title{Run functions to summarise and gather inputs for a CSLS lake}
+\title{Run all functions needed to summarise water budget inputs for a CSLS lake}
 \usage{
-runall_csls_inputs(lake, threshold = 0.01, by_gw_iso = FALSE,
-  annual = FALSE)
+runall_csls_inputs(lake, threshold = 0.01, by_gw_iso = FALSE, annual = FALSE)
 }
 \arguments{
 \item{lake}{name of lake (e.g., Pleasant, Long, or Plainfield)}
@@ -24,15 +23,20 @@ basis. If TRUE, calculates the annual balance instead.}
 }
 \value{
 monthly_inputs, a data frame with the following columns:
-\describe{
 \item{date}{date of month}
+\item{ltmp_degC}{average lake surface temperature, degrees C}
+\item{ltmp_K}{average lake surface temperature, Kelvin}
 \item{atmp_degC}{average air temperature, degrees C}
-\item{RH_pct}{average relative humidity, percent}
-\item{P_mm}{total precipitaiton, mm}
-\item{ET_mm}{total lake evaporation, mm}
 \item{atmp_K}{average air temperature, Kelvin}
-\item{ltmp_K}{average lake surface tempearture, Kelvin}
-\item{dV}{change in lake volume, mm}
+\item{RH_pct}{average relative humidity, percent}
+\item{P_mm}{precipitaiton for month or year, mm}
+\item{E_mm}{lake evaporation for month or year, mm}
+\item{dV_mm}{change in lake volume for month or year, mm}
+\item{P_m3}{precipitation for month or year, m3}
+\item{E_m3}{lake evaporation for month or year, m3}
+\item{dV_m3}{change in lake volume for month or year, m3}
+\item{mean_vol_m3}{mean lake volume during the month or year (m3)}
+\item{mean_area_m2}{mean lake area during the month or year (m2)}
 \item{d18O_lake}{mean stable isotope measurement for d18O, lake (per mil)}
 \item{d18O_pcpn}{mean stable isotope measurement for d18O, precipitation
 (per mil)}
@@ -50,15 +54,16 @@ mil)}
 \item{GWin_sites}{name of monitoring wells use for GWin isotopes}
 \item{GWout_sites}{name of monitoring wells use for GWout isotopes}
 }
-}
 \description{
-Runs all major functions in the isoH2Obudget package to transform raw data
-into the final inputs data frame for one of the CSLS lakes.
+Runs all major functions in the CSLSiso package to transform raw data into
+the final inputs data frame for one of the CSLS lakes. Can be calculated on a
+monthly basis (annual = FALSE) or based on all available data (annual =
+TRUE).
 }
 \details{
 Loaded data includes the following data in a list format, where each lake has
 its own data frame. For example, to access groundwater levels for Pleasant
-Lake, the command would be \code{CSLSdata::gw_levels[["Pleasant"]]}.
+Lake, the command would be \code{gw_levels <- CSLSdata::gw_levels[["Pleasant"]]}.
 \itemize{
 \item \code{\link[CSLSdata]{weather}}, hourly weather data including date
 (POSIXct), atmp (air temperature, deg C), P (precipitation, mm), RH

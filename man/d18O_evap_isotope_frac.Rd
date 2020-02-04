@@ -4,21 +4,35 @@
 \alias{d18O_evap_isotope_frac}
 \title{Equilibrium Isotope Fractionation Factor}
 \usage{
-d18O_evap_isotope_frac(ltmp)
+d18O_evap_isotope_frac(ltmp, method = "Gibson")
 }
 \arguments{
 \item{ltmp}{lake surface temperature (K)}
+
+\item{method}{equation to use, defaults to "Gibson" but can also be "Mook".}
 }
 \value{
-alpha - the equilibrium isotope fractionation factor (-)
+alpha (-), the equilibrium isotope fractionation factor in LV form
+(i.e., alpha > 1)
 }
 \description{
 Calculates the equilibrium isotope fractionation factor at the temperature of
-the air-water interface based on equation 9 in Ozaydin et al. (2001).
+the air-water interface based on Eq. 16a in Gibson et al. (2016) or Eq. 1.6
+in Mook (2000). Returns this value as the ratio in liquid vs. the ratio in
+vapor (i.e., LV form, alpha > 1). Gibson et al. refer to this formulation as
+alpha+ and to the VL form (i.e., alpha < 1) as alpha*. Krabbenhoft et al.
+(1990) use alpha* (i.e, VL form, alpha < 1) in their equations.
 }
 \references{
-Ozaydin, V., U. Sendil, and D. Altinbilek. (2001). Stable isotope
-mass balance method to find the water budget of a lake. Turkish Journal of
-Engineering and Environmental Sciences, 25:329-344. Retrieved from:
-https://dergipark.org.tr/download/article-file/126752
+Gibson, J.J., S.J. Birks, and Y. Yi. 2016. Stable isotope mass
+balance of lakes: a contemporary perspective. Quaternary Science Reviews,
+131:316-328. https://doi.org/10.1016/j.quascirev.2015.04.013
+
+Mook, W.G. (ed.) 2000. Environmental Isotopes in the Hydrologic
+Cycle: Volume III: Surface Water. UNESCO. Paris, France.
+
+Krabbenhoft, D. P., C. J. Bowser, M. P. Anderson, and J. W.
+Valley. (1990). Estimating Groundwater Exchange with Lakes: 1. The Stable
+Isotope Mass Balance Method. Water Resources Research, 26(10):2445-2453.
+https://doi.org/10.1029/WR026i010p02445
 }

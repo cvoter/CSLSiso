@@ -19,7 +19,7 @@ surface water (-)
 }
 \description{
 Calculates the relative humidity normalized to the temperature of the surface
-water. Based on equation 1.8 of Mook (2000).
+water. Based on Equation 1.8 of Mook (2000).
 }
 \references{
 Mook, W.G. (ed.) 2000. Environmental Isotopes in the Hydrologic

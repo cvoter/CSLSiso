@@ -69,6 +69,15 @@ summarise_inputs <- function(lake, weather, lst, isotopes, lake_levels,
                    .data$delta_d18O_lake, .data$delta_d2H_lake,
                    .data$GWin_sites, .data$GWout_sites)
   if (annual){
+    # Summarize over entire period with data
+    # 1. Weight evap and precip stable isotopes by evap and precip fluxes
+    #    (see Krabbenhoft et al., 1990, Gibson et al., 2016, and Kniffin, 2018)
+    # 2. Calculate total change in lake isotopes over entire period
+    # 3. Sum total precip, evap, and change in volume over entire period
+    # 4. Average groundwater and lake stable isotopes over entire period
+    # 5. Average lake volume and lake area over entire period
+    # 6. Sum weighted precip and evap stable isotope values
+    # 7. Retain total change in lake isotopes over entire period.
     inputs <- inputs %>%
               mutate(d18O_evap = .data$d18O_evap*.data$E_m3/
                                  sum(.data$E_m3[!is.na(.data$d18O_evap)]),

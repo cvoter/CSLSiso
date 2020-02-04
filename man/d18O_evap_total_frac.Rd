@@ -7,8 +7,8 @@
 d18O_evap_total_frac(alpha, delta_epsilon)
 }
 \arguments{
-\item{alpha}{equilibrium isotope fractionation factor at the temperature of
-the air-water interface (-)}
+\item{alpha}{equilibrium isotope fractionation factor (-) at the temperature
+of the air-water interface in LV form (i.e., alpha > 1).}
 
 \item{delta_epsilon}{kinetic fractionation factor (-)}
 }
@@ -17,8 +17,10 @@ epsilon - the total fractionation factor (-)
 }
 \description{
 Calculates the total fractionation factor based on the definition of epsilon
-for equation 5 in Krabbenhoft et al. (1990). Note that alpha* is equivalent
-to 1/alpha.
+for equation 5 in Krabbenhoft et al. (1990). Note that while
+\code{\link{d18O_evap_isotope_frac}} calculates alpha in LV form (i.e,
+alpha+ > 1), the equation in Krabbenhoft et al. (1990) assumes alpha is in
+V/L form (i.e., alpha* < 1).
 }
 \references{
 Krabbenhoft, D. P., C. J. Bowser, M. P. Anderson, and J. W.

@@ -4,8 +4,18 @@
 \alias{summarise_inputs}
 \title{Summarize Inputs over Common Timeseries}
 \usage{
-summarise_inputs(lake, weather, lst, isotopes, lake_levels, gw_levels,
-  dictionary, threshold = 0.01, by_gw_iso = FALSE, annual = FALSE)
+summarise_inputs(
+  lake,
+  weather,
+  lst,
+  isotopes,
+  lake_levels,
+  gw_levels,
+  dictionary,
+  threshold = 0.01,
+  by_gw_iso = FALSE,
+  annual = FALSE
+)
 }
 \arguments{
 \item{lake}{name of lake (e.g., Pleasant, Long, or Plainfield)}

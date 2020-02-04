@@ -1,6 +1,6 @@
 #d18O_evap_functions.R
 # All functions required to calculate the isotopic composition of evaporation.
-# Includes;
+# Includes:
 # - d18O_evap
 # - d18O_evap_sat_vapor_press
 # - d18O_evap_normalized_humidity
@@ -13,7 +13,7 @@
 #' Evaporation d18O
 #'
 #' Calculates the isotope composition of evaporation based on equation 5 in
-#' Krabbenhoft et al. (1990). Note that alpha* is equivalent to 1/alpha.
+#' Krabbenhoft et al. (1990). Note that alpha* is equivalent to alpha^-1.
 #'
 #' @references Krabbenhoft, D. P., C. J. Bowser, M. P. Anderson, and J. W.
 #'   Valley. (1990). Estimating Groundwater Exchange with Lakes: 1. The Stable
@@ -69,7 +69,7 @@ d18O_evap_sat_vapor_press <- function(tmp) {
 #' Normalized Relative Humidity
 #'
 #' Calculates the relative humidity normalized to the temperature of the surface
-#' water. Based on equation 1.8 of Mook (2000).
+#' water. Based on Equation 1.8 of Mook (2000).
 #'
 #' @references Mook, W.G. (ed.) 2000. Environmental Isotopes in the Hydrologic
 #'   Cycle: Volume III: Surface Water. UNESCO. Paris, France.
@@ -91,21 +91,38 @@ d18O_evap_normalized_humidity <- function(RH, es_a, es_l) {
 #' Equilibrium Isotope Fractionation Factor
 #'
 #' Calculates the equilibrium isotope fractionation factor at the temperature of
-#' the air-water interface based on equation 9 in Ozaydin et al. (2001).
+#' the air-water interface based on Eq. 16a in Gibson et al. (2016) or Eq. 1.6
+#' in Mook (2000). Returns this value as the ratio in liquid vs. the ratio in
+#' vapor (i.e., LV form, alpha > 1). Gibson et al. refer to this formulation as
+#' alpha+ and to the VL form (i.e., alpha < 1) as alpha*. Krabbenhoft et al.
+#' (1990) use alpha* (i.e, VL form, alpha < 1) in their equations.
 #'
-#' @references Ozaydin, V., U. Sendil, and D. Altinbilek. (2001). Stable isotope
-#'   mass balance method to find the water budget of a lake. Turkish Journal of
-#'   Engineering and Environmental Sciences, 25:329-344. Retrieved from:
-#'   https://dergipark.org.tr/download/article-file/126752
+#' @references Gibson, J.J., S.J. Birks, and Y. Yi. 2016. Stable isotope mass
+#'   balance of lakes: a contemporary perspective. Quaternary Science Reviews,
+#'   131:316-328. https://doi.org/10.1016/j.quascirev.2015.04.013
+#'
+#' @references Mook, W.G. (ed.) 2000. Environmental Isotopes in the Hydrologic
+#'   Cycle: Volume III: Surface Water. UNESCO. Paris, France.
+#'
+#' @references Krabbenhoft, D. P., C. J. Bowser, M. P. Anderson, and J. W.
+#'   Valley. (1990). Estimating Groundwater Exchange with Lakes: 1. The Stable
+#'   Isotope Mass Balance Method. Water Resources Research, 26(10):2445-2453.
+#'   https://doi.org/10.1029/WR026i010p02445
 #'
 #' @param ltmp lake surface temperature (K)
+#' @param method equation to use, defaults to "Gibson" but can also be "Mook".
 #'
-#' @return alpha - the equilibrium isotope fractionation factor (-)
+#' @return alpha (-), the equilibrium isotope fractionation factor in LV form
+#'        (i.e., alpha > 1)
 #'
 #' @export
 
-d18O_evap_isotope_frac <- function(ltmp){
-  alpha <- exp(-7.685e-3 + 6.7123/(ltmp) - 1666.4/(ltmp)^2 + 350410/(ltmp)^3)
+d18O_evap_isotope_frac <- function(ltmp, method = "Gibson"){
+  if (method == "Gibson") {
+    alpha <- exp(-7.685e-3 + 6.7123/ltmp - 1666.4/(ltmp^2) + 350410/(ltmp^3))
+  } else if (method == "Mook") {
+    alpha <- 1/exp(2.0667e-3 + (0.4156/ltmp) - (1.137e3/(ltmp^2)))
+  }
   return(alpha)
 }
 # ------------------------------------------------------------------------------
@@ -137,16 +154,18 @@ d18O_evap_kinetic_frac <- function(h, K = 14.3) {
 #' Total Fractionation Factor
 #'
 #' Calculates the total fractionation factor based on the definition of epsilon
-#' for equation 5 in Krabbenhoft et al. (1990). Note that alpha* is equivalent
-#' to 1/alpha.
+#' for equation 5 in Krabbenhoft et al. (1990). Note that while
+#' \code{\link{d18O_evap_isotope_frac}} calculates alpha in LV form (i.e,
+#' alpha+ > 1), the equation in Krabbenhoft et al. (1990) assumes alpha is in
+#' V/L form (i.e., alpha* < 1).
 #'
 #' @references Krabbenhoft, D. P., C. J. Bowser, M. P. Anderson, and J. W.
 #'   Valley. (1990). Estimating Groundwater Exchange with Lakes: 1. The Stable
 #'   Isotope Mass Balance Method. Water Resources Research, 26(10):2445-2453.
 #'   https://doi.org/10.1029/WR026i010p02445
 #'
-#' @param alpha equilibrium isotope fractionation factor at the temperature of
-#'              the air-water interface (-)
+#' @param alpha equilibrium isotope fractionation factor (-) at the temperature
+#'              of the air-water interface in LV form (i.e., alpha > 1).
 #' @param delta_epsilon kinetic fractionation factor (-)
 #'
 #' @return epsilon - the total fractionation factor (-)
@@ -160,15 +179,23 @@ d18O_evap_total_frac <- function(alpha, delta_epsilon) {
 # ------------------------------------------------------------------------------
 #' Atmosphere d18O
 #'
-#' Calculates the d18O isotope composition of the atmosphere based on equation
-#' 18 in Gibson et al. (2016).
+#' Calculates the d18O isotope composition of the atmosphere based on Equation
+#' 18 and the definition for espilon+ in the explanation for Equation 3 in
+#' Gibson et al. (2016). Alternatively, can instead calcuate this value based on
+#' Equation 1.10 and the definition for epsilon in the explanation for Equation
+#' 1.4 in Mook (2000).
 #'
 #' @references Gibson, J.J., S.J. Birks, and Y. Yi. 2016. Stable isotope mass
 #'   balance of lakes: a contemporary perspective. Quaternary Science Reviews,
 #'   131:316-328. https://doi.org/10.1016/j.quascirev.2015.04.013
 #'
+#' @references Mook, W.G. (ed.) 2000. Environmental Isotopes in the Hydrologic
+#'   Cycle: Volume III: Surface Water. UNESCO. Paris, France.
+#'
 #' @param d18O_pcpn isotopic composition of precipitation
-#' @param alpha isotope fractionation factor (-)
+#' @param alpha equilibrium isotope fractionation factor (-) at the temperature
+#'              of the air-water interface in LV form (i.e., alpha > 1).
+#' @param method defaults to "Gibson" to use those equations, can also be "Mook".
 #' @param k weighted factor which reflects seasonality, ranging from 0.5 for
 #'          highly seasonal climates to 1 for non-seasonal climates. Defaults
 #'          to 0.8
@@ -177,8 +204,16 @@ d18O_evap_total_frac <- function(alpha, delta_epsilon) {
 #'
 #' @export
 
-d18O_evap_d18O_atm <- function(d18O_pcpn, alpha, k = 1) {
-  epsilon_plus     <- (alpha - 1)*1000
-  d18O_atm         <- (d18O_pcpn - k*epsilon_plus)/(1 + k*1e-3*epsilon_plus)
+d18O_evap_d18O_atm <- function(d18O_pcpn, alpha, method = "Gibson", k = 1) {
+  if (method == "Gibson") {
+    epsilon_plus <- (alpha - 1)*1000
+    d18O_atm     <- (d18O_pcpn - k*epsilon_plus)/(1 + k*1e-3*epsilon_plus)
+  } else if (method == "Mook") {
+    epsilon_star <- (1/alpha) - 1
+    d18O_atm     <- (1/alpha)*d18O_pcpn + epsilon_star
+  }  else if (method == "Mook_corrected") {
+    epsilon_star <- ((1/alpha) - 1)*1000
+    d18O_atm     <- (1/alpha)*d18O_pcpn + epsilon_star
+  }
   return(d18O_atm)
 }

@@ -58,9 +58,16 @@ iso_site_type <- function(isotopes, dictionary, lake_levels = NULL,
                       filter(.data$site_no == this_USGS_id,
                              .data$date <= isotopes$date[i],
                              .data$date >= (isotopes$date[i] %m-% months(1)))
+      static_class <- iso_sites %>%
+                      filter(as.character(.data$site_id) ==
+                               isotopes$site_id[i]) %>%
+                      select(.data$static_iso_class) %>%
+                      as.character()
       if (length(this_well$diff_m) > 0) {
         # Use lake-gw water level difference, if have
-        if (abs(median(this_well$diff_m, na.rm = TRUE)) < threshold) {
+        if (static_class == "deep") {
+          isotopes$site_type[i] <- "deep"
+        } else if (abs(median(this_well$diff_m, na.rm = TRUE)) < threshold) {
           isotopes$site_type[i] <- NA
         } else if (mean(this_well$diff_m, na.rm = TRUE) > 0) {
           isotopes$site_type[i] <- "upgradient"
@@ -69,11 +76,7 @@ iso_site_type <- function(isotopes, dictionary, lake_levels = NULL,
         }
       } else if (as.character(isotopes$site_id[i]) %in% iso_sites$site_id) {
         # Use static site types if don't have lake-gw water level difference
-        isotopes$site_type[i] <- iso_sites %>%
-                                 filter(as.character(.data$site_id) ==
-                                          isotopes$site_id[i]) %>%
-                                 select(.data$static_iso_class) %>%
-                                 as.character()
+        isotopes$site_type[i] <- static_class
       }
 
     } else if (isotopes$site_id[i] == "PRECIP") {

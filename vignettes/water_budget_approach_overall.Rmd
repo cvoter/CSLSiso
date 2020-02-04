@@ -10,6 +10,7 @@ vignette: >
 ---
 
 ```{r setup, echo=FALSE, warning=FALSE, message=FALSE}
+# Libraries
 library(devtools)
 library(CSLSiso)
 library(CSLSdata)
@@ -23,7 +24,25 @@ library(knitr)
 library(stringr)
 library(scales) # for ::
 
-text_size = 12
+# Parameters
+text_size <- 12
+lakes     <- c("Pleasant", "Long", "Plainfield")
+
+# Speed up processing by getting combinded inputs and outputs once here.
+inputs  <- NULL
+outputs <- NULL
+for (lake in lakes){
+  # Inputs
+  these_inputs       <- runall_csls_inputs(lake)
+  these_inputs$lake  <- lake
+  inputs             <- rbind(inputs, these_inputs)
+  # Outputs
+  these_outputs      <- runall_csls_budget(lake)
+  these_outputs$lake <- lake
+  outputs            <- rbind(outputs, these_outputs)
+}
+inputs$lake  <- factor(inputs$lake, levels = lakes)
+outputs$lake <- factor(outputs$lake, levels = lakes)
 ```
 
 ## Overview {#top}
@@ -140,172 +159,6 @@ Below, we describe all additional assumptions and calculations used to transform
 `CSLSdata` Rda files from their form in the `CSLSdata` package into the monthly
 inputs required for monthly water balance calculations.
 
-```{r plot_fcns, eval=TRUE, echo=FALSE, message=FALSE, warning=FALSE}
-lake_level_plot <- function(ydata, ylabel, title = "", 
-                            lakes = c("Pleasant", "Long", "Plainfield")){
-  lake_levels <- NULL
-  for (lake in lakes){
-  tmp           <- CSLSdata::lake_levels[[lake]]
-  tmp           <- tmp[c("date", ydata)]
-  colnames(tmp) <- c("x", "y")
-  tmp$lake      <- lake
-  lake_levels <- rbind(lake_levels, tmp)
-  }
-  lake_levels$lake <- factor(lake_levels$lake, levels = lakes)
-  
-  plot_obj <- ggplot(lake_levels) +
-              geom_line(aes(x = x, y = y)) +
-              scale_x_datetime(date_breaks = "6 months",
-                               date_labels = "%b '%y") +
-              labs(x = "", y = ylabel, title = title) +
-              facet_wrap(~lake, scales = "free_y", ncol = 3) +
-              theme_bw() +
-              theme(text = element_text(family = "Segoe UI Semilight",
-                                        size = text_size),
-                    plot.title = element_text(hjust = 0.5),
-                    panel.grid.major = element_blank(),
-                    panel.grid.minor = element_blank())
-  
-  if (ydata != "level_m") {
-    plot_obj <- plot_obj + scale_y_continuous(labels = scales::scientific)
-  }
-  
-  return(plot_obj)
-}
-
-elev_area_vol_plot <- function(ydata, ylabel, title = "", 
-                               lakes = c("Pleasant", "Long", "Plainfield")){
-  elev_area_vol <- NULL
-  for (lake in lakes){
-  tmp           <- CSLSdata::elev_area_vol[[lake]]
-  tmp           <- tmp[c("elev_m", ydata)]
-  colnames(tmp) <- c("x", "y")
-  tmp$lake      <- lake
-  elev_area_vol <- rbind(elev_area_vol, tmp)
-  }
-  elev_area_vol$lake <- factor(elev_area_vol$lake, levels = lakes)
-  
-  plot_obj <- ggplot(elev_area_vol) +
-              geom_line(aes(x = x, y = y)) +
-              facet_wrap(~lake, scales = "free") +
-              scale_y_continuous(labels = scales::scientific) +
-              labs(x = "Elevation (m)", y = ylabel, title = title) +
-              theme_bw() +
-              theme(text = element_text(family = "Segoe UI Semilight",
-                                        size = text_size),
-                    plot.title = element_text(hjust = 0.5),
-                    panel.grid.major = element_blank(),
-                    panel.grid.minor = element_blank())
-  
-  return(plot_obj)
-}
-
-inputs_plot <- function(ydata, ylabel, geom_type = "col", title = "", 
-                        lakes = c("Pleasant", "Long", "Plainfield"),
-                        inputs_only = TRUE){
-  inputs <- NULL
-  for (lake in lakes){
-    if (inputs_only){
-      tmp       <- runall_csls_inputs(lake)
-    } else {
-      tmp       <- runall_csls_budget(lake)
-    }
-  tmp           <- tmp[c("date", ydata)]
-  colnames(tmp) <- c("x", "y")
-  tmp$lake      <- lake
-  inputs <- rbind(inputs, tmp)
-  }
-  inputs$lake <- factor(inputs$lake, levels = lakes)
-  
-  # Specify plot type (column or point)
-  if (geom_type == "col") {
-    plot_obj <- ggplot(inputs, aes(x = x, y = y)) +
-                geom_col()
-  } else if (geom_type == "point") {
-    plot_obj <- ggplot(inputs, aes(x = x, y = y)) +
-                geom_point()
-  }
-  
-  plot_obj <- plot_obj +
-              scale_x_datetime(date_breaks = "6 months",
-                               date_labels = "%b '%y") +
-              facet_wrap(~lake) +
-              scale_y_continuous(labels = scales::scientific) +
-              labs(x = "", y = ylabel, title = title) +
-              theme_bw() +
-              theme(text = element_text(family = "Segoe UI Semilight",
-                                        size = text_size),
-                    plot.title = element_text(hjust = 0.5),
-                    panel.grid.major = element_blank(),
-                    panel.grid.minor = element_blank())
-  
-  return(plot_obj)
-}
-
-
-iso_plot <- function(ydata = "d18O", ylabel = expression(delta^18*'O'), title = "", 
-                     lakes = c("Pleasant", "Long", "Plainfield")){
-  monthly_isotopes <- NULL
-  for (lake in lakes){
-    isotopes    <- CSLSdata::isotopes[[lake]]
-    dictionary  <- CSLSdata::dictionary[[lake]]
-    lake_levels <- CSLSdata::lake_levels[[lake]]
-    gw_levels   <- CSLSdata::gw_levels[[lake]]
-
-    # Measured values
-    tmp1     <- iso_site_type(isotopes, dictionary, lake_levels, gw_levels)
-    tmp1      <- tmp1 %>%
-                 group_by(floor_date(.data$date, unit = "month"),
-                          variable = .data$site_type) %>%
-                 filter(is.na(.data$site_type) == FALSE &
-                          .data$site_type != "") %>%
-                 summarise(date = floor_date(mean(.data$date), unit = "day"),
-                           value = mean(.data$d18O)) %>%
-                 ungroup() %>%
-                 select(.data$date, .data$variable, .data$value)
-    
-    tmp1$variable <- tmp1$variable %>%
-                     str_replace("upgradient","Groundwater") %>%
-                     str_replace("lake","Lake") %>%
-                     str_replace("precipitation","Precipitation")
-    tmp1$lake <- lake
-    tmp1$measurement <- "actual"
-
-    # monthly values
-    tmp2 <- summarise_isotopes(isotopes, dictionary, 
-                               find_timeseries(isotopes), 
-                               lake_levels, gw_levels) %>% 
-            select(date, d18O_GWin, d18O_lake, d18O_pcpn) %>% 
-            melt(id.vars = "date")
-    
-    tmp2$variable <- tmp2$variable %>%
-                     str_replace("d18O_GWin","Groundwater") %>%
-                     str_replace("d18O_lake","Lake") %>%
-                     str_replace("d18O_pcpn","Precipitation")
-   tmp2$lake <- lake
-   tmp2$measurement <- "monthly"
-   
-   monthly_isotopes <- rbind(monthly_isotopes, tmp1, tmp2)
-  }
-
-  plot_obj <- ggplot(monthly_isotopes,
-                     aes(x = date, y = value, color = measurement)) +
-              geom_point() +
-              scale_x_datetime(date_breaks = "6 months",
-                               date_labels = "%b '%y") +
-              facet_wrap(lake~variable) +
-              labs(x = "", y = ylabel, title = title) +
-              theme_bw() +
-              theme(text = element_text(family = "Segoe UI Semilight",
-                                        size = text_size),
-                    plot.title = element_text(hjust = 0.5),
-                    panel.grid.major = element_blank(),
-                    panel.grid.minor = element_blank())
-  
-  return(plot_obj)
-}
-```
-
 ### Change in Lake Volume {#dV}
 [back to top](#top)
 
@@ -313,20 +166,25 @@ We obtain **daily lake elevation data** from water level loggers at USGS gages
 at all three lakes in the Central Sands Lakes Study.
 
 ```{r dV01, eval=TRUE, echo=FALSE, message=FALSE, warning=FALSE, fig.width = 6.5, fig.height = 2.5}
-lake_level_plot("level_m", "Lake Elevation (m)")
+plot_lake_level(text_size = text_size)
 ```
 
 We also have the **elevation-volume relationships** for each lake from lake
 bathymetry data (calculated in ArcGIS).
 
 ```{r dV02, eval=TRUE, echo=FALSE, message=FALSE, warning=FALSE, fig.width = 6.5, fig.height = 2.5}
-elev_area_vol_plot("vol_m3", expression(Lake~Volume~(m^{3})))
+plot_elev_area_vol(ydata = "vol_m3", 
+                   ylabel = expression(Lake~Volume~(m^{3})), 
+                   text_size = text_size)
 ```
 
 We convert these daily lake level elevations to **daily lake volumes** using these elevation-volume relationships.
 
 ```{r dV03, eval=TRUE, echo=FALSE, message=FALSE, warning=FALSE, fig.width = 6.5, fig.height = 2.5}
-lake_level_plot("vol_m3", expression(Lake~Volume~(m^{3})))
+plot_lake_level(ydata = "vol_m3",
+                ylabel = expression(Lake~Volume~(m^{3})), 
+                yscales = scales::scientific, 
+                text_size = text_size)
 ```
 
 The **change in lake volume** for a given month is then the difference
@@ -334,7 +192,11 @@ between the lake volume on the last day of the month and the lake volume on the
 first day of the month.
 
 ```{r dV04, eval=TRUE, echo=FALSE, message=FALSE, warning=FALSE, fig.width = 6.5, fig.height = 2.5}
-inputs_plot("dV_m3", expression(Change~Lake~Volume~(m^{3})))
+plot_input(df = inputs,
+           ydata = "dV_m3", 
+           ylabel = expression(Change~Lake~Volume~(m^{3})), 
+           geom_type = "col", 
+           text_size = text_size)
 ```
 
 ### Precipitation {#precip}
@@ -372,34 +234,48 @@ To convert precipitation as a depth to precipitation as a volume, We use the
 **daily lake elevations** at the USGS gages at each lake.
 
 ```{r precip1, eval=TRUE, echo=FALSE, message=FALSE, warning=FALSE, fig.width = 6.5, fig.height = 2.5}
-lake_level_plot("level_m", "Lake Elevation (m)")
+plot_lake_level(text_size = text_size)
 ```
 
 We also use the **elevation-area relationships** for each lake from lake
 bathymetry data (calculated in ArcGIS).
 
 ```{r precip2, eval=TRUE, echo=FALSE, message=FALSE, warning=FALSE, fig.width = 6.5, fig.height = 2.5}
-elev_area_vol_plot("area_m2", expression(Lake~Area~(m^{2})))
+plot_elev_area_vol(ydata = "area_m2", 
+                   ylabel = expression(Lake~Area~(m^{2})), 
+                   text_size = text_size)
 ```
 
 We convert daily lake level elevations to **daily lake areas** using these
 elevation-area relationships.
 
 ```{r precip3, eval=TRUE, echo=FALSE, message=FALSE, warning=FALSE, fig.width = 6.5, fig.height = 2.5}
-lake_level_plot("area_m2", expression(Lake~Area~(m^{2})))
+plot_lake_level(ydata = "area_m2", 
+                ylabel = expression(Lake~Area~(m^{2})), 
+                yscales = scales::scientific, 
+                text_size = text_size)
 ```
 
 Then, we calculate the **mean monthly lake area**.
 
 ```{r precip4, eval=TRUE, echo=FALSE, message=FALSE, warning=FALSE, fig.width = 6.5, fig.height = 2.5}
-inputs_plot("mean_area_m2", expression(Lake~Area~(m^{2})), "point")
+plot_input(df = inputs,
+           ydata = "mean_area_m2", 
+           ylabel = expression(Lake~Area~(m^{2})), 
+           geom_type = "point", 
+           facet_scales = "free_y",
+           text_size = text_size)
 ```
 
 By multiplying monthly precipitation as a depth (mm) by the mean monthly lake
 area (m^2^), we obtain **monthly precipitation as a volume (m^3^)** for each lake.
 
 ```{r precip5, eval=TRUE, echo=FALSE, message=FALSE, warning=FALSE, fig.width = 6.5, fig.height = 2.5}
-inputs_plot("P_m3", expression(Precipitation~(m^{3})), "col")
+plot_input(df = inputs,
+           ydata = "P_m3", 
+           ylabel = expression(Precipitation~(m^{3})), 
+           geom_type = "col", 
+           text_size = text_size)
 ```
 
 ### Lake Evaporation {#evap}
@@ -424,8 +300,12 @@ converted to monthly lake evaporation volume by summing over each month and
 multiplying by the average monthly lake area, as in the [precipitation](#precip)
 calculations.
 
-```{r evap, eval=TRUE, echo=FALSE, message=FALSE, warning=FALSE, fig.width = 7, fig.height = 2.5}
-inputs_plot("E_m3", expression(Evaporation~(m^{3})), "col")
+```{r evap, eval=TRUE, echo=FALSE, message=FALSE, warning=FALSE, fig.width = 6.5, fig.height = 2.5}
+plot_input(df = inputs,
+           ydata = "E_m3", 
+           ylabel = expression(Evaporation~(m^{3})), 
+           geom_type = "col", 
+           text_size = text_size)
 ```
 
 ### Groundwater Inflow {#GWin}
@@ -568,16 +448,16 @@ ggplot(monthly_isotopes %>% arrange(measurement),
 
 5. Monthly **evaporation stable isotope measurements** must be estimated since
 it cannot be directly measured. We estimate $\delta^{18}O_{E}$ as follows
-(Krabbenhoft et al., 1990, eq. 5):
+(Krabbenhoft et al., 1990, Eq. 5):
 
    \begin{align}
    \tag{5}
-   \delta^{18}O_{E} = \frac{\alpha * \delta^{18}O_{L} - h*\delta^{18}O_{A} - 
+   \delta^{18}O_{E} = \frac{(1/\alpha) * \delta^{18}O_{L} - h*\delta^{18}O_{A} - 
                       \epsilon}{1 - h +10^{-3}\Delta \epsilon}
    \end{align}
 
    The relative humidity normalized to the temperature of the surface water (-),
-   $h$, is calculated as follows (Mook, 2000, eq. 1.8):
+   $h$, is calculated as follows (Mook, 2000, Eq. 1.8):
    \begin{align}
    \tag{6}
    h = \frac{RH}{100}*\frac{es_{A}}{es_{L}}
@@ -586,7 +466,7 @@ it cannot be directly measured. We estimate $\delta^{18}O_{E}$ as follows
    where $RH$ is the relative humidity (%), $es_{A}$ is the saturated vapor
    pressure for the air (kPa), and $es_{L}$ is the saturated vapor pressure for
    the lake (kPa). Saturated vapor pressure is calculated based on Allen et al. (1998) 
-   using air temperature (degrees C) or lake temperature (degrees C) for $t$ as 
+   using air temperature (degrees C) or lake temperature (degrees C) for $T$ as 
    appropriate:
    \begin{align} 
    \tag{7} 
@@ -594,12 +474,18 @@ it cannot be directly measured. We estimate $\delta^{18}O_{E}$ as follows
    \end{align}
 
    The equilibrium isotope fractionation factor (-), $\alpha$, is calculated
-   based on Ozaydin et al. (2001), where $t$ is the lake surface temperature
-   (K):
+   based on Gibson et al. (2016), where $T$ is the lake surface temperature
+   (K). Note that this formulation represents the fraction of isotopes in liquid 
+   vs. the fraction in vapor (i.e., L/V form, $\alpha > 1$). Others, including 
+   Krabbenhoft et al. (1990), use the inverse form of $\alpha$ (i.e., V/L form, 
+   $\alpha < 1$) in their equations. In all equations presented in this 
+   document, we consistently use the L/V form for alpha. If you calculate the 
+   V/L form of alpha, simply replace $\alpha$ with $\frac{1}{\alpha}$ in 
+   the equations presented in this document.
 
    \begin{align}
    \tag{8}
-   \alpha &= e^{\frac{-2.0667 - \frac{415.6}{t} + (\frac{1137}{t^2})*10^3}{1000}}
+   \alpha &= exp(-7.685*10^{-3} + \frac{6.7123}{T} - \frac{1666.4}{T^{2}} + \frac{350410}{T^{3}})
    \end{align}
 
    The kinetic fractionation factor (-), $\Delta \epsilon$, is calculated based
@@ -621,7 +507,7 @@ it cannot be directly measured. We estimate $\delta^{18}O_{E}$ as follows
    calculated based on Gibson et al. (2016):
    \begin{align}
    \tag{11}
-   \delta^{18}O_{A} &= \frac{\delta^{18}O_{P} - k*\epsilon^{+}}{1 + 10^{-3}*k*\epsilon^{+}})
+   \delta^{18}O_{A} &= \frac{\delta^{18}O_{P} - k*\epsilon^{+}}{1 + 10^{-3}*k*\epsilon^{+}}
    \end{align}
 
    where $k$ can vary from 0.5 for highly seasonal climates to 1.0 for
@@ -632,16 +518,25 @@ it cannot be directly measured. We estimate $\delta^{18}O_{E}$ as follows
    \epsilon^{+} &= (\alpha - 1)*1000
    \end{align}
 
-```{r iso_evap, eval=TRUE, echo=FALSE, message=FALSE, warning=FALSE, fig.width = 7, fig.height = 2.5}
-inputs_plot("d18O_evap", expression(delta^18*'O'), geom_type = "point")
+```{r iso_evap, eval=TRUE, echo=FALSE, message=FALSE, warning=FALSE, fig.width = 6.5, fig.height = 2.5}
+plot_input(df = inputs,
+           ydata = "d18O_evap", 
+           ylabel = expression(delta^18*'O'[evap]), 
+           yscales = scales::number,
+           geom_type = "point", 
+           text_size = text_size)
 ```
 
 <br>
 
 With the above information, we can then calculate groundwater inflow using Eq. 3. 
 
-```{r GWin, eval=TRUE, echo=FALSE, message=FALSE, warning=FALSE, fig.width = 6.5, fig.height = 3}
-inputs_plot("GWin_m3", expression(Groundwater~Inflow~(m^{3})), inputs_only = FALSE)
+```{r GWin, eval=TRUE, echo=FALSE, message=FALSE, warning=FALSE, fig.width = 6.5, fig.height = 2.5}
+plot_input(df = outputs,
+           ydata = "GWin_m3", 
+           ylabel = expression(Groundwater~Inflow~(m^{3})), 
+           inputs_only = FALSE, 
+           text_size = text_size)
 ```
 
 ### Groundwater Outflow {#GWout}
@@ -650,8 +545,12 @@ inputs_plot("GWin_m3", expression(Groundwater~Inflow~(m^{3})), inputs_only = FAL
 Finally, we calculate groundwater outflow as the only remaining term of the
 water balance per Eq. 4.
 
-```{r GWout, eval=TRUE, echo=FALSE, message=FALSE, warning=FALSE, fig.width = 6.5, fig.height = 3}
-inputs_plot("GWout_m3", expression(Groundwater~Outflow~(m^{3})), inputs_only = FALSE)
+```{r GWout, eval=TRUE, echo=FALSE, message=FALSE, warning=FALSE, fig.width = 6.5, fig.height = 2.5}
+plot_input(df = outputs,
+           ydata = "GWout_m3", 
+           ylabel = expression(Groundwater~Outflow~(m^{3})), 
+           inputs_only = FALSE, 
+           text_size = text_size)
 ```
 
 ## Overall Water Budget
@@ -687,6 +586,35 @@ for (lake in c("Pleasant", "Long", "Plainfield")) {
 plot_annual_bal(annual_h2o_bal)
 plot_annual_bal(annual_h2o_bal, as_pcnt = TRUE)
 ```
+
+## References
+
+Allen, R. G., Pereira, L. S., Raes, D., & Smith, M. (1998). Crop
+evapotranspiration: Guidelines for computing crop water requirements. Rome: FAO.
+Retrieved from http://www.fao.org/docrep/X0490E/x0490e00.htm.
+
+Gibson, J.J., S.J. Birks, and Y. Yi. 2016. Stable isotope mass balance of lakes:
+a contemporary perspective. Quaternary Science Reviews, 131:316-328.
+https://doi.org/10.1016/j.quascirev.2015.04.013
+
+Krabbenhoft, D. P., C. J. Bowser, M. P. Anderson, and J. W. Valley. (1990).
+Estimating Groundwater Exchange with Lakes: 1. The Stable Isotope Mass Balance
+Method. Water Resources Research, 26(10):2445-2453.
+https://doi.org/10.1029/WR026i010p02445
+
+McJannet, D. L., Webster, I. T., Stenson, M. P., and Sherman, B.S. (2008).
+Estimating open water evaporation for the Murray-Darling Basin. A report to the
+Australian Government from the CSIRO Murray-Darling Basin Sustainable Yields
+Project, CSIRO, Australia, 50 pp. Retrieved from
+http://www.clw.csiro.au/publications/waterforahealthycountry/mdbsy/technical/U-OpenWaterEvaporation.pdf.
+
+McMahon, T. A., Peel, M. C., Lowe, L., Srikanthan, R., and McVicar, T. R.
+(2013). Estimating actual, potential, reference crop and pan evaporation using
+standard meteorological data: a pragmatic synthesis, Hydrol. Earth Syst. Sci.,
+17, 1331–1363. https://doi.org/10.5194/hess-17-1331-2013.
+
+Mook, W.G. (ed.) 2000. Environmental Isotopes in the Hydrologic Cycle: Volume
+III: Surface Water. UNESCO. Paris, France.
 
 ## Session Info
 

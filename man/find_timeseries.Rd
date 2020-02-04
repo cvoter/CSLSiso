@@ -4,8 +4,14 @@
 \alias{find_timeseries}
 \title{Identify Months With Overlapping Data}
 \usage{
-find_timeseries(isotopes, lake_levels = NULL, gw_levels = NULL,
-  dictionary = NULL, threshold = 0.01, by_gw_iso = FALSE)
+find_timeseries(
+  isotopes,
+  lake_levels = NULL,
+  gw_levels = NULL,
+  dictionary = NULL,
+  threshold = 0.01,
+  by_gw_iso = FALSE
+)
 }
 \arguments{
 \item{isotopes}{a data frame with isotopes measurements as formatted in the

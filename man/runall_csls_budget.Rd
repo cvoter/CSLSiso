@@ -2,10 +2,9 @@
 % Please edit documentation in R/runall_csls_budget.R
 \name{runall_csls_budget}
 \alias{runall_csls_budget}
-\title{Run isoH2Obudget start to finish for a CSLS lake}
+\title{Run all functions needed to calculate water budget for a CSLS lake}
 \usage{
-runall_csls_budget(lake, threshold = 0.01, by_gw_iso = FALSE,
-  annual = FALSE)
+runall_csls_budget(lake, threshold = 0.01, by_gw_iso = FALSE, annual = FALSE)
 }
 \arguments{
 \item{lake}{name of lake (e.g., Pleasant, Long, or Plainfield)}
@@ -23,24 +22,32 @@ days before last day of the month)}
 basis. If TRUE, calculates the annual balance instead.}
 }
 \value{
-monthly_h2o_bal, a data frame with the following columns:
-\describe{
-\item{date}{first of the month for each monthly observation (Date)}
-\item{P}{monthly precipitation (mm)}
-\item{E}{monthly evapotranspiration (mm)}
-\item{GWin}{monthly groundwater inflow to the lake (mm)}
-\item{GWout}{monthly groundwater outflow to the lake (mm)}
-\item{dV}{monthly change in lake volume (mm)}
-}
+h2o_bal, a data frame with the following columns:
+\item{date}{observation dates, last day of the month (if monthly) or date
+interval (if annual) (POSIXct)}
+\item{P_m3}{precipitation for month or year (m3)}
+\item{E_m3}{evapotranspiration for month or year (m3)}
+\item{GWin_m3}{groundwater inflow to the lake for month or year (m3)}
+\item{GWout_m3}{groundwater outflow to the lake for month or year (m3)}
+\item{dV_m3}{change in lake volume for month or year (m3)}
+\item{P_mm}{precipitation for month or year (mm)}
+\item{E_mm}{evapotranspiration for month or year (mm)}
+\item{GWin_mm}{groundwater inflow to the lake for month or year (mm)}
+\item{GWout_mm}{groundwater outflow to the lake for month or year (mm)}
+\item{dV_mm}{change in lake volume for month or year (mm)}
+\item{mean_vol_m3}{mean lake volume during the month or year (m3)}
+\item{mean_area_m2}{mean lake area during the month or year (m2)}
 }
 \description{
-Runs all major functions in the isoH2Obudget package, from loading in raw
-data to the final monthly water balance for one of the CSLS lakes.
+Runs all major functions in the CSLSiso package, from loading in raw data to
+the final water balance for one of the CSLS lakes. Can be calculated on a
+monthly basis (annual = FALSE) or based on all available data (annual =
+TRUE).
 }
 \details{
 Loaded data includes the following data in a list format, where each lake has
 its own data frame. For example, to access groundwater levels for Pleasant
-Lake, the command would be \code{CSLSdata::gw_levels[["Pleasant"]]}.
+Lake, the command would be: \code{gw_levels <- CSLSdata::gw_levels[["Pleasant"]]}.
 \itemize{
 \item \code{\link[CSLSdata]{weather}}, hourly weather data including "date",
 "atmp" (air temperature, deg C), "P" (precipitation, mm), "RH"

@@ -20,46 +20,51 @@ library(ggplot2) #for plotting
 library(extrafont) #for fonts
 library(knitr)
 library(scales) # for ::
+library(lubridate)
+
+text_size <- 12
 ```
 
 ```{r fcns, eval=TRUE, echo=FALSE}
-get_dynamic_sites <- function(lake){
-  weather         <- CSLSdata::weather
-  lst             <- CSLSdata::lst_HOBO[[lake]]
-  isotopes        <- CSLSdata::isotopes[[lake]]
-  lake_levels     <- CSLSdata::lake_levels[[lake]]
-  gw_levels       <- CSLSdata::gw_levels[[lake]]
-  elev_area_vol   <- CSLSdata::elev_area_vol[[lake]]
-  dictionary      <- CSLSdata::dictionary[[lake]]
+static_well_types <- function(lake) {
+  df <- CSLSdata::dictionary[[lake]]
+  df <- df %>%
+        filter(obs_type == "GW") %>%
+        select(site_id = site_id, 
+               class = static_iso_class_detailed)
+  classes <- unique(df$class)
+  table   <- NULL
+  for (class in classes) {
+    sites <- df$site_id[df$class == class]
+    sites <- str_c(as.character(sites), sep = "", collapse = ", ")
+    class <- str_replace(as.character(class), "_", " ")
+    class <- str_to_sentence(class)
+    this_row <- c(class, sites)
+    table    <- rbind(table, this_row)
+  }
+  table <- as.data.frame(table)
+  rownames(table) <- NULL
+  colnames(table) <- c("Gradient Type", "Wells")
+  return(table)
+}
+
+get_well_types <- function(lake){
+  df            <- runall_csls_inputs(lake)
+  df            <- df %>%
+                   filter(is.na(.data$GWin_sites) == FALSE &
+                            .data$GWin_sites != "") %>%
+                   select(.data$date, .data$GWin_sites, .data$GWout_sites)
+  df$date       <- format(df$date, "%b %Y")
+  colnames(df)  <- c("Month", "Upgradient Wells", "Downgradient Wells")
+  return(df)
+}
+
+get_gw_gradient_d18O <- function(lake) {
+  isotopes      <- CSLSdata::isotopes[[lake]]
+  isotopes$date <- floor_date(isotopes$date, unit = "day")
+  lake_levels   <- CSLSdata::lake_levels[[lake]]
+  gw_levels     <- CSLSdata::gw_levels[[lake]]
   
-  # Identify monthly timeseries with complete coverage of input data
-  timeseries <- find_timeseries(isotopes, lake_levels, gw_levels,
-                              dictionary, by_gw_iso = TRUE)
-
-  monthly_isotopes  <- summarise_isotopes(isotopes, dictionary, timeseries, 
-                                          lake_levels, gw_levels)
-  monthly_isotopes            <- monthly_isotopes %>%
-                                 filter(is.na(.data$GWin_sites) == FALSE &
-                                          .data$GWin_sites != "") %>%
-                                 select(.data$date, .data$GWin_sites)
-  monthly_isotopes$date       <- format(monthly_isotopes$date, "%b %Y")
-  upgradient_sites            <- as.data.frame(cbind(monthly_isotopes$date, 
-                                                     monthly_isotopes$GWin_sites))
-  colnames(upgradient_sites)  <- c("Month", "Upgradient Wells")
-  return(upgradient_sites)
-}
-get_upgradient_sites <- function(lake){
-  dictionary       <- CSLSdata::dictionary[[lake]]
-  upgradient_sites <- dictionary %>% 
-                      filter(.data$static_iso_class == "upgradient") %>%
-                      select(.data$static_iso_class, .data$site_id)
-  upgradient_sites <- str_c(unique(upgradient_sites$site_id), collapse = ", ")
-  return(upgradient_sites)
-}
-
-get_water_level_diff <- function(lake){
-  lake_levels     <- CSLSdata::lake_levels[[lake]]
-  gw_levels       <- CSLSdata::gw_levels[[lake]]
   for (i in 1:nrow(gw_levels)) {
     today <- gw_levels$date[i]
     gw    <- gw_levels$level_m[i]
@@ -70,20 +75,23 @@ get_water_level_diff <- function(lake){
       gw_levels$diff_m[i] <- NA
     }
   }
-  return(gw_levels)
+  
+  df <- merge(gw_levels,
+              isotopes, 
+              by = c("date", "site_id"), 
+              all.x = TRUE, all.y = TRUE)
+  df <- df %>%
+        filter(!site_id %in% c("PLEAS", "LONG", "PLAIN", "PRECIP")) %>%
+        select(date, site_id, diff_m, d18O)
+  
+  return(df)
 }
-
 ```
 
 ## Overview
 
-This document is a deeper dive into:
-
-1. How the timing of isotope measurements compares with the daily **water level
-difference** between lake and well levels.
-2. How isotope measurements at each well plot relative to the **Local Meteoric
-Water Line**.
-3. How **d18O** measurements, specifically, vary over time at each well.
+This document is a deeper dive into the stable isotope measurements as they
+relate to one another and to the relative lake and groundwater levels.
 
 <br>
 
@@ -123,26 +131,33 @@ include_graphics(system.file("images",
 
 ## Lakes
 
+Here we're showing all stable isotope samples for each lake broken out by site
+type (precipitation, upgradient wells, downgradient wells, deep wells, and
+lake).
+
+```{r all, eval=TRUE, echo=FALSE, warning=FALSE, message=FALSE, fig.width=6.5, fig.height=4, fig.align="center"}
+plot_LMWL_all(text_size = text_size)
+```
+
 ### Pleasant Lake
 ```{r psnt, eval=TRUE, echo=FALSE}
 lake = "Pleasant"
-upgradient_sites      <- get_upgradient_sites(lake)
-lake_isotopes         <- CSLSdata::isotopes[[lake]]
-lake_isotopes$diff_m  <- 0
-water_level_diff      <- get_water_level_diff(lake)
-level_plot            <- plot_levels(lake, water_level_diff, lake_isotopes)
-iso_plot              <- plot_iso(lake, lake_isotopes)
-d18O_plot             <- plot_d18O(lake, lake_isotopes)
+
+well_types       <- get_well_types(lake)
+gw_gradient_d18O <- get_gw_gradient_d18O(lake)
+gradient_plot    <- plot_gradients(gw_gradient_d18O, 
+                                   text_size = text_size,
+                                   title = sprintf("%s Lake - Water Level Comparison", lake))
+LMWL_sites_plot  <- plot_LMWL_sites(lake)
 ```
 
 It looks like most wells at Pleasant Lake have had a consistent relationship
 with the lake over time:
 
- * *Consistently upgradient:* PSNT-01, PSNT-14, PSNT-15, and PSNT-16
- * *Consistently downgradient:* PSNT-03, PSNT-05, PSNT-06, PSNT-07, PSNT-08,
- PSNT-09, PSNT-10
- * *Inconsistent relationship:* PSNT-11
- 
+```{r psnt_table, eval=TRUE, echo=FALSE}
+kable(static_well_types(lake))
+```
+
 Aaron mentioned at an earlier meeting that PSNT-11 may have a well construction
 issue which causes it to respond very strongly to precipitation events. We
 have removed this well from analysis.
@@ -152,34 +167,30 @@ by relative lake levels and well levels in the 30 days prior to the measurement)
 are:
 
 ```{r psnt_iso, eval=TRUE, echo=FALSE}
-sites <- get_dynamic_sites(lake)
-knitr::kable(sites)
+knitr::kable(well_types)
 ```
 
-```{r psnt_plots, eval=TRUE, echo=FALSE, warning=FALSE, message=FALSE, fig.width=7, fig.height=6, fig.align="center"}
-level_plot
-iso_plot
-d18O_plot
+```{r psnt_plots, eval=TRUE, echo=FALSE, warning=FALSE, message=FALSE, fig.width=6.5, fig.height=6, fig.align="center"}
+gradient_plot
+LMWL_sites_plot
 ```
 
 ### Long Lake
 ```{r long, eval=TRUE, echo=FALSE}
 lake = "Long"
-upgradient_sites      <- get_upgradient_sites(lake)
-lake_isotopes         <- CSLSdata::isotopes[[lake]]
-lake_isotopes$diff_m  <- 0
-water_level_diff      <- get_water_level_diff(lake)
-level_plot            <- plot_levels(lake, water_level_diff, lake_isotopes)
-iso_plot              <- plot_iso(lake, lake_isotopes)
-d18O_plot             <- plot_d18O(lake, lake_isotopes)
+well_types       <- get_well_types(lake)
+gw_gradient_d18O <- get_gw_gradient_d18O(lake)
+gradient_plot    <- plot_gradients(gw_gradient_d18O, text_size = text_size,
+                                   title = sprintf("%s Lake - Water Level Comparison", lake))
+LMWL_sites_plot         <- plot_LMWL_sites(lake)
 ```
 
 It looks like there are a few wells that are consistently upgradient of Long
 Lake, but classifications are more dynamic here:
 
- * *Consistently upgradient:* LL-01, LL-06, LL-07, LL-08
- * *Inconsistent relationship:* LL-02, LL-03, LL-04, LL-05
- * *Typically downgradient:* LL-09, LL-10
+```{r long_table, eval=TRUE, echo=FALSE}
+kable(static_well_types(lake))
+```
  
 Note that: LL-01B, LL-02B, LL-05C, and LL-09B are deeper wells drilled next to
 the shallower monitoring wells. What plots as LL-05 here is called LL-05B in the
@@ -190,50 +201,43 @@ by relative lake levels and well levels in the 30 days prior to the measurement)
 are:
 
 ```{r long_iso, eval=TRUE, echo=FALSE}
-sites <- get_dynamic_sites(lake)
-knitr::kable(sites)
+knitr::kable(well_types)
 ```
 
-```{r long_plots, eval=TRUE, echo=FALSE, warning=FALSE, message=FALSE, fig.width=7, fig.height=6, fig.align="center"}
-level_plot
-iso_plot
-d18O_plot
+```{r long_plots, eval=TRUE, echo=FALSE, warning=FALSE, message=FALSE, fig.width=6.5, fig.height=6, fig.align="center"}
+gradient_plot
+LMWL_sites_plot
 ```
 
 
 ### Plainfield Lake
 ```{r pfl, eval=TRUE, echo=FALSE}
 lake = "Plainfield"
-upgradient_sites      <- get_upgradient_sites(lake)
-lake_isotopes         <- CSLSdata::isotopes[[lake]]
-lake_isotopes$diff_m  <- 0
-water_level_diff      <- get_water_level_diff(lake)
-level_plot            <- plot_levels(lake, water_level_diff, lake_isotopes)
-iso_plot              <- plot_iso(lake, lake_isotopes)
-d18O_plot             <- plot_d18O(lake, lake_isotopes)
+well_types       <- get_well_types(lake)
+gw_gradient_d18O <- get_gw_gradient_d18O(lake)
+gradient_plot    <- plot_gradients(gw_gradient_d18O, text_size = text_size,
+                                   title = sprintf("%s Lake - Water Level Comparison", lake))
+LMWL_sites_plot         <- plot_LMWL_sites(lake)
 ```
 
 As at Long Lake, a few wells are consistently upgradient of Plainfield Lake, but
 classifications are more dynamic here:
 
- * *Consistently upgradient:* PFL-02, PFL-04, PFL-05, PFL-15
- * *Inconsistent relationship:* PFL-07, PFL-13
- * *Typically downgradient:* PFL-03, PFL-09, PFL-11
- * *Consistently downgradient:* PFL-14
+```{r pfl_table, eval=TRUE, echo=FALSE}
+kable(static_well_types(lake))
+```
 
 The "upgradient" wells used in the monthly water budget analysis (as determined
 by relative lake levels and well levels in the 30 days prior to the measurement)
 are:
 
 ```{r pfl_iso, eval=TRUE, echo=FALSE}
-sites <- get_dynamic_sites(lake)
-knitr::kable(sites)
+knitr::kable(well_types)
 ```
 
-```{r pfl_plots, eval=TRUE, echo=FALSE, warning=FALSE, message=FALSE, fig.width=7, fig.height=6, fig.align="center"}
-level_plot
-iso_plot
-d18O_plot
+```{r pfl_plots, eval=TRUE, echo=FALSE, warning=FALSE, message=FALSE, fig.width=6.5, fig.height=6, fig.align="center"}
+gradient_plot
+LMWL_sites_plot
 ```
 
 ## Session Info

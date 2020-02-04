@@ -1,0 +1,426 @@
+---
+title: "CSLS d18O_Evap Calculations"
+output: 
+  rmarkdown::html_vignette:
+    toc: true
+vignette: >
+  %\VignetteIndexEntry{Put the title of your vignette here}
+  %\VignetteEngine{knitr::rmarkdown}
+  \usepackage[utf8]{inputenc}
+---
+
+```{r setup, echo=FALSE, warning=FALSE, message=FALSE}
+library(devtools)
+library(CSLSiso)
+library(lubridate)
+library(ggplot2)
+library(extrafont)
+library(NISTunits)
+library(reshape2)
+library(knitr)
+library(kableExtra)
+```
+
+## Overview
+After getting the negative values for Groundwater Inflow during some months, I
+went back to the $\delta^{18}O_{E}$ to systematically test them and make sure
+we're implementing them right. Overall, I think we are. The one thing we could
+change is to add an "evaporation-flux" weighting to $\delta^{18}O_{A}$, but it's
+not clear to me how we do this (or how to find precedent for this).
+
+## Krabbenhoft Data
+
+First, input values from Krabbenhoft et al. (1990) into R for comparison. Note
+that d18O_atm values are not listed in a table in this paper, they are only
+shown in Fig. 4. I used [DataThief](https://datathief.org/) to extract
+approximate values from the figure (also shown below).
+
+```{r Kdata, eval=TRUE, echo=FALSE, fig.width = 7, fig.height = 5}
+date          <- c("4/1/86", "5/1/86", "6/1/86", "7/1/86", "8/1/86", "9/1/86", 
+                   "10/1/86", "11/1/86")
+ltmp          <- c(4, 11.9, 18.1, 22.2, 22.3, 18.1, 11.3, 6.0)
+atmp          <- c(3.7, 11.8, 16.0, 19.4, 18.7, 12.7, 6.3, -1.3)
+d18O_pcpn     <- c(-14.8, -10.7, -6.3, -5.1, -5.3, -8.4, -11.1, -13.8)
+d18O_evap     <- c(-3.95, -13.90, -25.24, -23.97, -17.13, -10.40, -6.12, 33.24)
+h             <- c(0.76, 0.75, 0.78, 0.84, 0.86, 0.86, 0.82, 0.90)
+alpha_star    <- c(0.98878, 0.98956, 0.98994, 0.99024, 0.99018, 0.98964, 
+                   0.98904, 0.98826)
+delta_epsilon <- c(3.36, 3.36, 3.12, 2.27, 1.96, 1.96, 2.62, 1.43)
+epsilon       <- c(14.68, 14.07, 13.17, 12.04, 11.78, 12.31, 13.58, 13.17)
+d18O_atm      <- c(-25.88, -21.70, -17.07, -16.56, -17.46, -19.30, -22.07, -24.57)
+d18O_lake     <- rep(-5.8, 8)
+
+Krabbenhoft_data <- as.data.frame(cbind(date, d18O_evap, d18O_pcpn, d18O_atm, 
+                                        d18O_lake, ltmp, atmp, h, alpha_star, 
+                                        delta_epsilon, epsilon))
+
+Krabbenhoft_data$date       <- mdy(Krabbenhoft_data$date)
+Krabbenhoft_data$d18O_evap  <- as.numeric(as.character(Krabbenhoft_data$d18O_evap))
+Krabbenhoft_data$d18O_pcpn  <- as.numeric(as.character(Krabbenhoft_data$d18O_pcpn))
+Krabbenhoft_data$d18O_atm   <- as.numeric(as.character(Krabbenhoft_data$d18O_atm))
+Krabbenhoft_data$d18O_lake  <- as.numeric(as.character(Krabbenhoft_data$d18O_lake))
+Krabbenhoft_data$ltmp       <- as.numeric(as.character(Krabbenhoft_data$ltmp))
+Krabbenhoft_data$atmp       <- as.numeric(as.character(Krabbenhoft_data$atmp))
+Krabbenhoft_data$h          <- as.numeric(as.character(Krabbenhoft_data$h))
+Krabbenhoft_data$alpha_star <- as.numeric(as.character(Krabbenhoft_data$alpha_star))
+Krabbenhoft_data$delta_epsilon <- as.numeric(as.character(Krabbenhoft_data$delta_epsilon))
+Krabbenhoft_data$epsilon    <- as.numeric(as.character(Krabbenhoft_data$epsilon))
+
+kable_styling(kable(Krabbenhoft_data))
+```
+
+<br>
+
+```{r schematic1, out.width = "75%", eval=TRUE, echo=FALSE, fig.align="center"}
+include_graphics("../inst/images/Krabbenhoft_d18O_atm_fig_4.png")
+```
+
+<br>
+
+## Replicate Values
+
+### Kinetic Fractionation Factor, delta_epsilon
+The kinectic fractionation factor, $\Delta\epsilon$, is defined in Equation 6 of
+Krabbenhoft et al. (1990) as:
+
+\begin{align}
+\tag{1}
+\Delta \epsilon = 14.3*(1 - h)
+\end{align}
+
+Inputing reported values for $h$ does not yield reported values for
+$\Delta\epsilon$. This is bizzare, as Mook (2000) reports the same equation for
+the kinetic fractionation factor (Mook, 2000, Eq. 1.5). Chalking this up to an
+error in reporting in Krabbenhoft et al., 1990.
+
+```{r delta_epsilon, eval=TRUE, echo=FALSE, fig.width = 5, fig.height = 3}
+delta_epsilon        <- d18O_evap_kinetic_frac(h, K = 14.3)
+calculated           <- as.data.frame(cbind(date, delta_epsilon))
+colnames(calculated) <- c("date", "delta_epsilon")
+calculated$date      <- mdy(calculated$date)
+calculated$delta_epsilon <- as.numeric(as.character(calculated$delta_epsilon))
+
+cols <- c("c1" = "black", "c2" = "red3")
+
+ggplot() +
+  geom_point(data = Krabbenhoft_data,
+             aes(x = date, 
+                 y = delta_epsilon,
+                 color = "c1"),
+             size = 3) +
+  geom_point(data = calculated,
+             aes(x = date, 
+                 y = delta_epsilon,
+                 color = "c2"),
+             size = 3) +
+  scale_color_manual(name = "Value",
+                     breaks = c("c1", "c2"),
+                     values = cols,
+                     labels = c("Krabbenhoft", "Calculated")) +
+  labs(x = "", y = "delta_epsilon") +
+  theme_bw() +
+  theme(text = element_text(family = "Segoe UI Semilight"))
+
+```
+
+### Isotopic Fractionation Factor, alpha
+The isotopic fractionation factor, $\alpha*$, is never defined by Krabbenhoft et
+al. (1990), but both Mook (2000) and Gibson et al. (2016) present ways to
+calculate $\alpha_{L/V}$, where $\alpha_{L/V} = 1/\alpha_{V/L} = 1/\alpha*$. In
+both equations $\alpha$ is a function of $T$ which is the lake surface
+temperature (K). 
+
+\begin{align}
+\tag{2}
+\alpha &= exp(-2.0667*10^{-3} - \frac{0.4156}{T} + (\frac{1137}{T^2}))
+\end{align}
+
+\begin{align}
+\tag{3}
+\alpha &= exp(-7.685*10^{-3} + \frac{6.7123}{T} - \frac{1666.4}{T^{2}} + \frac{350410}{T^{3}})
+\end{align}
+
+**Take-away:** Both Mook (Eq. 2) and Gibson (Eq. 3) yield $\alpha$ values that
+are fairly consistent with each other, but neither match Krabbenhoft very well.
+That said, these differences in alpha values don't appear to appreciably impact
+$\delta^{18}O_{E}$ values (see last section). We'll stick with the formulation
+in Gibson et al. (2016).
+
+```{r alpha, eval=TRUE, echo=FALSE, fig.width = 7, fig.height = 5}
+ltmp_K         <- NISTdegCtOk(ltmp)
+
+# Mook version
+alpha          <- d18O_evap_isotope_frac(ltmp_K, method = "Mook")
+Mook           <- as.data.frame(cbind(date, alpha))
+colnames(Mook) <- c("date", "alpha")
+Mook$date      <- mdy(Mook$date)
+Mook$alpha     <- as.numeric(as.character(Mook$alpha))
+
+# Gibson version
+alpha            <- d18O_evap_isotope_frac(ltmp_K, method = "Gibson")
+Gibson           <- as.data.frame(cbind(date, alpha))
+colnames(Gibson) <- c("date", "alpha")
+Gibson$date      <- mdy(Gibson$date)
+Gibson$alpha     <- as.numeric(as.character(Gibson$alpha))
+
+cols <- c("c1" = "black", "c2" = "red3", "c3" = "blue3")
+
+ggplot() +
+  geom_point(data = Krabbenhoft_data,
+             aes(x = date, 
+                 y = alpha_star,
+                 color = "c1"),
+             size = 3) +
+  geom_point(data = Mook,
+             aes(x = date, 
+                 y = 1/alpha,
+                 color = "c2"),
+             size = 3) +
+  geom_point(data = Gibson,
+             aes(x = date, 
+                 y = 1/alpha,
+                 color = "c3"),
+             size = 3) +
+  scale_color_manual(name = "Value",
+                     breaks = c("c1", "c2", "c3"),
+                     values = cols,
+                     labels = c("Krabbenhoft", "Mook", "Gibson")) +
+  labs(x = "", y = "alpha") +
+  theme_bw() +
+  theme(text = element_text(family = "Segoe UI Semilight"))
+
+```
+
+### Total Fractionation Factor, epsilon
+
+The total fractionation factor combines the kinetic fractionation factor and the
+isotope fractionation factor. This value is defined in the text after Equation 5
+of Krabbenhoft et al. (1990) as shown here in Equation 4. This matches fairly
+well with the Gibson et al. (2016) definition (in the text after Equation 7a),
+except that Gibson does not include $\Delta\epsilon$ in the equation for
+$\epsilon$; they add $\Delta\epsilon$ separately in the equation for
+$\delta^{18}O_{E}$.
+
+\begin{align}
+\tag{4}
+\epsilon = 1000(1 - \alpha*) + \Delta \epsilon
+\end{align}
+
+The plot below can be interpreted as follows: 
+
+* The first letter indicates which values for $\alpha$ were used (K =
+Krabbenhoft, G = Gibson, M = Mook).
+* The second letter indicates which values for $\Delta\epsilon$ were used (K =
+Krabbenhoft, C = Calculated).
+
+Generally, the best match uses Krabbenhoft values for $\alpha$ but calculated
+values for $\Delta\epsilon$. The second best match is a draw - all other
+combinations do about the same.
+
+**Take-away:** There probably is something funny about the reported
+$\Delta\epsilon$ values in Krabbenhoft. Stick with $\Delta\epsilon$ and
+$\epsilon$ calculations as-is. Both come from the Krabbenhoft paper.
+
+```{r epsilon, eval=TRUE, echo=FALSE, fig.width = 7, fig.height = 5}
+epsilonKK <- d18O_evap_total_frac(1/Krabbenhoft_data$alpha_star, 
+                                  Krabbenhoft_data$delta_epsilon)
+epsilonGK <- d18O_evap_total_frac(Gibson$alpha,
+                                  Krabbenhoft_data$delta_epsilon)
+epsilonMK <- d18O_evap_total_frac(Mook$alpha,
+                                  Krabbenhoft_data$delta_epsilon)
+epsilonKC <- d18O_evap_total_frac(1/Krabbenhoft_data$alpha_star, 
+                                  delta_epsilon)
+epsilonGC <- d18O_evap_total_frac(Gibson$alpha, 
+                                  delta_epsilon)
+epsilonMC <- d18O_evap_total_frac(Mook$alpha, 
+                                  delta_epsilon)
+
+all_epsilon <- as.data.frame(cbind(date, epsilonKK, epsilonKC, epsilonGK, 
+                                   epsilonGC, epsilonMK, epsilonMC,
+                                   Krabbenhoft_data$epsilon))
+colnames(all_epsilon)   <- c("date", "KK", "KC", "GK", "GC", "MK", "MC", "Krabbenhoft")
+all_epsilon$date        <- mdy(all_epsilon$date)
+all_epsilon$Krabbenhoft <- as.numeric(as.character(all_epsilon$Krabbenhoft))
+all_epsilon$KK          <- as.numeric(as.character(all_epsilon$KK))
+all_epsilon$GK          <- as.numeric(as.character(all_epsilon$GK))
+all_epsilon$MK          <- as.numeric(as.character(all_epsilon$MK))
+all_epsilon$KC          <- as.numeric(as.character(all_epsilon$KC))
+all_epsilon$GC          <- as.numeric(as.character(all_epsilon$GC))
+all_epsilon$MC          <- as.numeric(as.character(all_epsilon$MC))
+melted_epsilon          <- melt(all_epsilon, id.vars = "date")
+
+ggplot() +
+  geom_point(data = melted_epsilon,
+             aes(x = date, 
+                 y = value,
+                 color = variable),
+             size = 3) +
+  labs(x = "", y = "epsilon") +
+  scale_color_brewer(palette = "Paired",
+                     direction = 1) +
+  theme_bw() +
+  theme(text = element_text(family = "Segoe UI Semilight"))
+
+```
+
+### The isotopic composition of the atmosphere, d18O_atm
+Krabbenhoft measured $\delta^{18}O_{A}$ directly and therefore does not provide
+an equation for estimating $\delta^{18}O_{A}$ but both Mook (2000) and Gibson et
+al. (2016) do. In Mook's equation, $\epsilon*$ is calculated as in Equation 6.
+The reported equation neglects to multiply by 1000, but this seems to be an
+error. The written version of Equation 6 matches the definition of $\epsilon$ in
+Krabbenhoft et al. (1990) and leads to better results (see plot below). In
+Gibson's formulation (Eq. 7), $k$ represents the seasonality of a location,
+varying from 0.5 for highly seasonal climates to 1.0 for non-seasonal climates,
+and $\epsilon+$ is calculated as in Equation 8. Plotted values represent a k of
+1.0. Lower values raise the curve and have a worse fit with Krabbenhoft data.
+
+\begin{align}
+\tag{5}
+\delta^{18}O_{A} &= frac{\delta^{18}O_{P}}{\alpha} + \epsilon*
+\end{align}
+
+\begin{align}
+\tag{6}
+\epsilon* &= (frac{1}{\alpha} - 1)*1000
+\end{align}
+
+\begin{align}
+\tag{7}
+\delta^{18}O_{A} &= \frac{\delta^{18}O_{P} - k*\epsilon+}{1 + 10^{-3}*k*\epsilon+})
+\end{align}
+
+\begin{align}
+\tag{8}
+\epsilon+ &= (\alpha - 1)*1000
+\end{align}
+
+**Take-away:** The corrected Mook and Gibson equations yeild identical results
+(Gibson is plotted on top of "Mook corrected") that are reasonably close to
+Krabbenhoft, though not exactly the same. The difference is likely due to
+seasonality, though there is not a clear way to correct for this (Gibson's
+seasonal correction makes results more different).
+
+```{r d18O_atm, eval=TRUE, echo=FALSE, fig.width = 7, fig.height = 5}
+d18O_atm         <- d18O_evap_d18O_atm(d18O_pcpn, 1/alpha_star, method = "Mook")
+Mook             <- as.data.frame(cbind(date, d18O_atm))
+colnames(Mook)   <- c("date", "d18O_atm")
+Mook$date        <- mdy(Mook$date)
+Mook$d18O_atm    <- as.numeric(as.character(Mook$d18O_atm))
+
+d18O_atm              <- d18O_evap_d18O_atm(d18O_pcpn, 1/alpha_star, 
+                                            method = "Mook_corrected")
+Mook_corr             <- as.data.frame(cbind(date, d18O_atm))
+colnames(Mook_corr)   <- c("date", "d18O_atm")
+Mook_corr$date        <- mdy(Mook_corr$date)
+Mook_corr$d18O_atm    <- as.numeric(as.character(Mook_corr$d18O_atm))
+
+d18O_atm         <- d18O_evap_d18O_atm(d18O_pcpn, 1/alpha_star, method = "Gibson", k = 1)
+Gibson           <- as.data.frame(cbind(date, d18O_atm))
+colnames(Gibson) <- c("date", "d18O_atm")
+Gibson$date      <- mdy(Gibson$date)
+Gibson$d18O_atm  <- as.numeric(as.character(Gibson$d18O_atm))
+
+cols <- c("c1" = "black", "c2" = "red3", "c3" = "blue3", "c4" = "green3")
+
+ggplot() +
+  geom_point(data = Mook,
+             aes(x = date, y = d18O_atm, color = "c2"),
+             size = 3) +
+  geom_point(data = Mook_corr,
+             aes(x = date, y = d18O_atm, color = "c4"),
+             size = 3) +
+  geom_point(data = Gibson,
+             aes(x = date, y = d18O_atm, color = "c3"),
+             size = 3) +
+  geom_point(data = Krabbenhoft_data,
+             aes(x = date, y = d18O_atm, color = "c1"),
+             size = 3) +
+  scale_color_manual(name = "Value",
+                     breaks = c("c1", "c2", "c3", "c4"),
+                     values = cols,
+                     labels = c("Krabbenhoft", "Mook", "Gibson", "Mook corrected")) +
+  labs(x = "", y = "d18O_atm") +
+  theme_bw() +
+  theme(text = element_text(family = "Segoe UI Semilight"))
+
+```
+
+### The isotopic composition of evaporation, d18O_evap
+
+Krabbenhoft and Gibson both present equations for $\delta^{18}O_{E}$ that are
+consistent with one another.
+
+\begin{align}
+\tag{9}
+\delta^{18}O_{E} = \frac{(1/\alpha) * \delta^{18}O_{L} - h*\delta^{18}O_{A} - 
+                  \epsilon}{1 - h +10^{-3}\Delta \epsilon}
+\end{align}
+
+**Take-away:** Most of the difference in match with $\delta^{18}O_{E}$ is due to
+differences in $\delta^{18}O_{A}$.
+
+```{r d18O_evap, eval=TRUE, echo=FALSE, fig.width = 7, fig.height = 5}
+d18O_evap_fcn <- function(alpha, d18O_lake, h, d18O_atm, epsilon, delta_epsilon) {
+  d18O_evap <- ((1/alpha)*d18O_lake - h*d18O_atm - epsilon)/(1 - h + delta_epsilon*10^(-3))
+}
+
+d18O_evap_K <- d18O_evap_fcn(1/Krabbenhoft_data$alpha_star, 
+                             Krabbenhoft_data$d18O_lake, 
+                             Krabbenhoft_data$h, 
+                             Krabbenhoft_data$d18O_atm, 
+                             Krabbenhoft_data$epsilon, 
+                             Krabbenhoft_data$delta_epsilon)
+
+
+alpha         <- d18O_evap_isotope_frac(ltmp_K, method = "Gibson")
+delta_epsilon <- d18O_evap_kinetic_frac(h, K = 14.3)
+d18O_atm      <- d18O_evap_d18O_atm(Krabbenhoft_data$d18O_pcpn,
+                                    alpha, 
+                                    method = "Gibson", 
+                                    k = 1)
+epsilon      <- d18O_evap_total_frac(alpha, delta_epsilon)
+d18O_evap    <- d18O_evap_fcn(alpha,
+                              Krabbenhoft_data$d18O_lake, 
+                              Krabbenhoft_data$h, 
+                              d18O_atm, 
+                              epsilon, 
+                              delta_epsilon)
+
+calculated           <- as.data.frame(cbind(date, d18O_evap))
+colnames(calculated) <- c("date", "d18O_evap")
+calculated$date      <- mdy(calculated$date)
+calculated$d18O_evap <- as.numeric(as.character(calculated$d18O_evap))
+
+d18O_evap   <- d18O_evap_fcn(alpha,
+                             Krabbenhoft_data$d18O_lake, 
+                             Krabbenhoft_data$h, 
+                             Krabbenhoft_data$d18O_atm, 
+                             epsilon, 
+                             delta_epsilon)
+calculated_atm           <- as.data.frame(cbind(date, d18O_evap))
+colnames(calculated_atm) <- c("date", "d18O_evap")
+calculated_atm$date      <- mdy(calculated_atm$date)
+calculated_atm$d18O_evap <- as.numeric(as.character(calculated_atm$d18O_evap))
+
+cols <- c("c1" = "black", "c2" = "red3", "c3" = "blue3")
+
+ggplot() +
+  geom_point(data = Krabbenhoft_data,
+             aes(x = date, y = d18O_evap, color = "c1"),
+             size = 3) +
+  geom_point(data = calculated,
+             aes(x = date, y = d18O_evap, color = "c2"),
+             size = 3) +
+  geom_point(data = calculated_atm,
+             aes(x = date, y = d18O_evap, color = "c3"),
+             size = 3) +
+  scale_color_manual(name = "Value",
+                     breaks = c("c1", "c2", "c3"),
+                     values = cols,
+                     labels = c("Krabbenhoft", "All Calculated", 
+                                "Krabbenhoft d18O_atm")) +
+  labs(x = "", y = "d18O_evap") +
+  theme_bw() +
+  theme(text = element_text(family = "Segoe UI Semilight"))
+```
