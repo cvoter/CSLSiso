@@ -70,8 +70,8 @@
 #'
 #' @export
 
-runall_csls_inputs <- function(lake, threshold = 0.01, by_gw_iso = FALSE,
-                               annual = FALSE){
+runall_csls_inputs <- function(lake, threshold = 0.01, start_date = NULL,
+                               end_date = NULL, annual = FALSE){
     weather       <- CSLSdata::weather
     lst           <- CSLSdata::lst_HOBO[[lake]]
     isotopes      <- CSLSdata::isotopes[[lake]]
@@ -80,6 +80,6 @@ runall_csls_inputs <- function(lake, threshold = 0.01, by_gw_iso = FALSE,
     dictionary    <- CSLSdata::dictionary[[lake]]
     inputs        <- summarise_inputs(lake, weather, lst, isotopes, lake_levels,
                                       gw_levels, dictionary, threshold,
-                                      by_gw_iso, annual)
+                                      start_date, end_date, annual)
   return(inputs)
 }

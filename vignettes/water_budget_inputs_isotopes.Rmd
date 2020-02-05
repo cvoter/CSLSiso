@@ -1,0 +1,267 @@
+---
+title: "CSLS - Exploring Isotope Measurements"
+output: 
+  rmarkdown::html_vignette:
+    toc: true
+vignette: >
+  %\VignetteIndexEntry{Put the title of your vignette here}
+  %\VignetteEngine{knitr::rmarkdown}
+  \usepackage[utf8]{inputenc}
+---
+
+```{r setup, echo=FALSE, warning=FALSE, message=FALSE}
+library(devtools)
+library(CSLSiso)
+library(CSLSdata)
+library(dplyr) #for pipes, filtering, and selecting
+library(stringr) #for str_c
+library(reshape2) #for melting
+library(ggplot2) #for plotting
+library(cowplot)     # for plot_grid
+library(magick)      # for drawing images
+library(extrafont) #for fonts
+library(knitr)
+library(scales) # for ::
+library(lubridate)
+
+text_size <- 12
+```
+
+```{r fcns, eval=TRUE, echo=FALSE}
+static_well_types <- function(lake) {
+  df <- CSLSdata::dictionary[[lake]]
+  df <- df %>%
+        filter(obs_type == "GW") %>%
+        select(site_id = site_id, 
+               class = static_iso_class_detailed)
+  classes <- unique(df$class)
+  table   <- NULL
+  for (class in classes) {
+    sites <- df$site_id[df$class == class]
+    sites <- str_c(as.character(sites), sep = "", collapse = ", ")
+    class <- str_replace(as.character(class), "_", " ")
+    class <- str_to_sentence(class)
+    this_row <- c(class, sites)
+    table    <- rbind(table, this_row)
+  }
+  table <- as.data.frame(table)
+  rownames(table) <- NULL
+  colnames(table) <- c("Gradient Type", "Wells")
+  return(table)
+}
+
+get_well_types <- function(lake){
+  df            <- runall_csls_inputs(lake)
+  df            <- df %>%
+                   filter(is.na(.data$GWin_sites) == FALSE &
+                            .data$GWin_sites != "") %>%
+                   select(.data$date, .data$GWin_sites, .data$GWout_sites)
+  df$date       <- format(df$date, "%b %Y")
+  colnames(df)  <- c("Month", "Upgradient Wells", "Downgradient Wells")
+  return(df)
+}
+
+get_gw_gradient_d18O <- function(lake) {
+  isotopes      <- CSLSdata::isotopes[[lake]]
+  isotopes$date <- floor_date(isotopes$date, unit = "day")
+  lake_levels   <- CSLSdata::lake_levels[[lake]]
+  gw_levels     <- CSLSdata::gw_levels[[lake]]
+  
+  for (i in 1:nrow(gw_levels)) {
+    today <- gw_levels$date[i]
+    gw    <- gw_levels$level_m[i]
+    lk    <- lake_levels$level_m[lake_levels$date == today]
+    if (length(lk) > 0) {
+      gw_levels$diff_m[i] <- gw - lk
+    } else {
+      gw_levels$diff_m[i] <- NA
+    }
+  }
+  
+  df <- merge(gw_levels,
+              isotopes, 
+              by = c("date", "site_id"), 
+              all.x = TRUE, all.y = TRUE)
+  df <- df %>%
+        filter(!site_id %in% c("PLEAS", "LONG", "PLAIN", "PRECIP")) %>%
+        select(date, site_id, diff_m, d18O)
+  
+  return(df)
+}
+```
+
+## Overview
+
+This document is a deeper dive into the stable isotope measurements as they
+relate to one another and to the relative lake and groundwater levels.
+
+<br>
+
+### Interpreting Plots
+
+When looking at the **Water Level Difference** plots, keep in mind that when the
+well plots above the dashed line, it is upgradient of the lake. When it plots
+below the dashed line, it is downgradient of the lake. Water level measurements
+are shown at a daily timestep. 
+
+To determine if a well is upgradient or downgradient for a given measurement
+record, we look at the previous month of daily water level differences. If the
+median of these daily differences is less than 1cm (i.e, less than the precision
+of HOBO U20 loggers), the isotope measurement is not used. Otherwise, if the
+mean of the daily differences is greater than 0, it is considered an upgradient
+well.
+
+When looking at the **Local Meteoric Water Line** plots, keep in mind that
+measurements closest to the meteoric water line are most likely inflowing
+groundwater wells while measurements drifting off to the right are likely
+outflowing groundwater wells (or the lake itself), which are influenced by
+evaporation.
+
+```{r schematic1, eval=TRUE, echo=FALSE, fig.align="center", fig.width=7, fig.height=4}
+# include_graphics(system.file("images", 
+#                              "water_level_diff.png", 
+#                              package = "CSLSiso", 
+#                              mustWork = TRUE))
+p1 <- ggdraw() + draw_image("../inst/images/water_level_diff.png", scale = 0.92)
+p2 <- ggdraw() + draw_image("../inst/images/isotope_signatures.png")
+plot_grid(p1, p2, ncol = 2)
+```
+
+## Lakes
+
+Here we're showing all stable isotope samples for each lake broken out by site
+type (precipitation, upgradient wells, downgradient wells, deep wells, and
+lake).
+
+```{r all, eval=TRUE, echo=FALSE, warning=FALSE, message=FALSE, fig.width=6.5, fig.height=4, fig.align="center"}
+plot_LMWL_all(text_size = text_size)
+```
+
+### Pleasant Lake
+
+#### General Behavior
+It looks like most wells at Pleasant Lake have had a consistent relationship
+with the lake over time. After analyzing the graphs below, we classify each well
+as follows:
+
+```{r psnt_table01, eval=TRUE, echo=FALSE}
+lake <- "Pleasant"
+kable(static_well_types(lake))
+```
+
+#### Specific Wells Used Each Month
+For the water budget calculations, we determine "upgradient" and "downgradient"
+wells based on relative lake and well levels in the 30 days prior to the
+measurement. For each month with samples, here's how we classify them:
+
+```{r psnt_table02, eval=TRUE, echo=FALSE}
+well_types <- get_well_types(lake)
+knitr::kable(well_types)
+```
+
+#### Detailed Results By Well
+Here's a breakdown of a) when isotope samples were collected for each well in
+context with relative lake and groundwater levels, and b) how samples for each
+well compare to the Local Meteoric Water Line (LMWL). Recall, we expect isotope
+samples from upgradient wells to lie along the LMWL and samples from
+downgradient wells to deviate from the LMWL, along the LEWL.
+
+```{r psnt_plot01, eval=TRUE, echo=FALSE, warning=FALSE, message=FALSE, fig.width=6.5, fig.height=5.5, fig.align="center"}
+gw_gradient_d18O <- get_gw_gradient_d18O(lake)
+plot_gradients(gw_gradient_d18O, 
+               text_size = text_size,
+               title = sprintf("%s Lake - Water Level Comparison", lake))
+```
+
+```{r psnt_plot02, eval=TRUE, echo=FALSE, warning=FALSE, message=FALSE, fig.width=6.5, fig.height=5.5, fig.align="center"}
+plot_LMWL_sites(lake, text_size = text_size)
+```
+
+### Long Lake
+
+#### General Behavior
+It looks like there are a few wells that are consistently upgradient of Long
+Lake, but classifications are more dynamic here. After analyzing the graphs
+below, we classify each well as follows:
+
+```{r long_table01, eval=TRUE, echo=FALSE}
+lake <- "Long"
+kable(static_well_types(lake))
+```
+
+#### Specific Wells Used Each Month
+For the water budget calculations, we determine "upgradient" and "downgradient"
+wells based on relative lake and well levels in the 30 days prior to the
+measurement. For each month with samples, here's how we classify them:
+
+```{r long_table02, eval=TRUE, echo=FALSE}
+well_types <- get_well_types(lake)
+knitr::kable(well_types)
+```
+
+#### Detailed Results By Well
+Here's a breakdown of a) when isotope samples were collected for each well in
+context with relative lake and groundwater levels, and b) how samples for each
+well compare to the Local Meteoric Water Line (LMWL). Recall, we expect isotope
+samples from upgradient wells to lie along the LMWL and samples from
+downgradient wells to deviate from the LMWL, along the LEWL.
+
+```{r long_plot01, eval=TRUE, echo=FALSE, warning=FALSE, message=FALSE, fig.width=6.5, fig.height=6.5, fig.align="center"}
+gw_gradient_d18O <- get_gw_gradient_d18O(lake)
+plot_gradients(gw_gradient_d18O, 
+               text_size = text_size,
+               title = sprintf("%s Lake - Water Level Comparison", lake))
+```
+
+```{r long_plot02, eval=TRUE, echo=FALSE, warning=FALSE, message=FALSE, fig.width=6.5, fig.height=6.5, fig.align="center"}
+plot_LMWL_sites(lake, text_size = text_size)
+```
+
+### Plainfield Lake
+
+#### General Behavior
+As at Long Lake a few wells  are consistently upgradient at Plainfield Lake, but
+classifications are pretty dynamic. After analyzing the graphs below, we
+classify each well as follows:
+
+```{r pfl_table01, eval=TRUE, echo=FALSE}
+lake <- "Plainfield"
+kable(static_well_types(lake))
+```
+
+#### Specific Wells Used Each Month
+For the water budget calculations, we determine "upgradient" and "downgradient"
+wells based on relative lake and well levels in the 30 days prior to the
+measurement. For each month with samples, here's how we classify them:
+
+```{r pfl_table02, eval=TRUE, echo=FALSE}
+well_types <- get_well_types(lake)
+knitr::kable(well_types)
+```
+
+#### Detailed Results By Well
+Here's a breakdown of a) when isotope samples were collected for each well in
+context with relative lake and groundwater levels, and b) how samples for each
+well compare to the Local Meteoric Water Line (LMWL). Recall, we expect isotope
+samples from upgradient wells to lie along the LMWL and samples from
+downgradient wells to deviate from the LMWL, along the LEWL.
+
+```{r pfl_plot01, eval=TRUE, echo=FALSE, warning=FALSE, message=FALSE, fig.width=6.5, fig.height=5.5, fig.align="center"}
+gw_gradient_d18O <- get_gw_gradient_d18O(lake)
+plot_gradients(gw_gradient_d18O, 
+               text_size = text_size,
+               title = sprintf("%s Lake - Water Level Comparison", lake))
+```
+
+```{r pfl_plot02, eval=TRUE, echo=FALSE, warning=FALSE, message=FALSE, fig.width=6.5, fig.height=5.5, fig.align="center"}
+plot_LMWL_sites(lake, text_size = text_size)
+```
+
+## Session Info
+
+The version of R and the versions of packages in use when this R Markdown file
+was created are listed here:
+
+```{r session_info, include=TRUE, echo=TRUE, results='markup'}
+devtools::session_info()
+```

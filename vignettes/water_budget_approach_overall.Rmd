@@ -553,40 +553,6 @@ plot_input(df = outputs,
            text_size = text_size)
 ```
 
-## Overall Water Budget
-With this, we can get the overall water budget for each lake on both a monthly
-(when ice-free) and an annual basis. Groundwater is clearly a critical part of
-lake water, representing over 80% of annual inflows to each lake. The volume of
-flow varies quite a bit by month, with the greatest volumes of flow through
-occuring during the summer (June, July, and August).
-
-### Pleasant Lake - Monthly Balance
-```{r psnt_monthly, eval=TRUE, echo=FALSE, message=FALSE, warning=FALSE, fig.width = 6.5, fig.height = 5}
-plot_balance("Pleasant", runall_csls_budget("Pleasant"))
-```
-
-### Long Lake - Monthly Balance
-```{r long_monthly, eval=TRUE, echo=FALSE, message=FALSE, warning=FALSE, fig.width = 6.5, fig.height = 5}
-plot_balance("Long", runall_csls_budget("Long"))
-```
-
-### Plainfield Lake - Monthly Balance
-```{r pfl_monthly, eval=TRUE, echo=FALSE, message=FALSE, warning=FALSE, fig.width = 6.5, fig.height = 5}
-plot_balance("Plainfield", runall_csls_budget("Plainfield"))
-```
-
-### All Lakes - Annual Balance
-```{r annual, eval=TRUE, echo=FALSE, message=FALSE, warning=FALSE, fig.width = 6.5, fig.height = 3}
-annual_h2o_bal <- NULL
-for (lake in c("Pleasant", "Long", "Plainfield")) {
-  budget <- runall_csls_budget(lake, annual = TRUE)
-  budget$lake <- lake
-  annual_h2o_bal <- rbind(annual_h2o_bal, budget)
-}
-plot_annual_bal(annual_h2o_bal)
-plot_annual_bal(annual_h2o_bal, as_pcnt = TRUE)
-```
-
 ## References
 
 Allen, R. G., Pereira, L. S., Raes, D., & Smith, M. (1998). Crop

@@ -66,7 +66,8 @@ plot_LMWL_sites <- function(lake, text_size = 12) {
                                                      label2,
                                                      label3), "%b '%y")) +
               theme_bw() +
-              theme(text = element_text(family = "Segoe UI Semilight"),
+              theme(text = element_text(family = "Segoe UI Semilight",
+                                        size = text_size),
                     panel.grid.major = element_blank(),
                     panel.grid.minor = element_blank(),
                     legend.position = "top")

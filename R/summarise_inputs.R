@@ -38,10 +38,11 @@
 
 summarise_inputs <- function(lake, weather, lst, isotopes, lake_levels,
                              gw_levels, dictionary, threshold = 0.01,
-                             by_gw_iso = FALSE, annual = FALSE){
+                             start_date = NULL, end_date = NULL,
+                             annual = FALSE){
 
   # Identify monthly timeseries with complete coverage of input data
-  timeseries <- find_timeseries(isotopes)
+  timeseries <- find_timeseries(isotopes, start_date, end_date)
 
   # Summarize inputs over common timeseries
   monthly_weather   <- summarise_weather(weather, timeseries, lake)

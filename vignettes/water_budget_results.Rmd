@@ -1,0 +1,140 @@
+---
+title: "CSLS Isotope Lake Water Budget"
+output: 
+  rmarkdown::html_vignette:
+    toc: true
+vignette: >
+  %\VignetteIndexEntry{CSLS_water_budget_results}
+  %\VignetteEngine{knitr::rmarkdown}
+  \usepackage[utf8]{inputenc}
+---
+
+```{r setup, echo=FALSE, warning=FALSE, message=FALSE}
+# Libraries
+library(devtools)
+library(CSLSiso)
+library(lubridate)
+library(knitr)
+
+# Parameters
+text_size  <- 12
+lakes      <- c("Pleasant", "Long", "Plainfield")
+start_date <- as_datetime(mdy("09-01-2018"))
+end_date   <- as_datetime(mdy("10-31-2019"))
+
+```
+
+## Overall Water Budget
+With this, we can get the overall water budget for each lake on both a monthly
+(when ice-free) and an annual basis. Groundwater is clearly a critical part of
+lake water, representing over 80% of annual inflows to each lake. The volume of
+flow varies quite a bit by month, with the greatest volumes of flow through
+occuring during the summer (June, July, and August).
+
+### All Lakes - Annual Balance
+```{r annual, eval=TRUE, echo=FALSE, message=FALSE, warning=FALSE, fig.width = 6.5, fig.height = 3}
+start_date <- as_datetime(mdy("10-01-2018"))
+end_date   <- as_datetime(mdy("09-30-2019"))
+
+df <- NULL
+for (lake in lakes) {
+  budget      <- runall_csls_budget(lake, annual = TRUE)
+  budget$lake <- lake
+  df          <- rbind(df, budget)
+}
+df$lake <- factor(df$lake, levels = lakes)
+plot_budget(df, 
+            annual = TRUE, 
+            text_size = text_size)
+plot_budget(df, 
+            annual = TRUE, 
+            as_pcnt = TRUE, 
+            text_size = text_size)
+
+start_date <- as_datetime(mdy("09-01-2018"))
+end_date   <- as_datetime(mdy("10-31-2019"))
+```
+
+### Pleasant Lake - Monthly Balance
+```{r psnt01, eval=TRUE, echo=FALSE, message=FALSE, warning=FALSE, fig.width = 6.5, fig.height = 5}
+df <- runall_csls_budget("Pleasant", 
+                         start_date = start_date, 
+                         end_date = end_date)
+plot_budget(df, 
+            title = "Pleasant Lake",
+            text_size = text_size)
+```
+
+```{r psnt02, eval=TRUE, echo=FALSE, message=FALSE, warning=FALSE, fig.width = 6.5, fig.height = 3}
+plot_budget(df, 
+            title = "Pleasant Lake",
+            text_size = text_size,
+            gw_only = TRUE)
+```
+
+```{r psnt03, eval=TRUE, echo=FALSE, message=FALSE, warning=FALSE, fig.width = 6.5, fig.height = 3}
+plot_budget(df, 
+            title = "Pleasant Lake",
+            text_size = text_size,
+            gw_only = TRUE,
+            as_pcnt = TRUE)
+```
+
+### Long Lake - Monthly Balance
+```{r long01, eval=TRUE, echo=FALSE, message=FALSE, warning=FALSE, fig.width = 6.5, fig.height = 5}
+df <- runall_csls_budget("Long", 
+                         start_date = start_date, 
+                         end_date = end_date)
+plot_budget(df, 
+            title = "Long Lake",
+            text_size = text_size)
+```
+
+```{r long02, eval=TRUE, echo=FALSE, message=FALSE, warning=FALSE, fig.width = 6.5, fig.height = 3}
+plot_budget(df, 
+            title = "Long Lake",
+            text_size = text_size,
+            gw_only = TRUE)
+```
+
+```{r long03, eval=TRUE, echo=FALSE, message=FALSE, warning=FALSE, fig.width = 6.5, fig.height = 3}
+plot_budget(df, 
+            title = "Long Lake",
+            text_size = text_size,
+            gw_only = TRUE,
+            as_pcnt = TRUE)
+```
+
+### Plainfield Lake - Monthly Balance
+```{r pfl01, eval=TRUE, echo=FALSE, message=FALSE, warning=FALSE, fig.width = 6.5, fig.height = 5}
+df <- runall_csls_budget("Plainfield", 
+                         start_date = start_date, 
+                         end_date = end_date)
+plot_budget(df, 
+            title = "Plainfield Lake",
+            text_size = text_size)
+```
+
+```{r pfl02, eval=TRUE, echo=FALSE, message=FALSE, warning=FALSE, fig.width = 6.5, fig.height = 3}
+plot_budget(df, 
+            title = "Plainfield Lake",
+            text_size = text_size,
+            gw_only = TRUE)
+```
+
+```{r pfl03, eval=TRUE, echo=FALSE, message=FALSE, warning=FALSE, fig.width = 6.5, fig.height = 3}
+plot_budget(df, 
+            title = "Plainfield Lake",
+            text_size = text_size,
+            gw_only = TRUE,
+            as_pcnt = TRUE)
+```
+
+## Session Info
+
+The version of R and the versions of packages in use when this R Markdown file
+was created are listed here:
+
+```{r session_info, include=TRUE, echo=TRUE, results='markup'}
+devtools::session_info()
+```

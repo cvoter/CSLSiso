@@ -33,10 +33,12 @@
 #' @param threshold minimum median difference between lake levels and
 #'                  groundwater levels during the month of measurement in order
 #'                  to classify groundwater measurement.
-#' @param by_gw_iso logical defaults to TRUE to calculate water balance
-#'                 30 days prior to upgradient groundwater isotope measurements.
-#'                 If FALSE, calculates balance by calendar month instead (30
-#'                 days before last day of the month)
+#' @param start_date optional start date to use for analysis (first day of the
+#'                   month) in POSIXct. If not provided, defaults to NULL and
+#'                  timeseries is based on months with isotope samples.
+#' @param end_date optional end date to use for analysis (last day of the
+#'                   month) in POSIXct. If not provided, defaults to NULL and
+#'                  timeseries is based on months with isotope samples.
 #' @param annual defaults to FALSE to calculate water balance on a monthly
 #'               basis. If TRUE, calculates the annual balance instead.
 #'
@@ -57,12 +59,12 @@
 
 summarise_h2o_bal <- function(lake, weather, lst, isotopes, lake_levels,
                               gw_levels, dictionary, threshold = 0.01,
-                              by_gw_iso = FALSE, annual = FALSE) {
+                              start_date = NULL, end_date = NULL, annual = FALSE) {
 
   # Summarise inputs over same monthly timeseries
   inputs  <- summarise_inputs(lake, weather, lst, isotopes, lake_levels,
-                              gw_levels, dictionary, threshold, by_gw_iso,
-                              annual)
+                              gw_levels, dictionary, threshold, start_date,
+                              end_date, annual)
 
   # Calculate remaining water balance terms
   h2o_bal <- calculate_h2o_bal(inputs)

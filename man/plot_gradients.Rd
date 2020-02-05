@@ -6,7 +6,7 @@
 \usage{
 plot_gradients(
   df,
-  date_intervals = "4 months",
+  date_intervals = "6 months",
   date_formats = "\%b '\%y",
   title = "",
   text_size = 10

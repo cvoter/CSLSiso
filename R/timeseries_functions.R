@@ -45,6 +45,10 @@ fill_timeseries_gaps <- function (df, timeseries){
 #' timeseries with complete input data coverage.
 #'
 #' @inheritParams summarise_inputs
+#' @param deep_ids list of site_ids associated with deeps wells, which should
+#'                 not be included when identifying start and end dates for
+#'                 analysis purposes (if isotopes data frame is used to
+#'                 determine start and end dates)
 #'
 #' @import lubridate
 #' @importFrom magrittr %>%
@@ -53,33 +57,28 @@ fill_timeseries_gaps <- function (df, timeseries){
 #'
 #' @export
 
-find_timeseries <- function(isotopes, lake_levels = NULL, gw_levels = NULL,
-                            dictionary = NULL, threshold = 0.01,
-                            by_gw_iso = FALSE){
-  if (by_gw_iso){
-    isotopes           <- iso_site_type(isotopes, dictionary, lake_levels,
-                                        gw_levels, threshold)
-    analysis_dates     <- isotopes %>%
-                          filter(.data$site_type == "upgradient") %>%
-                          group_by(floor_date(.data$date, unit = "month")) %>%
-                          summarise(date = floor_date(mean(.data$date), unit = "day")) %>%
-                          select(.data$date) %>%
-                          unlist()
-    analysis_dates     <- as_datetime(analysis_dates)
-    analysis_intervals <- interval(analysis_dates %m-% months(1), analysis_dates)
-  } else {
-    start_date     <- find_start_date(isotopes$date)
-    end_date       <- find_end_date(isotopes$date)
-    nmonths        <- find_nmonths(start_date, end_date)
-    analysis_dates <- NULL
-    for (i in 1:nmonths){
-      analysis_dates[i] <- start_date + months(i-1)
-    }
-    analysis_dates <- as_datetime(analysis_dates)
-    analysis_intervals <- interval(analysis_dates,
-                                   analysis_dates + months(1) - days(1))
-    analysis_dates     <- analysis_dates + months(1) - days(1)
+find_timeseries <- function(isotopes,
+                            start_date = NULL,
+                            end_date = NULL,
+                            deep_ids = c("LL-01B", "LL-02B", "LL-05C", "LL-09B",
+                                         "PFL-100", "PFL-101")){
+  if (is.null(start_date) | is.null(end_date)) {
+    isotopes   <- isotopes %>%
+                  filter(!.data$site_id %in% deep_ids)
+    start_date <- find_start_date(isotopes$date)
+    end_date   <- find_end_date(isotopes$date)
   }
+  nmonths        <- find_nmonths(start_date, end_date)
+
+  analysis_dates <- NULL
+  for (i in 1:nmonths){
+    analysis_dates[i] <- start_date + months(i-1)
+  }
+  analysis_dates <- as_datetime(analysis_dates)
+
+  analysis_intervals <- interval(analysis_dates,
+                                 analysis_dates + months(1) - days(1))
+  analysis_dates     <- analysis_dates + months(1) - days(1)
 
   return(list(dates = analysis_dates,
               intervals = analysis_intervals))

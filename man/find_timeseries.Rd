@@ -6,39 +6,27 @@
 \usage{
 find_timeseries(
   isotopes,
-  lake_levels = NULL,
-  gw_levels = NULL,
-  dictionary = NULL,
-  threshold = 0.01,
-  by_gw_iso = FALSE
+  start_date = NULL,
+  end_date = NULL,
+  deep_ids = c("LL-01B", "LL-02B", "LL-05C", "LL-09B", "PFL-100", "PFL-101")
 )
 }
 \arguments{
 \item{isotopes}{a data frame with isotopes measurements as formatted in the
 isotopes dataset, subset for a single lake.}
 
-\item{lake_levels}{a data frame with daily water level measurements as
-formatted in the lake_levels dataset,
-subset to lake level records for the lake of interest.}
+\item{start_date}{optional start date to use for analysis (first day of the
+month) in POSIXct. If not provided, defaults to NULL and
+timeseries is based on months with isotope samples.}
 
-\item{gw_levels}{a data frame with daily water level measurements as
-formatted in the lake_levels dataset,
-subset to groundwater level records at the lake of
-interest.}
+\item{end_date}{optional end date to use for analysis (last day of the
+month) in POSIXct. If not provided, defaults to NULL and
+timeseries is based on months with isotope samples.}
 
-\item{dictionary}{a data frame with site id numbers and static isotope
-site classifications as formatted in the
-dictionary dataset, subset to
-records for the lake of interest.}
-
-\item{threshold}{minimum median difference between lake levels and
-groundwater levels during the month of measurement in order
-to classify groundwater measurement.}
-
-\item{by_gw_iso}{logical defaults to TRUE to calculate water balance
-30 days prior to upgradient groundwater isotope measurements.
-If FALSE, calculates balance by calendar month instead (30
-days before last day of the month)}
+\item{deep_ids}{list of site_ids associated with deeps wells, which should
+not be included when identifying start and end dates for
+analysis purposes (if isotopes data frame is used to
+determine start and end dates)}
 }
 \description{
 Identifies the start date, end date, and number of months in the monthly

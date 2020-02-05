@@ -4,7 +4,13 @@
 \alias{runall_csls_inputs}
 \title{Run all functions needed to summarise water budget inputs for a CSLS lake}
 \usage{
-runall_csls_inputs(lake, threshold = 0.01, by_gw_iso = FALSE, annual = FALSE)
+runall_csls_inputs(
+  lake,
+  threshold = 0.01,
+  start_date = NULL,
+  end_date = NULL,
+  annual = FALSE
+)
 }
 \arguments{
 \item{lake}{name of lake (e.g., Pleasant, Long, or Plainfield)}
@@ -13,10 +19,13 @@ runall_csls_inputs(lake, threshold = 0.01, by_gw_iso = FALSE, annual = FALSE)
 groundwater levels during the month of measurement in order
 to classify groundwater measurement.}
 
-\item{by_gw_iso}{logical defaults to TRUE to calculate water balance
-30 days prior to upgradient groundwater isotope measurements.
-If FALSE, calculates balance by calendar month instead (30
-days before last day of the month)}
+\item{start_date}{optional start date to use for analysis (first day of the
+month) in POSIXct. If not provided, defaults to NULL and
+timeseries is based on months with isotope samples.}
+
+\item{end_date}{optional end date to use for analysis (last day of the
+month) in POSIXct. If not provided, defaults to NULL and
+timeseries is based on months with isotope samples.}
 
 \item{annual}{defaults to FALSE to calculate water balance on a monthly
 basis. If TRUE, calculates the annual balance instead.}

@@ -34,7 +34,8 @@ Suggests:
     roxygen2,
     testthat (>= 2.1.0),
     CSLSchem,
-    kableExtra
+    kableExtra,
+    magick
 License: MIT + file LICENSE
 Encoding: UTF-8
 LazyData: true
