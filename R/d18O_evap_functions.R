@@ -204,7 +204,7 @@ d18O_evap_total_frac <- function(alpha, delta_epsilon) {
 #'
 #' @export
 
-d18O_evap_d18O_atm <- function(d18O_pcpn, alpha, method = "Gibson", k = 1) {
+d18O_evap_d18O_atm <- function(d18O_pcpn, alpha, method = "Mook_corrected", k = 1) {
   if (method == "Gibson") {
     epsilon_plus <- (alpha - 1)*1000
     d18O_atm     <- (d18O_pcpn - k*epsilon_plus)/(1 + k*1e-3*epsilon_plus)

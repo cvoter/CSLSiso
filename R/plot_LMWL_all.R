@@ -15,6 +15,8 @@
 #' @param downgradient_off logical defaults to FALSE to include downgradient wells
 #' @param deep_off logical defaults to FALSE to include deep wells
 #' @param text_size size of font, defaults to 12 point
+#' @param line_size size of lines, defaults to 1
+#' @param point_size size of points, defaults to 2.5
 #'
 #' @return plot_obj - a plot object with aesthetics added
 #'
@@ -38,7 +40,9 @@ plot_LMWL_all <- function(lakes = c("Pleasant", "Long", "Plainfield"),
                           upgradient_off = FALSE,
                           downgradient_off = FALSE,
                           deep_off = FALSE,
-                          text_size = 12) {
+                          text_size = 12,
+                          point_size = 2.5,
+                          line_size = 1) {
   isotopes <- NULL
   for (lake in lakes){
     these_isotopes <- CSLSdata::isotopes[[lake]]
@@ -79,15 +83,15 @@ plot_LMWL_all <- function(lakes = c("Pleasant", "Long", "Plainfield"),
                           aes(x = .data$d18O, y = .data$d2H, color = "LMWL"),
                           method = "lm",
                           se = FALSE,
-                          size = 1) +
+                          size = line_size) +
               geom_smooth(data = lakes,
-                          aes(x = .data$d18O, y = .data$d2H, color = "LEWL"),
+                          aes(x = .data$d18O, y = .data$d2H, color = "LEL"),
                           method = "lm",
                           se = FALSE,
-                          size = 1) +
+                          size = line_size) +
               geom_point(aes(fill = .data$site_type,
                              shape = .data$site_type),
-                         size = 2.5,
+                         size = point_size,
                          color = "black") +
               labs(x = expression(delta^18*'O'),
                    y = expression(delta^2*'H'),
@@ -105,10 +109,11 @@ plot_LMWL_all <- function(lakes = c("Pleasant", "Long", "Plainfield"),
                                  labels = str_to_sentence(site_types),
                                  values = c(22, 21, 21, 21, 24)) +
               scale_color_manual(name = "Local Water Lines",
-                                 breaks = c("LMWL", "LEWL"),
+                                 breaks = c("LMWL", "LEL"),
                                  values = c("grey70", "black")) +
               theme_bw() +
-              theme(text = element_text(family = "Segoe UI Semilight"),
+              theme(text = element_text(family = "Segoe UI Semilight",
+                                        size = text_size),
                     panel.grid.major = element_blank(),
                     panel.grid.minor = element_blank(),
                     legend.position = "top",

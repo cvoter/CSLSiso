@@ -15,6 +15,7 @@ library(devtools)
 library(CSLSiso)
 library(lubridate)
 library(knitr)
+library(extrafont)
 
 # Parameters
 text_size  <- 12
@@ -38,7 +39,10 @@ end_date   <- as_datetime(mdy("09-30-2019"))
 
 df <- NULL
 for (lake in lakes) {
-  budget      <- runall_csls_budget(lake, annual = TRUE)
+  budget      <- runall_csls_budget(lake, 
+                                    annual = TRUE, 
+                                    start_date = start_date,
+                                    end_date = end_date)
   budget$lake <- lake
   df          <- rbind(df, budget)
 }

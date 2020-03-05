@@ -11,6 +11,8 @@
 #' @param as_pcnt logical defaults to FALSE to display as percents.
 #' @param text_size size of font, defaults to 12 point
 #' @param title string to use for title, defaults to "".
+#' @param gw_only logical defaults to false to display all components of the
+#'                water budget.
 #' @param fill_breaks vector with column names of variables to plot
 #' @param fill_labels vector with display labels for plotted variables
 #' @param fill_values vector with hex codes for colors associated with each

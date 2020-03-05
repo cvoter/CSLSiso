@@ -50,16 +50,10 @@ plot_gradients <- function(df,
                              color = "Samples w/Water Levels"),
                          shape = 16,
                          size = 2) +
-              geom_point(data = grey_points,
-                         aes(x = .data$date,
-                             y = .data$diff_m,
-                             color = "Samples w/out Water Levels"),
-                         shape = 16,
-                         size = 2) +
-              scale_color_manual(values = c("grey40", "darkred", "grey70"),
+              scale_color_manual(values = c("darkred", "grey70"),
                                  guide = guide_legend(override.aes = list(
-                                           linetype = c("blank", "blank", "solid"),
-                                           shape = c(16, 16, NA)))) +
+                                           linetype = c("blank", "solid"),
+                                           shape = c(16, NA)))) +
               scale_x_datetime(date_breaks = date_intervals,
                                date_labels = date_formats) +
               facet_wrap(~site_id, ncol = 4) +
@@ -73,5 +67,19 @@ plot_gradients <- function(df,
                     panel.grid.major = element_blank(),
                     panel.grid.minor = element_blank(),
                     legend.position = "top")
+  if (nrow(grey_points) > 0) {
+    plot_obj <- plot_obj +
+                geom_point(data = grey_points,
+                           aes(x = .data$date,
+                               y = .data$diff_m,
+                               color = "Samples w/out Water Levels"),
+                           shape = 16,
+                           size = 2) +
+                 scale_color_manual(values = c("grey40", "darkred", "grey70"),
+                                    guide = guide_legend(override.aes = list(
+                                      linetype = c("blank", "blank", "solid"),
+                                      shape = c(16, 16, NA))))
+
+  }
   return(plot_obj)
 }

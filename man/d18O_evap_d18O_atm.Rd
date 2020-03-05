@@ -4,7 +4,7 @@
 \alias{d18O_evap_d18O_atm}
 \title{Atmosphere d18O}
 \usage{
-d18O_evap_d18O_atm(d18O_pcpn, alpha, method = "Gibson", k = 1)
+d18O_evap_d18O_atm(d18O_pcpn, alpha, method = "Mook", k = 1)
 }
 \arguments{
 \item{d18O_pcpn}{isotopic composition of precipitation}

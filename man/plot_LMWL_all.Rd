@@ -11,7 +11,9 @@ plot_LMWL_all(
   upgradient_off = FALSE,
   downgradient_off = FALSE,
   deep_off = FALSE,
-  text_size = 12
+  text_size = 12,
+  point_size = 2.5,
+  line_size = 1
 )
 }
 \arguments{
