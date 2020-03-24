@@ -32,6 +32,10 @@ c("Pleasant", "Long", "Plainfield")}
 \item{deep_off}{logical defaults to FALSE to include deep wells}
 
 \item{text_size}{size of font, defaults to 12 point}
+
+\item{point_size}{size of points, defaults to 2.5}
+
+\item{line_size}{size of lines, defaults to 1}
 }
 \value{
 plot_obj - a plot object with aesthetics added

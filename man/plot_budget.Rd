@@ -27,6 +27,9 @@ budgets. If TRUE, creates plot for annual water budgets.}
 
 \item{as_pcnt}{logical defaults to FALSE to display as percents.}
 
+\item{gw_only}{logical defaults to false to display all components of the
+water budget.}
+
 \item{text_size}{size of font, defaults to 12 point}
 
 \item{title}{string to use for title, defaults to "".}

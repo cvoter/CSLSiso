@@ -49,7 +49,8 @@ for (lake in lakes) {
 df$lake <- factor(df$lake, levels = lakes)
 plot_budget(df, 
             annual = TRUE, 
-            text_size = text_size)
+            text_size = text_size,
+            title = "2018-2019 Lake Water Budgets")
 plot_budget(df, 
             annual = TRUE, 
             as_pcnt = TRUE, 
@@ -64,6 +65,9 @@ end_date   <- as_datetime(mdy("10-31-2019"))
 df <- runall_csls_budget("Pleasant", 
                          start_date = start_date, 
                          end_date = end_date)
+# test <- NISTunits::NISTcubMeterTOgallon(df[,2:6])/day(df$date)
+# test <- cbind(df$date, test, df[,14:18])
+
 plot_budget(df, 
             title = "Pleasant Lake",
             text_size = text_size)
@@ -89,6 +93,10 @@ plot_budget(df,
 df <- runall_csls_budget("Long", 
                          start_date = start_date, 
                          end_date = end_date)
+
+# test <- NISTunits::NISTcubMeterTOgallon(df[,2:6])/day(df$date)
+# test <- cbind(df$date, test, df[,14:18])
+
 plot_budget(df, 
             title = "Long Lake",
             text_size = text_size)
@@ -114,6 +122,9 @@ plot_budget(df,
 df <- runall_csls_budget("Plainfield", 
                          start_date = start_date, 
                          end_date = end_date)
+# test <- NISTunits::NISTcubMeterTOgallon(df[,2:6])/day(df$date)
+# test <- cbind(df$date, test, df[,14:18])
+
 plot_budget(df, 
             title = "Plainfield Lake",
             text_size = text_size)

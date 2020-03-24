@@ -50,6 +50,9 @@ plot_gradients <- function(df,
                              color = "Samples w/Water Levels"),
                          shape = 16,
                          size = 2) +
+              annotate("rect", ymin = -0.1, ymax = 0.1,
+                        xmin = min(df$date), xmax = max(df$date),
+                        fill = 'grey70', alpha = 0.4) +
               scale_color_manual(values = c("darkred", "grey70"),
                                  guide = guide_legend(override.aes = list(
                                            linetype = c("blank", "solid"),

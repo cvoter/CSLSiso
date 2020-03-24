@@ -27,6 +27,7 @@
 #' @export
 
 calculate_h2o_bal <- function(inputs){
+  # Groundwater inflow
   h2o_bal <- inputs %>%
              mutate(GWin_m3 = calculate_GW_inflow(.data$P_m3,
                                                 .data$E_m3,
@@ -47,6 +48,7 @@ calculate_h2o_bal <- function(inputs){
              select(.data$date, .data$P_m3, .data$E_m3, .data$dV_m3,
                     .data$GWin_m3, .data$P_mm, .data$E_mm, .data$dV_mm,
                     .data$GWin_mm, .data$mean_vol_m3, .data$mean_area_m2)
+  # Groundwater outflow
   h2o_bal <- h2o_bal %>%
              mutate(GWout_m3 = calculate_GW_outflow(.data$P_m3,
                                                     .data$E_m3,
@@ -61,5 +63,13 @@ calculate_h2o_bal <- function(inputs){
                            .data$E_mm, .data$dV_mm, .data$GWin_mm,
                            .data$GWout_mm, .data$mean_vol_m3,
                            .data$mean_area_m2)
+  # As percents (in addition to mm and m3)
+  h2o_bal <- h2o_bal %>%
+             mutate(P_pcnt = .data$P_m3/(.data$GWin_m3 + .data$P_m3),
+                    E_pcnt = .data$E_m3/(.data$GWin_m3 + .data$P_m3),
+                    dV_pcnt = .data$dV_m3/(.data$GWin_m3 + .data$P_m3),
+                    GWin_pcnt = .data$GWin_m3/(.data$GWin_m3 + .data$P_m3),
+                    GWout_pcnt = .data$GWout_m3/(.data$GWin_m3 + .data$P_m3))
+
   return(h2o_bal)
 }
